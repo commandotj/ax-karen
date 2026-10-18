@@ -166,6 +166,13 @@ mod tests {
     #[test]
     fn volumes_include_the_root_volume() {
         let volumes = MonitorCore::new().sample_volumes();
-        assert!(volumes.iter().any(|volume| volume.mount_point == "/"));
+        if cfg!(windows) {
+            assert!(volumes.iter().any(|volume| {
+                volume.mount_point.starts_with("C:")
+                    || volume.mount_point.starts_with("c:")
+            }));
+        } else {
+            assert!(volumes.iter().any(|volume| volume.mount_point == "/"));
+        }
     }
 }
