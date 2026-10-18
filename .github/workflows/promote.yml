@@ -1,7 +1,8 @@
 name: Promote develop to main
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: [develop]
 
 permissions:
@@ -15,6 +16,9 @@ concurrency:
 jobs:
   promote:
     name: Open or update promotion PR
+    if: >-
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'autorelease: pending')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5

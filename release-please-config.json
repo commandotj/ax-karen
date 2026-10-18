@@ -1,6 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "separate-pull-requests": false,
+  "include-component-in-tag": false,
   "bump-minor-pre-major": true,
   "skip-github-release": true,
   "packages": {
@@ -10,12 +11,12 @@
         {
           "type": "toml",
           "path": "Cargo.toml",
-          "jsonpath": "$.workspace.package.version.value"
+          "jsonpath": "$.workspace.package.version"
         },
         {
           "type": "toml",
           "path": "apps/desktop/src-tauri/Cargo.toml",
-          "jsonpath": "$.package.version.value"
+          "jsonpath": "$.package.version"
         },
         {
           "type": "json",
@@ -30,37 +31,37 @@
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name.value=='karen-cli')].version.value"
+          "jsonpath": "$.package[?(@.name=='karen-cli')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name.value=='monitor-battery')].version.value"
+          "jsonpath": "$.package[?(@.name=='monitor-battery')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name.value=='monitor-core')].version.value"
+          "jsonpath": "$.package[?(@.name=='monitor-core')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name.value=='monitor-cpu')].version.value"
+          "jsonpath": "$.package[?(@.name=='monitor-cpu')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name.value=='monitor-disk')].version.value"
+          "jsonpath": "$.package[?(@.name=='monitor-disk')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name.value=='monitor-memory')].version.value"
+          "jsonpath": "$.package[?(@.name=='monitor-memory')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name.value=='monitor-network')].version.value"
+          "jsonpath": "$.package[?(@.name=='monitor-network')].version"
         }
       ]
     }
