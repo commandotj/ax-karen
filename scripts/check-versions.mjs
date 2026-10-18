@@ -22,20 +22,20 @@ function extractJsonVersion(path) {
 
 const expectedTag = process.argv[2];
 
-const releasePleaseVersion = readFileSync(resolve(rootDir, "VERSION"), "utf8").trim();
+const packageVersion = extractJsonVersion(resolve(rootDir, "package.json"));
 const workspaceCargo = extractCargoVersion(resolve(rootDir, "Cargo.toml"));
 const desktopCargo = extractCargoVersion(resolve(rootDir, "apps/desktop/src-tauri/Cargo.toml"));
 const desktopPkg = extractJsonVersion(resolve(rootDir, "apps/desktop/package.json"));
 const tauriConf = extractJsonVersion(resolve(rootDir, "apps/desktop/src-tauri/tauri.conf.json"));
 
 console.log(`Checking version alignment:`);
-console.log(`  VERSION:                      ${releasePleaseVersion}`);
+console.log(`  package.json (workspace):     ${packageVersion}`);
 console.log(`  Cargo.toml (workspace):       ${workspaceCargo}`);
 console.log(`  apps/desktop/src-tauri/Cargo: ${desktopCargo}`);
 console.log(`  apps/desktop/package.json:    ${desktopPkg}`);
 console.log(`  tauri.conf.json:              ${tauriConf}`);
 
-const versions = new Set([releasePleaseVersion, workspaceCargo, desktopCargo, desktopPkg, tauriConf]);
+const versions = new Set([packageVersion, workspaceCargo, desktopCargo, desktopPkg, tauriConf]);
 if (versions.size > 1) {
   console.error(`\nError: Version mismatch detected across manifests: ${Array.from(versions).join(", ")}`);
   process.exit(1);

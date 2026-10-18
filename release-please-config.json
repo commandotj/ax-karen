@@ -5,8 +5,7 @@
   "skip-github-release": true,
   "packages": {
     ".": {
-      "release-type": "simple",
-      "version-file": "VERSION",
+      "release-type": "node",
       "extra-files": [
         {
           "type": "toml",

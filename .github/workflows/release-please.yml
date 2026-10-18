@@ -27,9 +27,29 @@ jobs:
           fi
 
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           target-branch: develop
           skip-github-release: true
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Report version pull request
+        env:
+          PRS_CREATED: ${{ steps.release.outputs.prs_created }}
+          RELEASE_PRS: ${{ steps.release.outputs.prs }}
+        run: |
+          if [ "$PRS_CREATED" = "true" ]; then
+            echo "Release Please opened or updated version pull request:"
+            echo "$RELEASE_PRS"
+            {
+              echo "### Release Please"
+              echo
+              echo '```json'
+              echo "$RELEASE_PRS"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Release Please completed without opening or updating a version pull request."
+          fi
