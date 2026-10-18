@@ -129,14 +129,6 @@ jobs:
           - { name: Linux x86_64, runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu, os: linux }
           - { name: Windows x86_64, runner: windows-2025, target: x86_64-pc-windows-msvc, os: windows }
     runs-on: ${{ matrix.runner }}
-    env:
-      APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
-      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -171,6 +163,14 @@ jobs:
 
       - name: macOS Signing & Notarization Preflight
         if: matrix.os == 'macos'
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         run: |
           echo "=== macOS Release Preflight ==="
           missing=()
@@ -178,34 +178,50 @@ jobs:
           [ -z "$APPLE_CERTIFICATE_PASSWORD" ] && missing+=("APPLE_CERTIFICATE_PASSWORD")
           [ -z "$APPLE_SIGNING_IDENTITY" ] && missing+=("APPLE_SIGNING_IDENTITY")
           [ -z "$APPLE_TEAM_ID" ] && missing+=("APPLE_TEAM_ID")
-          [ -z "$APPLE_API_KEY" ] && missing+=("APPLE_API_KEY")
           [ -z "$APPLE_API_KEY_ID" ] && missing+=("APPLE_API_KEY_ID")
+          [ -z "$APPLE_API_PRIVATE_KEY" ] && missing+=("APPLE_API_PRIVATE_KEY")
           [ -z "$APPLE_API_ISSUER" ] && missing+=("APPLE_API_ISSUER")
 
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::warning::Missing Apple signing/notarization secrets: ${missing[*]}"
-            echo "Continuing unnotarized bundle build for verification. Signed release requires configured GitHub Environment secrets."
-          else
-            echo "All Apple Developer credentials discovered."
-            KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
-            KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
-            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-            CERT_PATH="$RUNNER_TEMP/certificate.p12"
-            echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
-            security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-            security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
-
-            AUTH_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
-            echo "$APPLE_API_KEY" > "$AUTH_KEY_PATH"
-            echo "APPLE_API_KEY_PATH=$AUTH_KEY_PATH" >> "$GITHUB_ENV"
+            echo "::error::Missing Apple signing/notarization secrets: ${missing[*]}"
+            exit 1
           fi
+
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          CERT_PATH="$RUNNER_TEMP/certificate.p12"
+          printf '%s' "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
+          security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -Fq "$APPLE_SIGNING_IDENTITY"; then
+            echo "::error::Configured Developer ID signing identity was not imported into the temporary keychain."
+            exit 1
+          fi
+
+          AUTH_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+          printf '%s\n' "$APPLE_API_PRIVATE_KEY" > "$AUTH_KEY_PATH"
+          if ! xcrun notarytool history --key "$AUTH_KEY_PATH" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER" --output-format json >/dev/null 2>&1; then
+            echo "::error::Apple notarization authentication preflight failed."
+            exit 1
+          fi
+
+          echo "APPLE_API_KEY=$APPLE_API_KEY_ID" >> "$GITHUB_ENV"
+          echo "APPLE_API_KEY_PATH=$AUTH_KEY_PATH" >> "$GITHUB_ENV"
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm tauri
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
 
       - name: Package Desktop Bundle (macOS)
         if: matrix.os == 'macos'
