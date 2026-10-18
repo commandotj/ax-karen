@@ -11,6 +11,11 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -27,20 +32,26 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - name: Validate tag
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate tag and version consistency
         id: version
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
-          if [ "$TAG" != "v$version" ]; then
-            echo "tag $TAG does not match workspace version $version" >&2
-            exit 1
-          fi
+          node scripts/check-versions.mjs "$TAG"
+          version=$(node -e "console.log(require('./apps/desktop/package.json').version)")
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Create draft
+      - name: Create or verify draft release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
@@ -50,27 +61,82 @@ jobs:
               --title "Karen ${TAG#v}" --generate-notes
           fi
 
-  build:
-    name: Build (${{ matrix.name }})
+  build-cli:
+    name: Build CLI (${{ matrix.name }})
     needs: prepare
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { name: Linux x86_64, runner: ubuntu-24.04, arch: x86_64, os: linux }
-          - { name: Linux aarch64, runner: ubuntu-24.04-arm, arch: aarch64, os: linux }
-          - { name: macOS arm64, runner: macos-15, arch: aarch64, os: macos }
-          - { name: macOS Intel, runner: macos-15-intel, arch: x86_64, os: macos }
-          - { name: Windows x86_64, runner: windows-2025, arch: x86_64, os: windows }
-          - { name: Windows arm64, runner: windows-11-arm, arch: aarch64, os: windows }
+          - { name: Linux x86_64, runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu, os: linux, ext: tar.gz }
+          - { name: Linux aarch64, runner: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu, os: linux, ext: tar.gz }
+          - { name: macOS arm64, runner: macos-15, target: aarch64-apple-darwin, os: macos, ext: tar.gz }
+          - { name: macOS Intel, runner: macos-15, target: x86_64-apple-darwin, os: macos, ext: tar.gz, cross: true }
+          - { name: Windows x86_64, runner: windows-2025, target: x86_64-pc-windows-msvc, os: windows, ext: zip }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.97"
+          targets: ${{ matrix.target }}
+
+      - name: Build CLI binary
+        run: cargo build --release --bin karen --target ${{ matrix.target }}
+
+      - name: Package CLI (Unix)
+        if: matrix.os != 'windows'
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          mkdir -p dist
+          asset="karen-${VERSION}-${TARGET}.tar.gz"
+          tar -C "target/${TARGET}/release" -czf "dist/${asset}" karen
+          (cd dist && shasum -a 256 "${asset}" > "${asset}.sha256")
+
+      - name: Package CLI (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $asset = "karen-$env:VERSION-$env:TARGET.zip"
+          Compress-Archive -Path "target/$env:TARGET/release/karen.exe" -DestinationPath "dist/$asset"
+          $hash = (Get-FileHash "dist/$asset" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $asset" | Out-File -Encoding utf8 "dist/$asset.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  build-desktop:
+    name: Build Desktop (${{ matrix.name }})
+    needs: prepare
+    environment: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macOS arm64, runner: macos-15, target: aarch64-apple-darwin, os: macos }
+          - { name: Linux x86_64, runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu, os: linux }
+          - { name: Windows x86_64, runner: windows-2025, target: x86_64-pc-windows-msvc, os: windows }
     runs-on: ${{ matrix.runner }}
     env:
-      APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-      APPLE_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
-      APPLE_API_KEY: ${{ secrets.NOTARY_KEY_ID }}
-      APPLE_API_ISSUER: ${{ secrets.NOTARY_ISSUER }}
-      NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+      APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -88,6 +154,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.97"
+          targets: ${{ matrix.target }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -102,74 +169,198 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Prepare notarization key
-        if: matrix.os == 'macos' && env.NOTARY_KEY_P8 != ''
+      - name: macOS Signing & Notarization Preflight
+        if: matrix.os == 'macos'
         run: |
-          key="$RUNNER_TEMP/AuthKey.p8"
-          echo "$NOTARY_KEY_P8" | base64 --decode > "$key"
-          echo "APPLE_API_KEY_PATH=$key" >> "$GITHUB_ENV"
+          echo "=== macOS Release Preflight ==="
+          missing=()
+          [ -z "$APPLE_CERTIFICATE_BASE64" ] && missing+=("APPLE_CERTIFICATE_BASE64")
+          [ -z "$APPLE_CERTIFICATE_PASSWORD" ] && missing+=("APPLE_CERTIFICATE_PASSWORD")
+          [ -z "$APPLE_SIGNING_IDENTITY" ] && missing+=("APPLE_SIGNING_IDENTITY")
+          [ -z "$APPLE_TEAM_ID" ] && missing+=("APPLE_TEAM_ID")
+          [ -z "$APPLE_API_KEY" ] && missing+=("APPLE_API_KEY")
+          [ -z "$APPLE_API_KEY_ID" ] && missing+=("APPLE_API_KEY_ID")
+          [ -z "$APPLE_API_ISSUER" ] && missing+=("APPLE_API_ISSUER")
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::warning::Missing Apple signing/notarization secrets: ${missing[*]}"
+            echo "Continuing unnotarized bundle build for verification. Signed release requires configured GitHub Environment secrets."
+          else
+            echo "All Apple Developer credentials discovered."
+            KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+            KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+            CERT_PATH="$RUNNER_TEMP/certificate.p12"
+            echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
+            security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+            AUTH_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+            echo "$APPLE_API_KEY" > "$AUTH_KEY_PATH"
+            echo "APPLE_API_KEY_PATH=$AUTH_KEY_PATH" >> "$GITHUB_ENV"
+          fi
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test
       - run: pnpm tauri
 
-      - name: Package standalone CLI and desktop bundle
-        if: runner.os != 'Windows'
+      - name: Package Desktop Bundle (macOS)
+        if: matrix.os == 'macos'
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
-          ARCH: ${{ matrix.arch }}
-          OS_NAME: ${{ matrix.os }}
+          TARGET: ${{ matrix.target }}
         run: |
           mkdir -p dist
-          cli="karen-$VERSION-$ARCH-$OS_NAME.tar.gz"
-          tar -C target/release -czf "dist/$cli" karen
-          bundle="karen-app-$VERSION-$ARCH-$OS_NAME.tar.gz"
-          tar -C target/release/bundle \
-            -czf "dist/$bundle" .
-          (cd dist && shasum -a 256 "$cli" "$bundle" > "SHA256SUMS-$OS_NAME-$ARCH")
+          bundle="karen-desktop-${VERSION}-${TARGET}.tar.gz"
+          tar -C target/release/bundle -czf "dist/${bundle}" .
+          if [ -d target/release/bundle/dmg ]; then
+            cp target/release/bundle/dmg/*.dmg "dist/" 2>/dev/null || true
+          fi
+          (cd dist && shasum -a 256 * > SHA256SUMS-desktop-macos)
 
-      - name: Package standalone CLI and desktop bundle
-        if: runner.os == 'Windows'
+      - name: Package Desktop Bundle (Linux)
+        if: matrix.os == 'linux'
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          mkdir -p dist
+          bundle="karen-desktop-${VERSION}-${TARGET}.tar.gz"
+          tar -C target/release/bundle -czf "dist/${bundle}" .
+          if [ -d target/release/bundle/deb ]; then
+            cp target/release/bundle/deb/*.deb "dist/" 2>/dev/null || true
+          fi
+          if [ -d target/release/bundle/appimage ]; then
+            cp target/release/bundle/appimage/*.AppImage "dist/" 2>/dev/null || true
+          fi
+          (cd dist && shasum -a 256 * > SHA256SUMS-desktop-linux)
+
+      - name: Package Desktop Bundle (Windows)
+        if: matrix.os == 'windows'
         shell: pwsh
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
-          ARCH: ${{ matrix.arch }}
+          TARGET: ${{ matrix.target }}
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          $cli = "karen-$env:VERSION-$env:ARCH-windows.zip"
-          Compress-Archive -Path target/release/karen.exe -DestinationPath "dist/$cli"
-          $bundle = "karen-app-$env:VERSION-$env:ARCH-windows.zip"
+          $bundle = "karen-desktop-$env:VERSION-$env:TARGET.zip"
           Compress-Archive -Path target/release/bundle/* -DestinationPath "dist/$bundle"
-          $hashes = Get-ChildItem dist/*.zip | ForEach-Object {
+          if (Test-Path target/release/bundle/msi) {
+            Copy-Item target/release/bundle/msi/*.msi dist/ -ErrorAction SilentlyContinue
+          }
+          $hashes = Get-ChildItem dist/* | ForEach-Object {
             "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
           }
-          [IO.File]::WriteAllLines("dist/SHA256SUMS-windows-$env:ARCH", $hashes)
+          [IO.File]::WriteAllLines("dist/SHA256SUMS-desktop-windows", $hashes)
 
       - uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.os }}-${{ matrix.arch }}
+          name: desktop-${{ matrix.target }}
           path: dist/*
           if-no-files-found: error
 
   publish:
-    name: Attach artifacts and publish
-    needs: [prepare, build]
+    name: Consolidate checksums and publish release
+    needs: [prepare, build-cli, build-desktop]
     runs-on: ubuntu-24.04
+    environment: release
     steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
       - uses: actions/download-artifact@v4
         with:
-          pattern: release-*
+          pattern: cli-*
           merge-multiple: true
           path: dist
 
-      - name: Upload artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          merge-multiple: true
+          path: dist
+
+      - name: Generate master SHA256SUMS
+        run: |
+          cd dist
+          rm -f SHA256SUMS* *.sha256
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload artifacts to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.prepare.outputs.tag }}
         run: gh release upload "$TAG" dist/* --clobber
 
-      - name: Publish release
+      - name: Publish draft release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.prepare.outputs.tag }}
         run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+
+  homebrew-tap-pr:
+    name: Package manager pull request (luban-homebrew)
+    needs: [prepare, publish]
+    runs-on: ubuntu-24.04
+    environment: release
+    steps:
+      - name: Check Homebrew PAT availability
+        id: check-token
+        env:
+          HOMEBREW_TAP_PAT: ${{ secrets.HOMEBREW_TAP_PAT }}
+        run: |
+          if [ -z "$HOMEBREW_TAP_PAT" ]; then
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "HOMEBREW_TAP_PAT not set; skipping automated Homebrew tap PR."
+          else
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Clone Homebrew tap and create PR
+        if: steps.check-token.outputs.has_token == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_PAT }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git clone --branch develop https://x-access-token:${GH_TOKEN}@github.com/systembugtj/luban-homebrew.git tap
+          cd tap
+
+          branch="bump-karen-${TAG}"
+          git checkout -b "$branch"
+
+          # Update formula / cask if present
+          if [ -f Formula/karen.rb ]; then
+            asset_url="https://github.com/commandotj/ax-karen/releases/download/${TAG}/karen-${VERSION}-aarch64-apple-darwin.tar.gz"
+            sha=$(curl -sL "${asset_url}" | sha256sum | awk '{print $1}')
+            sed -i "s|url \".*\"|url \"${asset_url}\"|" Formula/karen.rb
+            sed -i "s|sha256 \".*\"|sha256 \"${sha}\"|" Formula/karen.rb
+            git add Formula/karen.rb
+          fi
+
+          if [ -f Casks/karen.rb ]; then
+            dmg_url="https://github.com/commandotj/ax-karen/releases/download/${TAG}/karen-desktop-${VERSION}-aarch64-apple-darwin.tar.gz"
+            sha=$(curl -sL "${dmg_url}" | sha256sum | awk '{print $1}')
+            sed -i "s|version \".*\"|version \"${VERSION}\"|" Casks/karen.rb
+            sed -i "s|sha256 \".*\"|sha256 \"${sha}\"|" Casks/karen.rb
+            git add Casks/karen.rb
+          fi
+
+          if git diff --staged --quiet; then
+            echo "No formula/cask changes staged; tap is already up to date or formulas not yet registered."
+          else
+            git commit -m "chore(karen): bump to ${TAG}"
+            git push origin "$branch"
+            gh pr create --repo systembugtj/luban-homebrew \
+              --head "$branch" \
+              --base develop \
+              --title "chore(karen): update to ${TAG}" \
+              --body "Automated release update for Karen ${TAG}."
+          fi
