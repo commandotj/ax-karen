@@ -4,6 +4,8 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { KarenCli, type CliEvent } from "./cli";
+import TabWheel from "./TabWheel.vue";
+import type { TabId, TabItem } from "./tabWheel";
 import { categoryColor, drawTreemap, tileAt, type TreeTile } from "./treemap";
 
 type Volume = {
@@ -977,6 +979,20 @@ watch(tab, (value) => {
   }
 });
 
+const tabItems = computed<TabItem[]>(() => [
+  { id: "runtime", index: "01", label: "Runtime", badge: cpu.value === null ? "WAIT" : "LIVE" },
+  { id: "cpu", index: "02", label: "CPU", badge: cpuProcessesAvailable.value ? "LIVE" : "WAIT" },
+  { id: "memory", index: "03", label: "Memory", badge: memoryTotal.value === null ? "WAIT" : "LIVE" },
+  { id: "battery", index: "04", label: "Battery", badge: battery.value.present ? `${battery.value.percent ?? "—"}%` : "AC" },
+  { id: "network", index: "05", label: "Network", badge: network.value.rx_bytes_per_sec == null ? "WAIT" : "LIVE" },
+  { id: "disk", index: "06", label: "Space", badge: scanning.value ? "MAP" : treeRoot.value ? "READY" : "OPEN" },
+]);
+
+function selectTab(target: TabId): void {
+  if (target === "disk") openDiskTree();
+  else tab.value = target;
+}
+
 function pushSample(samples: number[], value: number): void {
   samples.push(value);
   if (samples.length > 90) samples.shift();
@@ -1012,9 +1028,9 @@ function formatDuration(secs: number | null | undefined): string {
 const networkPeakRate = computed(() => Math.max(1024, ...networkRxSamples.value, ...networkTxSamples.value));
 
 function selectTrayTab(target: string): void {
-  if (target === "space") openDiskTree();
+  if (target === "space") selectTab("disk");
   else if (["runtime", "cpu", "memory", "battery", "network"].includes(target)) {
-    tab.value = target as "runtime" | "cpu" | "memory" | "battery" | "network";
+    selectTab(target as TabId);
   }
 }
 
@@ -1100,15 +1116,7 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <nav class="tab-rail" aria-label="Monitor views">
-      <button :class="{ active: tab === 'runtime' }" @click="tab = 'runtime'"><span class="tab-index">01</span><span>Runtime</span><i>{{ cpu === null ? "WAIT" : "LIVE" }}</i></button>
-      <button :class="{ active: tab === 'cpu' }" @click="tab = 'cpu'"><span class="tab-index">02</span><span>CPU</span><i>{{ cpuProcessesAvailable ? "LIVE" : "WAIT" }}</i></button>
-      <button :class="{ active: tab === 'memory' }" @click="tab = 'memory'"><span class="tab-index">03</span><span>Memory</span><i>{{ memoryTotal === null ? "WAIT" : "LIVE" }}</i></button>
-      <button :class="{ active: tab === 'battery' }" @click="tab = 'battery'"><span class="tab-index">04</span><span>Battery</span><i>{{ battery.present ? `${battery.percent ?? "—"}%` : "AC" }}</i></button>
-      <button :class="{ active: tab === 'network' }" @click="tab = 'network'"><span class="tab-index">05</span><span>Network</span><i>{{ network.rx_bytes_per_sec == null ? "WAIT" : "LIVE" }}</i></button>
-      <button :class="{ active: tab === 'disk' }" @click="openDiskTree"><span class="tab-index">06</span><span>Space</span><i>{{ scanning ? "MAP" : treeRoot ? "READY" : "OPEN" }}</i></button>
-      <div class="tab-fill"></div>
-    </nav>
+    <TabWheel :tabs="tabItems" :active="tab" @select="selectTab" />
 
     <section v-if="tab === 'runtime'" class="view metric-view runtime-view">
       <div class="view-heading"><h1>Runtime Monitor</h1></div>

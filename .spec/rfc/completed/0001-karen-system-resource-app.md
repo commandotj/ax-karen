@@ -26,9 +26,9 @@ Kernel tuning, process termination, automatic cleanup, privileged collection, re
 |-----|---------|
 | [0014](0014-replace-xtask-with-mjs.md) | Replace Rust xtask runner with root mjs script |
 | [0013](0013-redesign-icon-logo-designer.md) | Redesign application icon with Logo Designer skill |
-| [0012](../0012-top-bar-tray-icon.md) | Add top-bar system tray icon and menu |
-| [0011](../0011-network-tab-monitoring.md) | Add network telemetry and Network tab |
-| [0010](../0010-battery-tab-monitoring.md) | Add battery telemetry and Battery tab |
+| [0012](0012-top-bar-tray-icon.md) | Add top-bar system tray icon and menu |
+| [0011](0011-network-tab-monitoring.md) | Add network telemetry and Network tab |
+| [0010](0010-battery-tab-monitoring.md) | Add battery telemetry and Battery tab |
 | [0009](0009-disktree-ui-parity.md) | Restore Disktree UI feature parity in Karen |
 | [0008](../0008-per-process-memory-usage.md) | Report per-process memory usage |
 | [0007](../0007-usable-system-monitor-experience.md) | Make Karen a usable live system monitor |

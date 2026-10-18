@@ -1,8 +1,8 @@
 # RFC 0011: Add network telemetry and Network tab (child of 0001)
 
-**Status:** Approved
+**Status:** Implemented
 
-**Parent:** [0001](completed/0001-karen-system-resource-app.md)
+**Parent:** [0001](0001-karen-system-resource-app.md)
 
 ## Summary
 
