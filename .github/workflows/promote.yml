@@ -1,0 +1,85 @@
+name: Promote develop to main
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: promote-develop-to-main
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Open or update promotion PR
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Check whether develop has unreleased version
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          node scripts/check-versions.mjs
+          git fetch origin main --quiet
+
+          develop_version=$(node -p "require('./apps/desktop/package.json').version")
+          main_version=$(git show origin/main:apps/desktop/package.json | node -e "let data=''; process.stdin.on('data', chunk => data += chunk).on('end', () => console.log(JSON.parse(data).version))")
+          echo "develop=$develop_version" >> "$GITHUB_OUTPUT"
+          echo "main=$main_version" >> "$GITHUB_OUTPUT"
+
+          if [ "$develop_version" = "$main_version" ]; then
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            echo "No version change: develop=$develop_version, main=$main_version."
+            exit 0
+          fi
+
+          pending_release_pr=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base develop \
+            --state open \
+            --label "autorelease: pending" \
+            --json number \
+            --jq '.[0].number // empty')
+          if [ -n "$pending_release_pr" ]; then
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            echo "Version PR #$pending_release_pr must merge before promotion."
+            exit 0
+          fi
+
+          echo "promote=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create or report promotion PR
+        if: steps.version.outputs.promote == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          DEVELOP_VERSION: ${{ steps.version.outputs.develop }}
+        run: |
+          existing_pr=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head "$GITHUB_REPOSITORY_OWNER:develop" \
+            --state open \
+            --json url \
+            --jq '.[0].url // empty')
+
+          if [ -n "$existing_pr" ]; then
+            echo "Promotion PR already tracks develop: $existing_pr"
+            echo "Promotion PR: $existing_pr" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --head develop \
+            --base main \
+            --title "chore(release): promote develop v${DEVELOP_VERSION} to main" \
+            --body "Automated promotion for Karen v${DEVELOP_VERSION}. Merging this PR triggers the signed release workflow." \
+            | tee -a "$GITHUB_STEP_SUMMARY"
