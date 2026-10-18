@@ -25,3 +25,5 @@
 | 0021 | [Single-instance desktop application guard](rfc/completed/0021-single-instance-desktop-guard.md) | Implemented |
 | 0022 | [Desktop application multi-language internationalization](rfc/completed/0022-desktop-internationalization.md) | Implemented |
 | 0023 | [Publishify CI/CD Pipeline and Distribution Setup](rfc/completed/0023-publishify-cicd-pipeline-setup.md) | Implemented |
+| 0024 | [Cask-only Homebrew distribution](rfc/pending/0024-cask-only-homebrew-distribution.md) | Pending |
+| 0025 | [Drop Windows release targets](rfc/pending/0025-drop-windows-release-targets.md) | Pending |

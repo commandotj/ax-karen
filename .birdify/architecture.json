@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "mapId": "karen-desktop",
-  "revision": 3,
+  "revision": 4,
   "project": {
     "id": "karen",
     "name": "Karen",
@@ -316,6 +316,31 @@
         "row": 2,
         "column": 5
       }
+    },
+    {
+      "id": "release-pipeline",
+      "role": "backend",
+      "name": "Build and Release Pipeline",
+      "kind": "local",
+      "responsibility": "GitHub Actions validates release tags, builds CLI and desktop bundles, signs and notarizes macOS output, publishes checksums, and opens a PR updating the Luban Homebrew cask.",
+      "ownership": [
+        {
+          "kind": "file",
+          "path": ".github/workflows/release.yml"
+        }
+      ],
+      "evidence": [
+        {
+          "path": ".github/workflows/release.yml",
+          "note": "Release jobs prepare, build desktop artifacts, publish assets and checksums, then submit the tap update PR."
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 3,
+        "column": 3
+      }
     }
   ],
   "relationships": [
@@ -461,6 +486,26 @@
       "status": "supported",
       "openQuestions": [],
       "kind": "request",
+      "visibility": "overview"
+    },
+    {
+      "id": "release-tauri-build",
+      "from": "release-pipeline",
+      "to": "tauri-shell",
+      "label": "builds desktop bundle from Tauri config",
+      "evidence": [
+        {
+          "path": ".github/workflows/release.yml",
+          "note": "The release job runs pnpm tauri to build the configured desktop bundle."
+        },
+        {
+          "path": "apps/desktop/src-tauri/tauri.conf.json",
+          "note": "Tauri defines the product bundle and CLI sidecar."
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "dependency",
       "visibility": "overview"
     }
   ]
