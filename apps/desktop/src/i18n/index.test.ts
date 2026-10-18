@@ -139,4 +139,26 @@ describe("i18n engine and dictionaries", () => {
     expect(i18n.locale.value).toBe("ko");
     expect(i18n.t("nav.runtime")).toBe("실행 상태");
   });
+
+  it("gracefully catches localStorage read and write exceptions", () => {
+    const errorStorage = {
+      getItem: () => {
+        throw new Error("QuotaExceeded or SecurityError");
+      },
+      setItem: () => {
+        throw new Error("QuotaExceeded or SecurityError");
+      },
+      removeItem: () => {},
+      clear: () => {},
+    };
+    Object.defineProperty(window, "localStorage", { value: errorStorage, writable: true });
+    Object.defineProperty(globalThis, "localStorage", { value: errorStorage, writable: true });
+
+    expect(() => detectSystemLocale()).not.toThrow();
+    expect(() => setLocale("de")).not.toThrow();
+
+    // Restore mockStorage
+    Object.defineProperty(window, "localStorage", { value: mockStorage, writable: true });
+    Object.defineProperty(globalThis, "localStorage", { value: mockStorage, writable: true });
+  });
 });

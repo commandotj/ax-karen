@@ -126,6 +126,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn non_finite_zoom_resets_and_io_failures_are_reported() {
         let dir = tempfile::tempdir().expect("temp dir");
         let path = dir.path().join("config.toml");

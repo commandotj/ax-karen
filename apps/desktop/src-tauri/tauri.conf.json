@@ -35,9 +35,6 @@
       "icons/icon.ico",
       "icons/icon.png"
     ],
-    "externalBin": ["../../../target/tauri-sidecars/karen"],
-    "macOS": {
-      "signingIdentity": "Developer ID Application: Peng Li (7989A7T39X)"
-    }
+    "externalBin": ["../../../target/tauri-sidecars/karen"]
   }
 }

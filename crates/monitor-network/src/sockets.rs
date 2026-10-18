@@ -126,6 +126,7 @@ pub fn collect_raw_sockets() -> Vec<RawSocketEntry> {
         let SocketInfo {
             associated_pids,
             protocol_socket_info,
+            ..
         } = item;
         let pid = associated_pids.first().copied();
 
