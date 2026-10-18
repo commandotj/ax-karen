@@ -22,6 +22,8 @@
   - [x] Implement RFC 0015: Linux and Windows desktop support (child of 0001 (child of 0001) (RFC 0015)
 - [x] Implement RFC 0020: Network process attribution and connection topology (RFC 0020)
 - [x] Implement RFC 0021: Single-instance desktop application guard (RFC 0021)
+- [x] Implement RFC 0022: Desktop application multi-language internationalization (RFC 0022)
+
 
 
 

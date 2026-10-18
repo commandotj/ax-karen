@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { formatBytes, meterStyle, volumePercent } from "../format";
+import { useI18n } from "../i18n";
 import { categoryColor, drawTreemap, tileAt, type TreeTile } from "../treemap";
 import type { BlockedMark, Crumb, DiskMark, Finding, PowerPreset, RemovalState, Sibling, TreeMode, Volume } from "../types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   selectedVolume: string;
@@ -707,7 +710,7 @@ onBeforeUnmount(() => {
           </div>
           <span v-if="previewing" class="tree-preview-badge">SCANNING · PREVIOUS MAP RETAINED</span>
           <button class="map-button" :disabled="scanning || !selectedVolume" @click="emit('scan', treeRoot || selectedVolume)">
-            {{ scanning ? "MAPPING…" : treeRoot ? "RESCAN" : "MAP VOLUME" }}
+            {{ scanning ? t("space.scanning") : treeRoot ? t("space.rescan") : t("space.scanRoot") }}
           </button>
         </div>
       </div>
@@ -721,14 +724,14 @@ onBeforeUnmount(() => {
         </label>
         <label class="tree-check">
           <input :checked="apparentSize" type="checkbox" :disabled="scanning" @change="emit('update:apparentSize', ($event.target as HTMLInputElement).checked); rescanWithFilter()">
-          <span>APPARENT SIZE</span>
+          <span>{{ t("space.apparent") }}</span>
         </label>
         <label v-show="filterOpen || filterText" class="tree-filter">
           <span>FILTER</span>
           <input ref="filterInput" v-model="filterText" type="text" placeholder="name contains…" aria-label="Filter tiles by name" @keydown.enter.prevent="closeFilter(false)" @keydown.esc.stop.prevent="closeFilter(true)">
         </label>
         <div class="depth-control">
-          <span>DEPTH {{ treeDepth }}</span>
+          <span>{{ t("space.depthLimit") }} {{ treeDepth }}</span>
           <button aria-label="Decrease treemap depth" :disabled="treeDepth <= 1" @click="setTreeDepth(-1)">−</button>
           <button aria-label="Increase treemap depth" :disabled="treeDepth >= 6" @click="setTreeDepth(1)">+</button>
         </div>

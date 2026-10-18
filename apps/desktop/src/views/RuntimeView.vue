@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { chartPath, formatBytes, formatRate, meterStyle, volumePercent } from "../format";
+import { useI18n } from "../i18n";
 import type { BatteryInfo, CpuProcess, MemoryProcess, NetworkInfo, Volume } from "../types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   cpu: number | null;
@@ -30,10 +33,10 @@ const visibleCpuProcesses = computed(() => props.cpuProcesses.slice(0, 8));
 
 <template>
   <section class="view metric-view runtime-view">
-    <div class="view-heading"><h1>Runtime Monitor</h1></div>
+    <div class="view-heading"><h1>{{ t("nav.runtime") }}</h1></div>
     <div class="metric-console runtime-console">
       <div class="metric-main">
-        <span class="metric-caption">TOTAL CPU LOAD</span>
+        <span class="metric-caption">{{ t("runtime.cpuLoad") }}</span>
         <strong class="metric-value">{{ cpu ?? "—" }}<small>%</small></strong>
         <div class="metric-ruler"><i :style="{ width: `${cpu ?? 0}%` }"></i></div>
         <div class="metric-state">
@@ -65,13 +68,13 @@ const visibleCpuProcesses = computed(() => props.cpuProcesses.slice(0, 8));
         </div>
       </div>
       <div class="runtime-memory">
-        <span class="metric-caption">MEMORY IN USE</span>
+        <span class="metric-caption">{{ t("runtime.memoryLoad") }}</span>
         <strong>{{ memoryUsed === null ? "—" : formatBytes(memoryUsed) }}</strong>
         <div class="metric-ruler memory-ruler"><i :style="{ width: `${usedMemoryPercent}%` }"></i></div>
         <div class="runtime-memory-stats">
-          <span>USED <b>{{ usedMemoryPercent.toFixed(0) }}%</b></span>
-          <span>TOTAL <b>{{ memoryTotal === null ? "—" : formatBytes(memoryTotal) }}</b></span>
-          <span>AVAILABLE <b>{{ memoryTotal === null ? "—" : formatBytes(memoryTotal - (memoryUsed ?? 0)) }}</b></span>
+          <span>{{ t("memory.used") }} <b>{{ usedMemoryPercent.toFixed(0) }}%</b></span>
+          <span>{{ t("memory.total") }} <b>{{ memoryTotal === null ? "—" : formatBytes(memoryTotal) }}</b></span>
+          <span>{{ t("memory.free") }} <b>{{ memoryTotal === null ? "—" : formatBytes(memoryTotal - (memoryUsed ?? 0)) }}</b></span>
         </div>
         <div class="runtime-process-mini">
           <span class="metric-caption">RESIDENT MEMORY LEADERS</span>
@@ -81,20 +84,20 @@ const visibleCpuProcesses = computed(() => props.cpuProcesses.slice(0, 8));
           </div>
           <p v-if="!memoryProcessesAvailable">PROCESS SAMPLE UNAVAILABLE</p>
         </div>
-        <button class="runtime-memory-link" @click="$emit('navigate', 'memory')">MEMORY DETAIL <span>↗</span></button>
+        <button class="runtime-memory-link" @click="$emit('navigate', 'memory')">{{ t("runtime.memoryDetail") }} <span>↗</span></button>
       </div>
       <div class="runtime-aux">
         <button class="runtime-mini-instrument runtime-battery-card" @click="$emit('navigate', 'battery')">
-          <span class="metric-caption">POWER &amp; BATTERY</span>
-          <strong>{{ battery.present ? `${battery.percent ?? "—"}%` : "AC POWER" }}</strong>
-          <small>{{ battery.present ? `${(battery.state ?? "unknown").toUpperCase()} · ${battery.power_watts != null ? `${battery.power_watts.toFixed(1)} W` : "— W"}` : "No battery detected (AC power)" }}</small>
-          <span class="runtime-mini-open">BATTERY DETAIL ↗</span>
+          <span class="metric-caption">{{ t("nav.battery") }}</span>
+          <strong>{{ battery.present ? `${battery.percent ?? "—"}%` : t("battery.acPower") }}</strong>
+          <small>{{ battery.present ? `${(battery.state ?? "unknown").toUpperCase()} · ${battery.power_watts != null ? `${battery.power_watts.toFixed(1)} W` : "— W"}` : t("battery.acPower") }}</small>
+          <span class="runtime-mini-open">{{ t("runtime.batteryDetail") }} ↗</span>
         </button>
         <button class="runtime-mini-instrument runtime-network-card" @click="$emit('navigate', 'network')">
-          <span class="metric-caption">NETWORK THROUGHPUT</span>
+          <span class="metric-caption">{{ t("runtime.netThroughput") }}</span>
           <strong>RX {{ formatRate(network.rx_bytes_per_sec) }}</strong>
           <small>TX {{ formatRate(network.tx_bytes_per_sec) }} · {{ network.interfaces.length }} IFACES</small>
-          <span class="runtime-mini-open">NETWORK DETAIL ↗</span>
+          <span class="runtime-mini-open">{{ t("runtime.networkDetail") }} ↗</span>
         </button>
       </div>
     </div>

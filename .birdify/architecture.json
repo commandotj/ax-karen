@@ -43,6 +43,10 @@
         {
           "kind": "directory",
           "path": "apps/desktop/src/views"
+        },
+        {
+          "kind": "directory",
+          "path": "apps/desktop/src/i18n"
         }
       ],
       "evidence": [

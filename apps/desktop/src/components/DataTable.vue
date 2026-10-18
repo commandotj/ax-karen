@@ -1,4 +1,8 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
+import { useI18n } from "../i18n";
+
+const { t } = useI18n();
+
 defineProps<{
   columns: readonly string[];
   items: readonly T[];
@@ -23,7 +27,7 @@ defineProps<{
     </div>
     <div class="detail-process-rows">
       <slot v-if="empty || !items.length" name="empty">
-        <p class="process-empty">{{ emptyMessage || "NO READINGS AVAILABLE" }}</p>
+        <p class="process-empty">{{ emptyMessage || t("dataTable.noData") }}</p>
       </slot>
       <template v-else>
         <div

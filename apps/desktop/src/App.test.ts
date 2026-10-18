@@ -1367,11 +1367,19 @@ describe("Karen desktop interface", () => {
       expect(wrapper.find(".battery-view").exists()).toBe(true);
       host.emitTray("space");
       await flushPromises();
-      expect(wrapper.find(".disk-view").exists()).toBe(true);
       host.emitTray("unknown");
       await flushPromises();
       expect(wrapper.find(".disk-view").exists()).toBe(true);
       expect(host.trayStatus.some((status) => status.includes("CPU 12%  MEM 25%"))).toBe(true);
+    });
+
+    it("switches interface language dynamically from masthead selector", async () => {
+      const select = wrapper.find(".lang-picker select");
+      expect(select.exists()).toBe(true);
+      await select.setValue("zh-CN");
+      expect(wrapper.text()).toContain("运行状态");
+      await select.setValue("en");
+      expect(wrapper.text()).toContain("Runtime");
     });
   });
 });

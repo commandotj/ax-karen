@@ -23,3 +23,4 @@
 | 0019 | [Modularize desktop views to reduce App.vue size](rfc/completed/0019-modularize-desktop-views.md) | Implemented |
 | 0020 | [Network process attribution and connection topology](rfc/completed/0020-network-process-connection-topology.md) | Implemented |
 | 0021 | [Single-instance desktop application guard](rfc/completed/0021-single-instance-desktop-guard.md) | Implemented |
+| 0022 | [Desktop application multi-language internationalization](rfc/completed/0022-desktop-internationalization.md) | Implemented |

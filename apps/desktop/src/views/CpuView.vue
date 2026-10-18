@@ -2,7 +2,10 @@
 import { computed } from "vue";
 import DataTable from "../components/DataTable.vue";
 import { processMetricWidth } from "../format";
+import { useI18n } from "../i18n";
 import type { CpuProcess } from "../types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   cpu: number | null;
@@ -11,13 +14,13 @@ const props = defineProps<{
 }>();
 
 const largestCpuProcess = computed(() => props.cpuProcesses[0]?.cpu_percent ?? 0);
-const columns = ["RANK / PROCESS", "PID", "CPU SHARE"] as const;
+const columns = computed(() => [t("runtime.processes"), t("network.colPid"), t("cpu.avgUtilization")]);
 </script>
 
 <template>
   <section class="view metric-view detail-view">
     <div class="view-heading">
-      <h1>CPU Process Load</h1>
+      <h1>{{ t("nav.cpu") }}</h1>
       <span class="volume-count">SYSTEM {{ cpu ?? "—" }}% · 100% = ONE CORE</span>
     </div>
     <DataTable

@@ -2,7 +2,10 @@
 import { computed, ref } from "vue";
 import DataTable from "../components/DataTable.vue";
 import { chartPath, formatBytes, formatRate } from "../format";
+import { useI18n } from "../i18n";
 import type { NetworkConnection, NetworkInfo, NetworkProcess } from "../types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   network: NetworkInfo;
@@ -113,17 +116,17 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
 <template>
   <section class="view metric-view network-view">
     <div class="view-heading">
-      <h1>Network Telemetry & Topology</h1>
+      <h1>{{ t("network.title") }}</h1>
       <span class="volume-count">RX {{ formatRate(network.rx_bytes_per_sec) }} · TX {{ formatRate(network.tx_bytes_per_sec) }}</span>
     </div>
 
     <div class="metric-console memory-console network-console">
       <div class="metric-main">
-        <span class="metric-caption">EXTERNAL THROUGHPUT</span>
+        <span class="metric-caption">{{ t("runtime.netThroughput") }}</span>
         <strong class="metric-value memory-value">{{ formatRate(network.rx_bytes_per_sec) }}</strong>
         <div class="metric-state"><span>TRANSMIT RATE (TX)</span><b>{{ formatRate(network.tx_bytes_per_sec) }}</b></div>
-        <div class="metric-state"><span>CUMULATIVE RECEIVED</span><b>{{ formatBytes(network.total_rx_bytes) }}</b></div>
-        <div class="metric-state"><span>CUMULATIVE TRANSMITTED</span><b>{{ formatBytes(network.total_tx_bytes) }}</b></div>
+        <div class="metric-state"><span>{{ t("network.totalRx") }}</span><b>{{ formatBytes(network.total_rx_bytes) }}</b></div>
+        <div class="metric-state"><span>{{ t("network.totalTx") }}</span><b>{{ formatBytes(network.total_tx_bytes) }}</b></div>
       </div>
       <div class="chart-console">
         <div class="chart-heading">
@@ -148,7 +151,7 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
         @click="activeSubTab = 'apps'"
       >
         <span class="nav-brass-dot">◆</span>
-        PROCESS LEDGER ({{ processes.length }})
+        {{ t("network.processLedger") }} ({{ processes.length }})
       </button>
       <button
         type="button"
@@ -158,7 +161,7 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
         @click="activeSubTab = 'interfaces'"
       >
         <span class="nav-brass-dot">◈</span>
-        INTERFACES ({{ network.interfaces.length }})
+        {{ t("network.interfaces") }} ({{ network.interfaces.length }})
       </button>
       <button
         type="button"
@@ -168,7 +171,7 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
         @click="activeSubTab = 'astrolabe'"
       >
         <span class="nav-brass-dot">❖</span>
-        CONNECTION ASTROLABE ({{ connections.length }})
+        {{ t("network.astrolabeTitle") }} ({{ connections.length }})
       </button>
     </div>
 

@@ -28,6 +28,9 @@ import DiskTreeView from "./views/DiskTreeView.vue";
 import MemoryView from "./views/MemoryView.vue";
 import NetworkView from "./views/NetworkView.vue";
 import RuntimeView from "./views/RuntimeView.vue";
+import { useI18n, type SupportedLocale } from "./i18n";
+
+const { t, locale, supportedLocales, setLocale } = useI18n();
 
 const status = ref("Starting monitor");
 const isMacOS = navigator.userAgent.includes("Macintosh");
@@ -449,13 +452,18 @@ function closeWindow(): void {
   void getCurrentWindow().close();
 }
 
+function onLocaleChange(event: Event): void {
+  const target = event.target as HTMLSelectElement;
+  setLocale(target.value as SupportedLocale);
+}
+
 const tabItems = computed<TabItem[]>(() => [
-  { id: "runtime", index: "01", label: "Runtime", badge: cpu.value === null ? "WAIT" : "LIVE" },
-  { id: "cpu", index: "02", label: "CPU", badge: cpuProcessesAvailable.value ? "LIVE" : "WAIT" },
-  { id: "memory", index: "03", label: "Memory", badge: memoryTotal.value === null ? "WAIT" : "LIVE" },
-  { id: "battery", index: "04", label: "Battery", badge: battery.value.present ? `${battery.value.percent ?? "—"}%` : "AC" },
-  { id: "network", index: "05", label: "Network", badge: network.value.rx_bytes_per_sec == null ? "WAIT" : "LIVE" },
-  { id: "disk", index: "06", label: "Space", badge: scanning.value ? "MAP" : treeRoot.value ? "READY" : "OPEN" },
+  { id: "runtime", index: "01", label: t("nav.runtime"), badge: cpu.value === null ? "WAIT" : "LIVE" },
+  { id: "cpu", index: "02", label: t("nav.cpu"), badge: cpuProcessesAvailable.value ? "LIVE" : "WAIT" },
+  { id: "memory", index: "03", label: t("nav.memory"), badge: memoryTotal.value === null ? "WAIT" : "LIVE" },
+  { id: "battery", index: "04", label: t("nav.battery"), badge: battery.value.present ? `${battery.value.percent ?? "—"}%` : "AC" },
+  { id: "network", index: "05", label: t("nav.network"), badge: network.value.rx_bytes_per_sec == null ? "WAIT" : "LIVE" },
+  { id: "disk", index: "06", label: t("nav.space"), badge: scanning.value ? "MAP" : treeRoot.value ? "READY" : "OPEN" },
 ]);
 
 function selectTab(target: TabId): void {
@@ -522,9 +530,16 @@ onBeforeUnmount(() => {
           <circle cx="256" cy="368" r="10" fill="#F0E4C6"/>
         </svg>
         <span class="brand-name">KAREN</span>
-        <span class="brand-edition">SYSTEM MONITOR</span>
+        <span class="brand-edition">{{ t("masthead.edition") }} · SYSTEM MONITOR</span>
       </div>
       <div class="masthead-right" @mousedown.self="startDragging">
+        <label class="lang-picker">
+          <select :value="locale" aria-label="Select language" @change="onLocaleChange">
+            <option v-for="item in supportedLocales" :key="item.code" :value="item.code">
+              {{ item.nativeName }}
+            </option>
+          </select>
+        </label>
         <div class="telemetry-state" :class="{ fault: status.includes('fault') || status.includes('unavailable') }">
           <span class="state-lamp"></span><span>{{ status }}</span><span class="state-divider">/</span><span>LOCAL</span>
         </div>

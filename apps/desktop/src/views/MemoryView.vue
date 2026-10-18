@@ -2,7 +2,10 @@
 import { computed } from "vue";
 import DataTable from "../components/DataTable.vue";
 import { chartPath, formatBytes, processMetricWidth } from "../format";
+import { useI18n } from "../i18n";
 import type { MemoryProcess } from "../types";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   memoryUsed: number | null;
@@ -16,23 +19,23 @@ const usedMemoryPercent = computed(() =>
   props.memoryTotal ? Math.min(100, ((props.memoryUsed ?? 0) / props.memoryTotal) * 100) : 0,
 );
 const largestMemoryProcess = computed(() => props.memoryProcesses[0]?.memory_bytes ?? 0);
-const columns = ["RANK / PROCESS", "PID", "RESIDENT"] as const;
+const columns = computed(() => [t("runtime.processes"), t("network.colPid"), t("memory.used")]);
 </script>
 
 <template>
   <section class="view metric-view memory-view">
-    <div class="view-heading"><h1>Memory</h1></div>
+    <div class="view-heading"><h1>{{ t("nav.memory") }}</h1></div>
     <div class="metric-console memory-console">
       <div class="metric-main">
-        <span class="metric-caption">CAPACITY IN USE</span>
+        <span class="metric-caption">{{ t("memory.systemMemory") }}</span>
         <strong class="metric-value memory-value">{{ memoryUsed === null ? "—" : formatBytes(memoryUsed) }}</strong>
         <div class="metric-ruler memory-ruler"><i :style="{ width: `${usedMemoryPercent}%` }"></i></div>
         <div class="metric-state">
-          <span>INSTALLED CAPACITY</span>
+          <span>{{ t("memory.total") }}</span>
           <b>{{ memoryTotal === null ? "INITIALIZING" : formatBytes(memoryTotal) }}</b>
         </div>
         <div class="metric-state">
-          <span>AVAILABLE RESERVE</span>
+          <span>{{ t("memory.free") }}</span>
           <b>{{ memoryTotal === null ? "—" : formatBytes(memoryTotal - (memoryUsed ?? 0)) }}</b>
         </div>
       </div>

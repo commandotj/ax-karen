@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { chartPath, formatDuration } from "../format";
+import { useI18n } from "../i18n";
 import type { BatteryInfo } from "../types";
+
+const { t } = useI18n();
 
 defineProps<{
   battery: BatteryInfo;
@@ -12,9 +15,9 @@ defineProps<{
 <template>
   <section class="view metric-view battery-view">
     <div class="view-heading">
-      <h1>Battery &amp; Power</h1>
+      <h1>{{ t("nav.battery") }}</h1>
       <span class="volume-count">
-        {{ battery.present ? `${(battery.state ?? "unknown").toUpperCase()} · ${battery.percent ?? "—"}%` : "NO BATTERY DETECTED (AC POWER)" }}
+        {{ battery.present ? `${(battery.state ?? "unknown").toUpperCase()} · ${battery.percent ?? "—"}%` : t("battery.acPower") }}
       </span>
     </div>
     <div class="metric-console memory-console battery-console">
