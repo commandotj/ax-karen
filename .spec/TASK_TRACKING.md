@@ -24,6 +24,10 @@
 - [x] Implement RFC 0021: Single-instance desktop application guard (RFC 0021)
 - [x] Implement RFC 0022: Desktop application multi-language internationalization (RFC 0022)
 - [x] Implement RFC 0023: Publishify CI/CD Pipeline and Distribution Setup (RFC 0023)
+- [x] Implement RFC 0024: Cask-only Homebrew distribution (RFC 0024)
+- [x] Implement RFC 0025: Drop Windows release targets (RFC 0025)
+
+
 
 
 
