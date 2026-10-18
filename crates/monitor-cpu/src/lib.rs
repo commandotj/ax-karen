@@ -128,8 +128,8 @@ mod tests {
         assert_eq!(rows.len(), MAX_PROCESS_ROWS);
         assert_eq!(rows[0].pid, 0);
         assert_eq!(rows[1].pid, 1);
-        assert_eq!(rows[2].cpu_percent, 22.0);
-        assert_eq!(rows[MAX_PROCESS_ROWS - 1].cpu_percent, 5.0);
+        assert!((rows[2].cpu_percent - 22.0).abs() < f32::EPSILON);
+        assert!((rows[MAX_PROCESS_ROWS - 1].cpu_percent - 5.0).abs() < f32::EPSILON);
     }
 
     #[test]
