@@ -329,6 +329,7 @@ fn export_marks_returns_paths_and_prompt_and_saves_to_downloads() {
     let mut child = Command::new(env!("CARGO_BIN_EXE_karen"))
         .arg("--stream-json")
         .env("HOME", home.path())
+        .env("USERPROFILE", home.path())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -626,7 +627,7 @@ impl Session {
         let mut child = Command::new(env!("CARGO_BIN_EXE_karen"))
             .arg("--stream-json")
             .env("HOME", home.path())
-            .env_remove("USERPROFILE")
+            .env("USERPROFILE", home.path())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -837,7 +838,15 @@ fn volumes_lists_the_boot_disk() {
     let list = volumes["volumes"].as_array().expect("volume list");
     let boot = list
         .iter()
-        .find(|volume| volume["mount_point"] == "/")
+        .find(|volume| {
+            if cfg!(windows) {
+                volume["mount_point"]
+                    .as_str()
+                    .is_some_and(|m| m.starts_with("C:") || m.starts_with("c:"))
+            } else {
+                volume["mount_point"] == "/"
+            }
+        })
         .expect("boot volume");
     assert!(boot["total_bytes"].as_u64().unwrap_or(0) > 0);
     assert!(boot.get("device").is_some());
@@ -1111,9 +1120,16 @@ fn worth_a_look_names_reclaimable_worktree_and_stale_experiment_findings() {
     sparse(&old.join("blob"));
     let long_ago =
         std::time::SystemTime::now() - std::time::Duration::from_hours(90 * 24);
-    // A directory's age follows its newest entry, so age both.
+    // A directory's age follows its newest entry; age both on Unix.
+    #[cfg(unix)]
     for path in [old.join("blob"), old.clone()] {
         fs::File::open(&path)
+            .and_then(|entry| entry.set_modified(long_ago))
+            .expect("age experiment");
+    }
+    #[cfg(not(unix))]
+    {
+        fs::File::open(old.join("blob"))
             .and_then(|entry| entry.set_modified(long_ago))
             .expect("age experiment");
     }
