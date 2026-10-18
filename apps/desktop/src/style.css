@@ -851,3 +851,314 @@ body {
   background: #0a0d0e;
 }
 
+/* Steampunk Network Subnav & Process Ledger */
+.network-view {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+  overflow: hidden;
+}
+.network-view > .view-heading {
+  margin: 0;
+}
+.network-view > .network-console {
+  margin: 0;
+}
+.network-view > .network-subnav {
+  margin: 0;
+}
+.network-view > .network-tab-pane,
+.network-view > .astrolabe-console {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.network-subnav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-bottom: 1px solid #3d301b;
+  background: linear-gradient(180deg, #15191c, #0d1012);
+  border-radius: 4px;
+}
+.network-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid #3d301b;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #1f2529, #121618);
+  color: #a89f8c;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.network-nav-btn:hover {
+  border-color: #7d6031;
+  color: #eeddb0;
+  background: linear-gradient(180deg, #2a3137, #191e22);
+}
+.network-nav-btn.is-active {
+  border-color: #d6b25e;
+  background: linear-gradient(180deg, #382c18, #1c160c);
+  color: #fce8aa;
+  box-shadow: inset 0 1px 0 #fff3bf30, 0 0 10px #d6b25e25;
+}
+.nav-brass-dot {
+  color: #d6b25e;
+  font-size: 10px;
+}
+
+.network-tab-pane {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.network-apps-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.network-apps-pane > .detail-process-console {
+  flex: 1 1 auto;
+  min-height: 140px;
+}
+
+.proto-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  margin-right: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 2px;
+  border: 1px solid #4a3a1f;
+  background: #1e1910;
+  color: #d8b668;
+}
+
+.service-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  border: 1px solid #5a4625;
+  background: #241c10;
+  color: #eed699;
+}
+.service-badge.is-known {
+  border-color: #d6b25e;
+  color: #fff1c2;
+  box-shadow: 0 0 6px #d6b25e30;
+}
+
+.state-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  color: #8c8577;
+  margin-right: 6px;
+}
+
+.net-scope-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 2px;
+}
+.scope-lan {
+  border: 1px solid #7c6229;
+  background: #2b200c;
+  color: #ffd875;
+}
+.scope-wan {
+  border: 1px solid #23658a;
+  background: #0c232f;
+  color: #7ae5ff;
+}
+
+/* Steampunk Connection Astrolabe Instrument */
+.astrolabe-console {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #3d301b;
+  border-radius: 4px;
+  background: radial-gradient(circle at 50% 45%, #182025 0%, #0d1114 75%, #080a0c 100%);
+  box-shadow: inset 0 1px 0 #fff2c710, inset 0 0 30px #000000bb;
+  padding: 10px 14px;
+  min-height: 0;
+  flex: 1 1 0;
+  overflow: hidden;
+}
+.astrolabe-header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #d6b25e;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #2a2214;
+}
+.astrolabe-viewport {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 4px 0;
+}
+.astrolabe-svg {
+  width: 100%;
+  max-width: 720px;
+  height: 100%;
+  max-height: 100%;
+}
+.astrolabe-ring-outer {
+  fill: none;
+  stroke: #423520;
+  stroke-width: 1.5;
+  stroke-dasharray: 2 4;
+}
+.astrolabe-ring-wan {
+  fill: none;
+  stroke: #2a4756;
+  stroke-width: 1.2;
+}
+.astrolabe-ring-lan {
+  fill: none;
+  stroke: #5a4623;
+  stroke-width: 1.2;
+}
+.astrolabe-ring-core {
+  fill: none;
+  stroke: #73592c;
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+}
+.astrolabe-axis {
+  stroke: #2e2617;
+  stroke-width: 1;
+}
+.astrolabe-cardinal {
+  font-size: 9px;
+  fill: #8a7346;
+  text-anchor: middle;
+  font-family: monospace;
+}
+.astrolabe-ring-label {
+  font-size: 8px;
+  fill: #615233;
+  text-anchor: middle;
+  font-family: monospace;
+  letter-spacing: 0.08em;
+}
+.astrolabe-vector {
+  stroke-width: 1;
+  stroke-opacity: 0.45;
+}
+.vector-lan {
+  stroke: #ffd56b;
+}
+.vector-wan {
+  stroke: #6be3ff;
+}
+.node-lan {
+  fill: #ffe08a;
+  stroke: #8a6523;
+  stroke-width: 1;
+}
+.node-wan {
+  fill: #85ebff;
+  stroke: #23658a;
+  stroke-width: 1;
+}
+.astrolabe-hub-label {
+  font-size: 9px;
+  fill: #d6b25e;
+  text-anchor: middle;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.astrolabe-metrics {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #231c11;
+}
+.astrolabe-metric-card {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, #151a1e, #0e1214);
+  border: 1px solid #2e2415;
+  border-radius: 3px;
+}
+.astrolabe-metric-card > span {
+  font-size: 9px;
+  color: #8c826e;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.astrolabe-metric-card > b {
+  font-size: 16px;
+  color: #eed79b;
+  margin-top: 1px;
+}
+
+@media (max-height: 720px) {
+  .network-view {
+    gap: 6px;
+  }
+  .network-view .metric-console {
+    padding: 6px 0;
+  }
+  .network-view .metric-main {
+    padding: 8px 14px;
+  }
+  .network-view .metric-value {
+    font-size: clamp(34px, 5vw, 48px);
+    margin-bottom: 6px;
+  }
+  .network-view .history-chart {
+    height: 50px;
+    margin: 4px 0 2px;
+  }
+  .network-view .astrolabe-console {
+    padding: 6px 10px;
+  }
+  .network-view .astrolabe-metrics {
+    gap: 6px;
+    margin-top: 4px;
+    padding-top: 4px;
+  }
+  .network-view .astrolabe-metric-card {
+    padding: 3px 6px;
+  }
+  .network-view .astrolabe-metric-card > b {
+    font-size: 14px;
+  }
+}
+

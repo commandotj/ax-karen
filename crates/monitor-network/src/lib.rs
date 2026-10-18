@@ -2,6 +2,13 @@ use std::time::{Duration, Instant};
 
 use sysinfo::Networks;
 
+pub mod sockets;
+pub use sockets::{
+    MAX_PROCESS_NETWORK_ROWS, MAX_SOCKET_CONNECTIONS, ProcessNetworkUsage,
+    RawSocketEntry, SocketConnection, SocketSampler, correlate_sockets,
+    is_lan_ip, service_label_for_port, tcp_state_str,
+};
+
 pub const MAX_INTERFACE_ROWS: usize = 20;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -24,6 +31,8 @@ pub struct Snapshot {
     pub total_rx_bytes: u64,
     pub total_tx_bytes: u64,
     pub interfaces: Vec<InterfaceUsage>,
+    pub processes: Vec<ProcessNetworkUsage>,
+    pub connections: Vec<SocketConnection>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -42,13 +51,16 @@ pub struct RawInterfaceCounter {
 #[derive(Debug)]
 pub struct Sampler {
     networks: Networks,
+    sockets: SocketSampler,
     last_sample_at: Option<Instant>,
 }
 
 impl Sampler {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             networks: Networks::new(),
+            sockets: SocketSampler::new(),
             last_sample_at: None,
         }
     }
@@ -80,7 +92,11 @@ impl Sampler {
             })
             .collect();
 
-        build_snapshot(&raw, elapsed)
+        let (processes, connections) = self.sockets.sample();
+        let mut snapshot = build_snapshot(&raw, elapsed);
+        snapshot.processes = processes;
+        snapshot.connections = connections;
+        snapshot
     }
 }
 
@@ -151,6 +167,8 @@ pub fn build_snapshot(
         total_rx_bytes,
         total_tx_bytes,
         interfaces: rows,
+        processes: Vec::new(),
+        connections: Vec::new(),
     }
 }
 

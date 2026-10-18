@@ -46,12 +46,35 @@ export type NetworkInterface = {
   errors_tx: number;
 };
 
+export type NetworkProcess = {
+  pid: number;
+  name: string;
+  connection_count: number;
+  remote_hosts: string[];
+  protocols: string[];
+};
+
+export type NetworkConnection = {
+  pid?: number | null;
+  process_name?: string | null;
+  protocol: string;
+  local_addr: string;
+  local_port: number;
+  remote_addr?: string | null;
+  remote_port?: number | null;
+  state: string;
+  service_label?: string | null;
+  is_lan: boolean;
+};
+
 export type NetworkInfo = {
   rx_bytes_per_sec?: number | null;
   tx_bytes_per_sec?: number | null;
   total_rx_bytes: number;
   total_tx_bytes: number;
   interfaces: NetworkInterface[];
+  processes?: NetworkProcess[];
+  connections?: NetworkConnection[];
 };
 
 export type Sibling = {

@@ -481,6 +481,25 @@ fn handle_request(
                         "packets_tx": iface.packets_tx,
                         "errors_rx": iface.errors_rx,
                         "errors_tx": iface.errors_tx
+                    })).collect::<Vec<_>>(),
+                    "processes": network.processes.into_iter().map(|proc| json!({
+                        "pid": proc.pid,
+                        "name": proc.name,
+                        "connection_count": proc.connection_count,
+                        "remote_hosts": proc.remote_hosts,
+                        "protocols": proc.protocols
+                    })).collect::<Vec<_>>(),
+                    "connections": network.connections.into_iter().map(|conn| json!({
+                        "pid": conn.pid,
+                        "process_name": conn.process_name,
+                        "protocol": conn.protocol,
+                        "local_addr": conn.local_addr,
+                        "local_port": conn.local_port,
+                        "remote_addr": conn.remote_addr,
+                        "remote_port": conn.remote_port,
+                        "state": conn.state,
+                        "service_label": conn.service_label,
+                        "is_lan": conn.is_lan
                     })).collect::<Vec<_>>()
                 }
             })

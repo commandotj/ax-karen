@@ -21,3 +21,4 @@
 | 0017 | [Reach full test coverage with a CI gate](rfc/completed/0017-full-test-coverage.md) | Implemented |
 | 0018 | [Cover platform-dependent code with integration tests](rfc/pending/0018-platform-integration-tests.md) | Pending |
 | 0019 | [Modularize desktop views to reduce App.vue size](rfc/completed/0019-modularize-desktop-views.md) | Implemented |
+| 0020 | [Network process attribution and connection topology](rfc/completed/0020-network-process-connection-topology.md) | Implemented |
