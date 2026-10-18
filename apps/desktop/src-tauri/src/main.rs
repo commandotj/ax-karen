@@ -159,6 +159,9 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            show_and_focus_main(app);
+        }))
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             setup_tray(app)?;
