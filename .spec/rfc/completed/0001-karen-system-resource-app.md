@@ -30,8 +30,8 @@ Kernel tuning, process termination, automatic cleanup, privileged collection, re
 | [0011](0011-network-tab-monitoring.md) | Add network telemetry and Network tab |
 | [0010](0010-battery-tab-monitoring.md) | Add battery telemetry and Battery tab |
 | [0009](0009-disktree-ui-parity.md) | Restore Disktree UI feature parity in Karen |
-| [0008](../0008-per-process-memory-usage.md) | Report per-process memory usage |
-| [0007](../0007-usable-system-monitor-experience.md) | Make Karen a usable live system monitor |
+| [0008](0008-per-process-memory-usage.md) | Report per-process memory usage |
+| [0007](0007-usable-system-monitor-experience.md) | Make Karen a usable live system monitor |
 | [0006](0006-karen-disk-tree-ui-migration.md) | Migrate the complete Disk Tree interface and interactions to Vue 3 |
 | [0005](0005-cpu-process-usage.md) | CPU process usage monitor |
 | [0004](0004-tauri-vue3-desktop.md) | Migrate Karen desktop UI from GPUI to Tauri and Vue 3 |
