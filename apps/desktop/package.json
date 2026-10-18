@@ -5,10 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vue-tsc --noEmit && vite build",
-    "tauri": "tauri",
-    "tauri:dev": "node scripts/build-sidecar.mjs && tauri dev",
-    "tauri:build": "node scripts/build-sidecar.mjs --release && tauri build"
+    "build": "vue-tsc --noEmit && vite build"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "^5.3.0",

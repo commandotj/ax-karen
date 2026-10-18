@@ -10,3 +10,4 @@
 | 0006 | [Migrate the complete Disk Tree interface and interactions to Vue 3 (child of 0001)](rfc/0006-karen-disk-tree-ui-migration.md) | Approved |
 | 0007 | [Make Karen a usable live system monitor (child of 0001)](rfc/0007-usable-system-monitor-experience.md) | Approved |
 | 0008 | [Report per-process memory usage (child of 0001)](rfc/0008-per-process-memory-usage.md) | Approved |
+| 0009 | [Restore Disktree UI feature parity in Karen (child of 0001)](rfc/0009-disktree-ui-parity.md) | Draft |

@@ -3,8 +3,8 @@
   "private": true,
   "packageManager": "pnpm@10.11.0",
   "scripts": {
-    "dev": "pnpm --dir apps/desktop tauri:dev",
+    "dev": "node scripts/build-sidecar.mjs && pnpm --dir apps/desktop exec tauri dev",
     "build": "pnpm --dir apps/desktop build",
-    "tauri": "pnpm --dir apps/desktop tauri:build"
+    "tauri": "node scripts/build-sidecar.mjs --release && pnpm --dir apps/desktop exec tauri build"
   }
 }

@@ -124,7 +124,7 @@ jobs:
           cli="karen-$VERSION-$ARCH-$OS_NAME.tar.gz"
           tar -C target/release -czf "dist/$cli" karen
           bundle="karen-app-$VERSION-$ARCH-$OS_NAME.tar.gz"
-          tar -C apps/desktop/src-tauri/target/release/bundle \
+          tar -C target/release/bundle \
             -czf "dist/$bundle" .
           (cd dist && shasum -a 256 "$cli" "$bundle" > "SHA256SUMS-$OS_NAME-$ARCH")
 
@@ -139,7 +139,7 @@ jobs:
           $cli = "karen-$env:VERSION-$env:ARCH-windows.zip"
           Compress-Archive -Path target/release/karen.exe -DestinationPath "dist/$cli"
           $bundle = "karen-app-$env:VERSION-$env:ARCH-windows.zip"
-          Compress-Archive -Path apps/desktop/src-tauri/target/release/bundle/* -DestinationPath "dist/$bundle"
+          Compress-Archive -Path target/release/bundle/* -DestinationPath "dist/$bundle"
           $hashes = Get-ChildItem dist/*.zip | ForEach-Object {
             "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
           }

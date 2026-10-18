@@ -12,7 +12,7 @@ export class KarenCli {
   }
 
   async start(): Promise<void> {
-    const command = Command.sidecar("binaries/karen", ["--stream-json"]);
+    const command = Command.sidecar("../../../target/tauri-sidecars/karen", ["--stream-json"]);
     command.stdout.on("data", (chunk) => this.consume(chunk));
     command.stderr.on("data", (chunk) => console.error("karen:", chunk));
     this.child = await command.spawn();

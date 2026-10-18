@@ -13,7 +13,7 @@
       "identifier": "shell:allow-spawn",
       "allow": [
         {
-          "name": "binaries/karen",
+          "name": "../../../target/tauri-sidecars/karen",
           "sidecar": true,
           "args": ["--stream-json"]
         }

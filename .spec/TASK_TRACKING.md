@@ -10,3 +10,4 @@
   - [ ] Implement RFC 0006: Migrate the complete Disk Tree interface and interactions to Vue 3 (child of 0001) (RFC 0006)
   - [ ] Implement RFC 0007: Make Karen a usable live system monitor (child of 0001) (RFC 0007)
   - [ ] Implement RFC 0008: Report per-process memory usage (child of 0001) (RFC 0008)
+  - [ ] Implement RFC 0009: Restore Disktree UI feature parity in Karen (child of 0001) (RFC 0009)

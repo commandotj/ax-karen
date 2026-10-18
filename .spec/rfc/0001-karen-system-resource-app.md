@@ -24,6 +24,7 @@ Kernel tuning, process termination, automatic cleanup, privileged collection, re
 
 | RFC | Concern |
 |-----|---------|
+| [0009](0009-disktree-ui-parity.md) | Restore Disktree UI feature parity in Karen |
 | [0008](0008-per-process-memory-usage.md) | Report per-process memory usage |
 | [0007](0007-usable-system-monitor-experience.md) | Make Karen a usable live system monitor |
 | [0006](0006-karen-disk-tree-ui-migration.md) | Migrate the complete Disk Tree interface and interactions to Vue 3 |

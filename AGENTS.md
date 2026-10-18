@@ -18,6 +18,16 @@ Vue or Tauri.
 | `crates/monitor-disk/` | scan, tree, layout, space and guarded removal |
 | `.agents/skills/karen-design/` | product design constraints and visual review |
 | `.impeccable/` | project design reference; keep at repository root |
+| `scripts/` | repo-root task scripts: sidecar build, scan benchmarks, mount tests |
+| `migration/gpui-reference/` | archived pre-migration GPUI sources; reference only, not compiled |
+
+Monorepo conventions: task orchestration lives at the repository root —
+root `package.json`, `scripts/` and `xtask/`. Workspace packages declare
+only minimal lifecycle scripts (`dev`, `build`); do not add per-package
+`scripts/` folders or separate task runners. All Rust and frontend build
+output is unified under the root `target/`; sidecars stage at
+`target/tauri-sidecars/` and generated Tauri schemas stay untracked.
+Nothing generated is committed.
 
 ## Commands
 

@@ -26,7 +26,8 @@ pnpm tauri
 ```
 
 Tauri bundles the Vue interface and the matching-platform `karen` CLI sidecar.
-macOS output is under `apps/desktop/src-tauri/target/release/bundle/`.
+Rust outputs, including desktop bundles and sidecar staging, live under the
+root `target/` directory.
 
 ## CLI
 

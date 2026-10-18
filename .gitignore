@@ -1,4 +1,13 @@
-target/
-node_modules/
-dist/
+# Rust build output at any workspace depth.
+**/target/
+
+# JavaScript dependencies and frontend build output at any workspace depth.
+**/node_modules/
+**/dist/
+**/.vite/
+**/.vite-temp/
+
+# Generated Tauri ACL schemas.
+/apps/desktop/src-tauri/gen/schemas/
+
 .playwright-mcp/
