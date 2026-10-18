@@ -5,12 +5,18 @@
   "skip-github-release": true,
   "packages": {
     ".": {
-      "release-type": "rust",
+      "release-type": "simple",
+      "version-file": "VERSION",
       "extra-files": [
         {
           "type": "toml",
+          "path": "Cargo.toml",
+          "jsonpath": "$.workspace.package.version.value"
+        },
+        {
+          "type": "toml",
           "path": "apps/desktop/src-tauri/Cargo.toml",
-          "jsonpath": "$.package.version"
+          "jsonpath": "$.package.version.value"
         },
         {
           "type": "json",
@@ -21,6 +27,41 @@
           "type": "json",
           "path": "apps/desktop/src-tauri/tauri.conf.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "toml",
+          "path": "Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='karen-cli')].version.value"
+        },
+        {
+          "type": "toml",
+          "path": "Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='monitor-battery')].version.value"
+        },
+        {
+          "type": "toml",
+          "path": "Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='monitor-core')].version.value"
+        },
+        {
+          "type": "toml",
+          "path": "Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='monitor-cpu')].version.value"
+        },
+        {
+          "type": "toml",
+          "path": "Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='monitor-disk')].version.value"
+        },
+        {
+          "type": "toml",
+          "path": "Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='monitor-memory')].version.value"
+        },
+        {
+          "type": "toml",
+          "path": "Cargo.lock",
+          "jsonpath": "$.package[?(@.name.value=='monitor-network')].version.value"
         }
       ]
     }
