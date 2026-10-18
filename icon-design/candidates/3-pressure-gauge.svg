@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>Karen icon candidate 3 — pressure gauge</title>
+  <!-- Background: Apple-style squircle, iOS 26+ shape (scripts/squircle.py). -->
+  <path id="bg" d="M 601.62 0 c 147.85 0 221.77 0 278.24 28.77 a 263.99 263.99 0 0 1 115.37 115.37 c 28.77 56.47 28.77 130.39 28.77 278.24 L 1024 601.62 c 0 147.85 0 221.77 -28.77 278.24 a 263.99 263.99 0 0 1 -115.37 115.37 c -56.47 28.77 -130.39 28.77 -278.24 28.77 L 422.38 1024 c -147.85 0 -221.77 0 -278.24 -28.77 a 263.99 263.99 0 0 1 -115.37 -115.37 c -28.77 -56.47 -28.77 -130.39 -28.77 -278.24 L 0 422.38 c 0 -147.85 0 -221.77 28.77 -278.24 a 263.99 263.99 0 0 1 115.37 -115.37 c 56.47 -28.77 130.39 -28.77 278.24 -28.77 Z" fill="#2A2A2E"/>
+  <!-- Brass bezel ring; dial knocked out in enamel, tick ring implies the
+       circle (closure). -->
+  <g id="glyph">
+    <circle cx="512" cy="512" r="288" fill="#C08A3E"/>
+    <circle cx="512" cy="512" r="224" fill="#2A2A2E"/>
+    <path d="M 335 439 L 375 455 M 376 376 L 407 407 M 438 335 L 455 375 M 512 320 L 512 364 M 586 335 L 569 375 M 648 376 L 617 407 M 689 439 L 649 455" stroke="#E8E8EA" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <path d="M 512 328 L 524 512 L 500 512 Z" fill="#C08A3E"/>
+    <circle cx="512" cy="512" r="40" fill="#C08A3E"/>
+    <circle cx="512" cy="512" r="14" fill="#E8E8EA"/>
+  </g>
+</svg>

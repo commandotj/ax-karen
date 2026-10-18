@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Karen Concept 4 — Monogram K Pressure Manometer</title>
+  <g id="background">
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#181510"/>
+    <rect x="28" y="28" width="456" height="456" rx="96" fill="none" stroke="#C9A24D" stroke-width="12"/>
+  </g>
+  <g id="icon">
+    <!-- Left vertical sight-glass boiler column -->
+    <rect x="116" y="96" width="56" height="320" rx="28" fill="#C9A24D"/>
+    <rect x="132" y="132" width="24" height="248" rx="12" fill="#14181A"/>
+    <rect x="132" y="228" width="24" height="152" rx="12" fill="#62A794"/>
+    <!-- Upper and lower K conduits -->
+    <path d="M 172 256 L 368 120" stroke="#C9A24D" stroke-width="48" stroke-linecap="round"/>
+    <path d="M 232 240 L 376 392" stroke="#C4703F" stroke-width="48" stroke-linecap="round"/>
+    <!-- Central manometer dial at the K vertex -->
+    <circle cx="232" cy="256" r="68" fill="#C9A24D"/>
+    <circle cx="232" cy="256" r="46" fill="#181510"/>
+    <path d="M 232 256 L 260 222" stroke="#EFCB70" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="232" cy="256" r="12" fill="#F0E4C6"/>
+  </g>
+</svg>

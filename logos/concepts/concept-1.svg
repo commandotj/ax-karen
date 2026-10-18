@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Karen Concept 1 — Brass Sector Panel Meter</title>
+  <g id="background">
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#181510"/>
+    <rect x="28" y="28" width="456" height="456" rx="96" fill="none" stroke="#C9A24D" stroke-width="12"/>
+  </g>
+  <g id="icon">
+    <!-- Heavy brass panel meter housing -->
+    <rect x="72" y="104" width="368" height="304" rx="44" fill="#C9A24D"/>
+    <rect x="86" y="118" width="340" height="276" rx="34" fill="#A67F35"/>
+    <!-- Corner rivets in dark enamel -->
+    <circle cx="110" cy="142" r="10" fill="#181510"/>
+    <circle cx="402" cy="142" r="10" fill="#181510"/>
+    <circle cx="110" cy="370" r="10" fill="#181510"/>
+    <circle cx="402" cy="370" r="10" fill="#181510"/>
+    <!-- Fan-shaped sector dial window cut into dark enamel -->
+    <path d="M 256 344 L 116 204 A 198 198 0 0 1 396 204 Z" fill="#14181A"/>
+    <!-- Subtle overload copper arc on the right sector -->
+    <path d="M 310 154 A 164 164 0 0 1 372 204" fill="none" stroke="#C4703F" stroke-width="14" stroke-linecap="round"/>
+    <!-- Bold engraved scale ticks (survive 16-32px) -->
+    <path d="M 148 214 L 170 236 M 194 176 L 208 202 M 256 162 L 256 192 M 318 176 L 304 202 M 364 214 L 342 236" stroke="#F0E4C6" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <!-- Tapered indicator needle pointing to active load (~68%) -->
+    <polygon points="304,178 268,344 244,344" fill="#EFCB70"/>
+    <!-- Pivot boss and center jewel -->
+    <circle cx="256" cy="344" r="30" fill="#C9A24D"/>
+    <circle cx="256" cy="344" r="12" fill="#F0E4C6"/>
+  </g>
+</svg>

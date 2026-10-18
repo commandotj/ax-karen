@@ -5,6 +5,7 @@ use monitor_disk::scan::{ScanHandle, ScanOptions, ScanSnapshot};
 use monitor_disk::tree::Node;
 
 pub mod disk_marks;
+pub mod settings;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ResourceSnapshot {

@@ -13,3 +13,8 @@ workspace = true
 monitor-cpu = { workspace = true }
 monitor-disk = { workspace = true }
 monitor-memory = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+
+[dev-dependencies]
+tempfile = "3"

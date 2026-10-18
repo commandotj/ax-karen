@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Karen Concept 3 — Astrolabe Treemap Chronometer</title>
+  <g id="background">
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#181510"/>
+    <rect x="28" y="28" width="456" height="456" rx="96" fill="none" stroke="#C9A24D" stroke-width="12"/>
+  </g>
+  <g id="icon">
+    <!-- Recessed treemap cells inside instrument plate -->
+    <rect x="88" y="88" width="196" height="204" rx="20" fill="#62A794"/>
+    <rect x="300" y="88" width="124" height="120" rx="20" fill="#C4703F"/>
+    <rect x="300" y="224" width="124" height="200" rx="20" fill="#A67F35"/>
+    <rect x="88" y="308" width="196" height="116" rx="20" fill="#1B2124" stroke="#C9A24D" stroke-width="10"/>
+    <!-- Circular brass chronometer bezel ring overlaying the mosaic -->
+    <circle cx="256" cy="256" r="176" fill="none" stroke="#C9A24D" stroke-width="22"/>
+    <!-- Cardinal engraved index marks -->
+    <path d="M 256 68 L 256 98 M 444 256 L 414 256 M 256 444 L 256 414 M 68 256 L 98 256" stroke="#F0E4C6" stroke-width="12" stroke-linecap="round"/>
+    <!-- Chronometer pointer needle -->
+    <polygon points="348,148 268,268 244,244" fill="#EFCB70"/>
+    <circle cx="256" cy="256" r="28" fill="#181510" stroke="#EFCB70" stroke-width="10"/>
+  </g>
+</svg>

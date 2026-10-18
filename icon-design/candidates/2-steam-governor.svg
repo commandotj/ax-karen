@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>Karen icon candidate 2 — steam governor</title>
+  <!-- Background: Apple-style squircle, iOS 26+ shape (scripts/squircle.py). -->
+  <path id="bg" d="M 601.62 0 c 147.85 0 221.77 0 278.24 28.77 a 263.99 263.99 0 0 1 115.37 115.37 c 28.77 56.47 28.77 130.39 28.77 278.24 L 1024 601.62 c 0 147.85 0 221.77 -28.77 278.24 a 263.99 263.99 0 0 1 -115.37 115.37 c -56.47 28.77 -130.39 28.77 -278.24 28.77 L 422.38 1024 c -147.85 0 -221.77 0 -278.24 -28.77 a 263.99 263.99 0 0 1 -115.37 -115.37 c -28.77 -56.47 -28.77 -130.39 -28.77 -278.24 L 0 422.38 c 0 -147.85 0 -221.77 28.77 -278.24 a 263.99 263.99 0 0 1 115.37 -115.37 c 56.47 -28.77 130.39 -28.77 278.24 -28.77 Z" fill="#2A2A2E"/>
+  <!-- Flyball governor: left arm + ball mirrored; spindle, collar, stepped
+       base and cap drawn once on the axis. -->
+  <defs>
+    <g id="half">
+      <path d="M 494 368 L 384 426" stroke="#C08A3E" stroke-width="36" stroke-linecap="round" fill="none"/>
+      <circle cx="360" cy="434" r="72" fill="#C08A3E"/>
+    </g>
+  </defs>
+  <g id="glyph">
+    <use href="#half"/>
+    <use href="#half" transform="translate(1024,0) scale(-1,1)"/>
+    <rect x="480" y="314" width="64" height="336" fill="#C08A3E"/>
+    <circle cx="512" cy="298" r="36" fill="#C08A3E"/>
+    <rect x="384" y="602" width="256" height="48" rx="16" fill="#C08A3E"/>
+    <rect x="288" y="650" width="448" height="112" rx="40" fill="#C08A3E"/>
+  </g>
+</svg>

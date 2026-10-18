@@ -57,7 +57,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - run: pnpm install --frozen-lockfile
-      - run: cargo xtask lint
-      - run: cargo xtask test
+      - run: pnpm lint
+      - run: pnpm test
       - run: pnpm build
       - run: pnpm tauri

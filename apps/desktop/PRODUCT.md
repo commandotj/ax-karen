@@ -31,7 +31,7 @@ the disk tree, which supports volume selection and directory zoom.
 ## Capabilities and Constraints
 
 - Resource views cover processor load, physical memory, and mounted volumes.
-- Disk Tree maps directory sizes and zooms into directories.
+- Space maps directory sizes and zooms into directories.
 - Tauri is a shell around the CLI stream protocol; it does not sample or scan.
 - Measurements and scans stay local.
 - Deletion and cleanup flows are outside the current monitor UI scope.

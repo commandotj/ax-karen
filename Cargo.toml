@@ -6,7 +6,6 @@ members = [
     "crates/monitor-cpu",
     "crates/monitor-disk",
     "crates/monitor-memory",
-    "xtask",
 ]
 
 [workspace.package]
@@ -28,8 +27,8 @@ sysinfo = { version = "0.31.4", default-features = false, features = ["system"] 
 
 # Lint gates follow omatrack's policy: the checks that catch real defects are
 # errors, and every deliberate omission is written down instead of silently
-# tolerated. Run them through `cargo xtask lint`, which adds `-D warnings` on
-# top so nothing is merely "warned about".
+# tolerated. Run them through `pnpm lint` (`scripts/cargo-check.mjs`), which adds
+# `-D warnings` on top so nothing is merely "warned about".
 [workspace.lints.rust]
 unsafe_code = "deny"
 unused_lifetimes = "warn"
@@ -91,5 +90,3 @@ lto = "thin"
 codegen-units = 1
 overflow-checks = true
 
-# gpui-pre-macros leaves a helper ungated in release builds while its module is
-# gated on debug_assertions; enable it for the host proc-macro only.

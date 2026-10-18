@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>Karen icon candidate 1 — panel meter</title>
+  <!-- Background: Apple-style squircle, iOS 26+ shape (scripts/squircle.py). -->
+  <path id="bg" d="M 601.62 0 c 147.85 0 221.77 0 278.24 28.77 a 263.99 263.99 0 0 1 115.37 115.37 c 28.77 56.47 28.77 130.39 28.77 278.24 L 1024 601.62 c 0 147.85 0 221.77 -28.77 278.24 a 263.99 263.99 0 0 1 -115.37 115.37 c -56.47 28.77 -130.39 28.77 -278.24 28.77 L 422.38 1024 c -147.85 0 -221.77 0 -278.24 -28.77 a 263.99 263.99 0 0 1 -115.37 -115.37 c -28.77 -56.47 -28.77 -130.39 -28.77 -278.24 L 0 422.38 c 0 -147.85 0 -221.77 28.77 -278.24 a 263.99 263.99 0 0 1 115.37 -115.37 c 56.47 -28.77 130.39 -28.77 278.24 -28.77 Z" fill="#2A2A2E"/>
+  <!-- Brass panel-meter bezel; fan-shaped sector window, rivets and dial are
+       knocked out in the enamel background colour (figure-ground). -->
+  <g id="glyph">
+    <rect x="224" y="288" width="576" height="448" rx="64" fill="#C08A3E"/>
+    <path d="M 512 640 L 308 436 A 288 288 0 0 1 716 436 Z" fill="#2A2A2E"/>
+    <circle cx="288" cy="352" r="14" fill="#2A2A2E"/>
+    <circle cx="736" cy="352" r="14" fill="#2A2A2E"/>
+    <circle cx="288" cy="672" r="14" fill="#2A2A2E"/>
+    <circle cx="736" cy="672" r="14" fill="#2A2A2E"/>
+    <path d="M 331 459 L 361 489 M 414 403 L 430 442 M 512 384 L 512 426 M 610 403 L 594 442 M 693 459 L 663 489" stroke="#E8E8EA" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <path d="M 512 384 L 524 640 L 500 640 Z" fill="#C08A3E"/>
+    <circle cx="512" cy="640" r="40" fill="#C08A3E"/>
+    <circle cx="512" cy="640" r="14" fill="#E8E8EA"/>
+  </g>
+</svg>

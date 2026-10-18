@@ -1,0 +1,1244 @@
+{
+  "schema": "birdify.constraint-catalog/v1",
+  "project": {
+    "name": "Karen",
+    "revision": "8c3be9aa313c7db00dedb5c71e5d86c49d7c3b34"
+  },
+  "coverage": {
+    "checkedAt": "2026-10-18T03:06:18.723Z",
+    "snapshot": "committed-HEAD",
+    "shallow": false,
+    "entries": [
+      ".agents/skills/karen-design/SKILL.md",
+      "AGENTS.md"
+    ],
+    "checkedPaths": [
+      ".agents/skills/karen-design/SKILL.md",
+      "AGENTS.md",
+      "apps/desktop/PRODUCT.md",
+      ".spec/ROADMAP.md",
+      ".spec/TASK_TRACKING.md",
+      ".spec/rfc/0001-karen-system-resource-app.md",
+      ".spec/rfc/rejected/0002-rebrand-karen.md",
+      ".spec/rfc/0003-cpu-memory-resource-monitor.md",
+      ".spec/rfc/0004-tauri-vue3-desktop.md",
+      ".spec/rfc/completed/0005-cpu-process-usage.md",
+      ".spec/rfc/0006-karen-disk-tree-ui-migration.md",
+      ".spec/rfc/0007-usable-system-monitor-experience.md",
+      ".spec/rfc/0008-per-process-memory-usage.md",
+      ".spec/rfc/0009-disktree-ui-parity.md",
+      "README.md"
+    ],
+    "excluded": [],
+    "unresolved": [],
+    "uninspectedPaths": [],
+    "semanticReview": "pending",
+    "limitations": [
+      "Only tracked entry files and their local Markdown references are collected.",
+      "Uncommitted files, external references, implicit contracts and host/user instructions need separate inspection.",
+      "Sections are source material, not automatically effective or verified rules.",
+      "History counts use current file paths; rename ancestry is not followed."
+    ]
+  },
+  "references": [
+    {
+      "from": ".agents/skills/karen-design/SKILL.md",
+      "to": "apps/desktop/PRODUCT.md",
+      "target": "apps/desktop/PRODUCT.md"
+    },
+    {
+      "from": "AGENTS.md",
+      "to": ".spec/ROADMAP.md",
+      "target": ".spec/ROADMAP.md"
+    },
+    {
+      "from": "AGENTS.md",
+      "to": ".spec/TASK_TRACKING.md",
+      "target": ".spec/TASK_TRACKING.md"
+    },
+    {
+      "from": "AGENTS.md",
+      "to": ".agents/skills/karen-design/SKILL.md",
+      "target": ".agents/skills/karen-design/SKILL.md"
+    },
+    {
+      "from": ".spec/ROADMAP.md",
+      "to": ".spec/rfc/0001-karen-system-resource-app.md",
+      "target": "rfc/0001-karen-system-resource-app.md"
+    },
+    {
+      "from": ".spec/ROADMAP.md",
+      "to": ".spec/rfc/rejected/0002-rebrand-karen.md",
+      "target": "rfc/rejected/0002-rebrand-karen.md"
+    },
+    {
+      "from": ".spec/ROADMAP.md",
+      "to": ".spec/rfc/0003-cpu-memory-resource-monitor.md",
+      "target": "rfc/0003-cpu-memory-resource-monitor.md"
+    },
+    {
+      "from": ".spec/ROADMAP.md",
+      "to": ".spec/rfc/0004-tauri-vue3-desktop.md",
+      "target": "rfc/0004-tauri-vue3-desktop.md"
+    },
+    {
+      "from": ".spec/ROADMAP.md",
+      "to": ".spec/rfc/completed/0005-cpu-process-usage.md",
+      "target": "rfc/completed/0005-cpu-process-usage.md"
+    },
+    {
+      "from": ".spec/ROADMAP.md",
+      "to": ".spec/rfc/0006-karen-disk-tree-ui-migration.md",
+      "target": "rfc/0006-karen-disk-tree-ui-migration.md"
+    },
+    {
+      "from": ".spec/ROADMAP.md",
+      "to": ".spec/rfc/0007-usable-system-monitor-experience.md",
+      "target": "rfc/0007-usable-system-monitor-experience.md"
+    },
+    {
+      "from": ".spec/ROADMAP.md",
+      "to": ".spec/rfc/0008-per-process-memory-usage.md",
+      "target": "rfc/0008-per-process-memory-usage.md"
+    },
+    {
+      "from": ".spec/ROADMAP.md",
+      "to": ".spec/rfc/0009-disktree-ui-parity.md",
+      "target": "rfc/0009-disktree-ui-parity.md"
+    },
+    {
+      "from": ".spec/rfc/0001-karen-system-resource-app.md",
+      "to": ".spec/rfc/0009-disktree-ui-parity.md",
+      "target": "0009-disktree-ui-parity.md"
+    },
+    {
+      "from": ".spec/rfc/0001-karen-system-resource-app.md",
+      "to": ".spec/rfc/0008-per-process-memory-usage.md",
+      "target": "0008-per-process-memory-usage.md"
+    },
+    {
+      "from": ".spec/rfc/0001-karen-system-resource-app.md",
+      "to": ".spec/rfc/0007-usable-system-monitor-experience.md",
+      "target": "0007-usable-system-monitor-experience.md"
+    },
+    {
+      "from": ".spec/rfc/0001-karen-system-resource-app.md",
+      "to": ".spec/rfc/0006-karen-disk-tree-ui-migration.md",
+      "target": "0006-karen-disk-tree-ui-migration.md"
+    },
+    {
+      "from": ".spec/rfc/0001-karen-system-resource-app.md",
+      "to": ".spec/rfc/completed/0005-cpu-process-usage.md",
+      "target": "completed/0005-cpu-process-usage.md"
+    },
+    {
+      "from": ".spec/rfc/0001-karen-system-resource-app.md",
+      "to": ".spec/rfc/0004-tauri-vue3-desktop.md",
+      "target": "0004-tauri-vue3-desktop.md"
+    },
+    {
+      "from": ".spec/rfc/0001-karen-system-resource-app.md",
+      "to": ".spec/rfc/0003-cpu-memory-resource-monitor.md",
+      "target": "0003-cpu-memory-resource-monitor.md"
+    },
+    {
+      "from": ".spec/rfc/0001-karen-system-resource-app.md",
+      "to": ".spec/rfc/rejected/0002-rebrand-karen.md",
+      "target": "rejected/0002-rebrand-karen.md"
+    },
+    {
+      "from": ".spec/rfc/rejected/0002-rebrand-karen.md",
+      "to": ".spec/rfc/0001-karen-system-resource-app.md",
+      "target": "../0001-karen-system-resource-app.md"
+    },
+    {
+      "from": ".spec/rfc/0003-cpu-memory-resource-monitor.md",
+      "to": ".spec/rfc/0001-karen-system-resource-app.md",
+      "target": "0001-karen-system-resource-app.md"
+    },
+    {
+      "from": ".spec/rfc/0004-tauri-vue3-desktop.md",
+      "to": ".spec/rfc/0001-karen-system-resource-app.md",
+      "target": "0001-karen-system-resource-app.md"
+    },
+    {
+      "from": ".spec/rfc/completed/0005-cpu-process-usage.md",
+      "to": ".spec/rfc/0001-karen-system-resource-app.md",
+      "target": "../0001-karen-system-resource-app.md"
+    },
+    {
+      "from": ".spec/rfc/0006-karen-disk-tree-ui-migration.md",
+      "to": ".spec/rfc/0001-karen-system-resource-app.md",
+      "target": "0001-karen-system-resource-app.md"
+    },
+    {
+      "from": ".spec/rfc/0007-usable-system-monitor-experience.md",
+      "to": ".spec/rfc/0001-karen-system-resource-app.md",
+      "target": "0001-karen-system-resource-app.md"
+    },
+    {
+      "from": ".spec/rfc/0008-per-process-memory-usage.md",
+      "to": ".spec/rfc/0001-karen-system-resource-app.md",
+      "target": "0001-karen-system-resource-app.md"
+    },
+    {
+      "from": ".spec/rfc/0009-disktree-ui-parity.md",
+      "to": ".spec/rfc/0001-karen-system-resource-app.md",
+      "target": "0001-karen-system-resource-app.md"
+    },
+    {
+      "from": ".spec/rfc/0009-disktree-ui-parity.md",
+      "to": "README.md",
+      "target": "README.md"
+    }
+  ],
+  "sources": [
+    {
+      "id": "source-e4ec717cb89bde6c",
+      "path": ".agents/skills/karen-design/SKILL.md",
+      "kind": "skill",
+      "scope": null,
+      "discoveredFrom": null,
+      "applicability": "unreviewed",
+      "text": "---\nname: karen-design\ndescription: Design, implement, or review Karen desktop resource-monitor interfaces. Use when changing Runtime, CPU, Memory, Disk Tree, app chrome, or visual styling in this repository.\n---\n\n# Karen interface design\n\nDesign Karen as a luxurious steampunk system monitor: a desktop instrument, not\na website, marketing page, or generic dashboard. Preserve the user's request\nfor ornate visual richness. Do not simplify it into flat cards, whitespace, or\na table-led layout.\n\n## Before changing UI\n\n1. Read `apps/desktop/PRODUCT.md` and the relevant RFCs in `.spec/rfc/`.\n2. Treat RFC status as a hard boundary. Draft RFCs are design context, not\n   implementation approval. Follow the repository's RFC approval workflow\n   before implementing RFC-scoped behavior.\n3. Use `assets/screenshot.png` as the visual reference for Disk Tree\n   structure and information hierarchy. Match its workflow and composition;\n   apply Karen's luxurious brass, copper, enamel, engraving, and restrained\n   instrument glow.\n4. Preserve `.impeccable/` at repository root. Use its design notes when\n   present; do not move or replace that directory.\n5. Keep the Tauri window a shell around the `karen --stream-json` CLI. The CLI\n   owns measurements, scans, tree state, and filesystem actions. Vue renders\n   CLI events and sends user actions through the existing protocol.\n\n## Information architecture\n\nUse a custom title bar and keep macOS traffic lights visible. Do not restore\nthe operating-system default title bar. Make the app open on **Runtime**.\n\nUse focused tabs:\n\n- **Runtime**: visual overview of every supported resource on one instrument\n  console: system CPU, physical memory, and every mounted volume. Show live\n  state, exact readings, capacity or utilization, and concise process-use\n  summaries where data exists. Use gauges, traces, engraved scales, segmented\n  meters, indicators, and compact numeric readouts. Graphics lead; a plain\n  ledger or cards must not dominate.\n- **CPU**: detailed, bounded per-process CPU usage, with stable process\n  identity, clear units, sorting, and explicit unavailable states.\n- **Memory**: physical-memory totals and detailed, bounded per-process memory\n  usage, with metric labels matching the CLI's platform-specific meaning.\n- **Disk Tree**: the complete disk space-finding work surface. Do not add a\n  separate Volumes tab. Clicking a Runtime volume instrument opens Disk Tree\n  for that volume.\n\nDo not start a filesystem scan on launch or when switching between Runtime,\nCPU, and Memory. Scan only after entering Disk Tree or explicitly requesting a\nrescan.\n\n## Disk Tree reference contract\n\nPreserve the source screen hierarchy shown in `assets/screenshot.png`:\n\n1. Top controls and absolute breadcrumb trail, including direct breadcrumb\n   navigation and sibling jumps.\n2. Scan totals, filters, and category legend above the treemap.\n3. Large treemap as the main work surface, retaining proportions, labels, and\n   selection behavior.\n4. Side panel for selection details, marks, review entry, and volume space.\n5. Keyboard help and scan status along the bottom.\n\nPreserve the full workflow: volume selection, cached tree navigation, click to\ndescend, breadcrumb return, sibling navigation, selection, mark/unmark,\nreview, guarded removal confirmation, and explicit rescan. Navigation within\na completed scan uses the cached tree. Never make a volume click discard the\nvisible tree or silently trigger a fresh scan. Keep paths absolute when\nresolving tiles, breadcrumbs, and marks. Keep deletion safeguards owned by the\nCLI/core.\n\n## Visual language\n\n- Build an instrument console with layered dark enamel, substantial brass and\n  copper framing, engraved dividers and scales, rivets or fine corner\n  ornament, selective highlights, and restrained status illumination.\n- Give each resource a distinct, legible instrument. Ornament must reinforce\n  reading and interaction, never obscure values or consume the treemap.\n- Maintain dense information hierarchy suitable for continuous monitoring.\n  Use stable alignment, readable labels, and explicit units; do not make users\n  infer whether values are percentages, bytes, rates, or totals.\n- Use custom-designed controls and dropdowns that match the console. Avoid\n  browser-default select menus, unstyled native popovers, and platform-default\n  chrome. Preserve the traffic lights.\n- Keep pointer interaction as the default desktop cursor. Use text cursors only\n  inside actual text-entry controls.\n- Make tabs, instruments, treemap tiles, breadcrumbs, and review actions\n  keyboard accessible with visible focus and meaningful accessible names.\n- Handle empty, loading, stale, permission-limited, and unavailable telemetry\n  as explicit states. Never fabricate readings or imply a scan completed when\n  it did not.\n\n## Review checklist\n\nBefore presenting a UI change, check:\n\n- Does Runtime visualize CPU, physical memory, and all mounted volumes\n  together, with exact readings and applicable process summaries?\n- Do CPU and Memory detail views show per-process usage rather than only\n  machine totals?\n- Does each Runtime disk instrument jump to the matching Disk Tree volume?\n- Does Disk Tree retain the source hierarchy and cached navigation behavior?\n- Does launch avoid scanning disks until Disk Tree is opened?\n- Are custom chrome, traffic lights, ornate steampunk treatment, readability,\n  and keyboard paths intact?\n- Are Draft RFC requirements kept separate from approved implementation scope?\n\nInspect the rendered app at practical window sizes when visual tooling is\navailable. Report what was inspected and what remains unverified; a build or\nstatic check alone does not establish visual correctness.\n\n## Authority\n\nRepository product definition and RFCs are authoritative for behavior. This\nskill defines the standing visual and interaction direction; it does not\noverride RFC approval, CLI ownership, or disk safety invariants.",
+      "sections": [
+        {
+          "id": "source-e4ec717cb89bde6c-s1",
+          "title": "Karen interface design",
+          "level": 1,
+          "line": 6,
+          "endLine": 12,
+          "text": "# Karen interface design\n\nDesign Karen as a luxurious steampunk system monitor: a desktop instrument, not\na website, marketing page, or generic dashboard. Preserve the user's request\nfor ornate visual richness. Do not simplify it into flat cards, whitespace, or\na table-led layout.\n"
+        },
+        {
+          "id": "source-e4ec717cb89bde6c-s2",
+          "title": "Before changing UI",
+          "level": 2,
+          "line": 13,
+          "endLine": 28,
+          "text": "## Before changing UI\n\n1. Read `apps/desktop/PRODUCT.md` and the relevant RFCs in `.spec/rfc/`.\n2. Treat RFC status as a hard boundary. Draft RFCs are design context, not\n   implementation approval. Follow the repository's RFC approval workflow\n   before implementing RFC-scoped behavior.\n3. Use `assets/screenshot.png` as the visual reference for Disk Tree\n   structure and information hierarchy. Match its workflow and composition;\n   apply Karen's luxurious brass, copper, enamel, engraving, and restrained\n   instrument glow.\n4. Preserve `.impeccable/` at repository root. Use its design notes when\n   present; do not move or replace that directory.\n5. Keep the Tauri window a shell around the `karen --stream-json` CLI. The CLI\n   owns measurements, scans, tree state, and filesystem actions. Vue renders\n   CLI events and sends user actions through the existing protocol.\n"
+        },
+        {
+          "id": "source-e4ec717cb89bde6c-s3",
+          "title": "Information architecture",
+          "level": 2,
+          "line": 29,
+          "endLine": 53,
+          "text": "## Information architecture\n\nUse a custom title bar and keep macOS traffic lights visible. Do not restore\nthe operating-system default title bar. Make the app open on **Runtime**.\n\nUse focused tabs:\n\n- **Runtime**: visual overview of every supported resource on one instrument\n  console: system CPU, physical memory, and every mounted volume. Show live\n  state, exact readings, capacity or utilization, and concise process-use\n  summaries where data exists. Use gauges, traces, engraved scales, segmented\n  meters, indicators, and compact numeric readouts. Graphics lead; a plain\n  ledger or cards must not dominate.\n- **CPU**: detailed, bounded per-process CPU usage, with stable process\n  identity, clear units, sorting, and explicit unavailable states.\n- **Memory**: physical-memory totals and detailed, bounded per-process memory\n  usage, with metric labels matching the CLI's platform-specific meaning.\n- **Disk Tree**: the complete disk space-finding work surface. Do not add a\n  separate Volumes tab. Clicking a Runtime volume instrument opens Disk Tree\n  for that volume.\n\nDo not start a filesystem scan on launch or when switching between Runtime,\nCPU, and Memory. Scan only after entering Disk Tree or explicitly requesting a\nrescan.\n"
+        },
+        {
+          "id": "source-e4ec717cb89bde6c-s4",
+          "title": "Disk Tree reference contract",
+          "level": 2,
+          "line": 54,
+          "endLine": 73,
+          "text": "## Disk Tree reference contract\n\nPreserve the source screen hierarchy shown in `assets/screenshot.png`:\n\n1. Top controls and absolute breadcrumb trail, including direct breadcrumb\n   navigation and sibling jumps.\n2. Scan totals, filters, and category legend above the treemap.\n3. Large treemap as the main work surface, retaining proportions, labels, and\n   selection behavior.\n4. Side panel for selection details, marks, review entry, and volume space.\n5. Keyboard help and scan status along the bottom.\n\nPreserve the full workflow: volume selection, cached tree navigation, click to\ndescend, breadcrumb return, sibling navigation, selection, mark/unmark,\nreview, guarded removal confirmation, and explicit rescan. Navigation within\na completed scan uses the cached tree. Never make a volume click discard the\nvisible tree or silently trigger a fresh scan. Keep paths absolute when\nresolving tiles, breadcrumbs, and marks. Keep deletion safeguards owned by the\nCLI/core.\n"
+        },
+        {
+          "id": "source-e4ec717cb89bde6c-s5",
+          "title": "Visual language",
+          "level": 2,
+          "line": 74,
+          "endLine": 94,
+          "text": "## Visual language\n\n- Build an instrument console with layered dark enamel, substantial brass and\n  copper framing, engraved dividers and scales, rivets or fine corner\n  ornament, selective highlights, and restrained status illumination.\n- Give each resource a distinct, legible instrument. Ornament must reinforce\n  reading and interaction, never obscure values or consume the treemap.\n- Maintain dense information hierarchy suitable for continuous monitoring.\n  Use stable alignment, readable labels, and explicit units; do not make users\n  infer whether values are percentages, bytes, rates, or totals.\n- Use custom-designed controls and dropdowns that match the console. Avoid\n  browser-default select menus, unstyled native popovers, and platform-default\n  chrome. Preserve the traffic lights.\n- Keep pointer interaction as the default desktop cursor. Use text cursors only\n  inside actual text-entry controls.\n- Make tabs, instruments, treemap tiles, breadcrumbs, and review actions\n  keyboard accessible with visible focus and meaningful accessible names.\n- Handle empty, loading, stale, permission-limited, and unavailable telemetry\n  as explicit states. Never fabricate readings or imply a scan completed when\n  it did not.\n"
+        },
+        {
+          "id": "source-e4ec717cb89bde6c-s6",
+          "title": "Review checklist",
+          "level": 2,
+          "line": 95,
+          "endLine": 113,
+          "text": "## Review checklist\n\nBefore presenting a UI change, check:\n\n- Does Runtime visualize CPU, physical memory, and all mounted volumes\n  together, with exact readings and applicable process summaries?\n- Do CPU and Memory detail views show per-process usage rather than only\n  machine totals?\n- Does each Runtime disk instrument jump to the matching Disk Tree volume?\n- Does Disk Tree retain the source hierarchy and cached navigation behavior?\n- Does launch avoid scanning disks until Disk Tree is opened?\n- Are custom chrome, traffic lights, ornate steampunk treatment, readability,\n  and keyboard paths intact?\n- Are Draft RFC requirements kept separate from approved implementation scope?\n\nInspect the rendered app at practical window sizes when visual tooling is\navailable. Report what was inspected and what remains unverified; a build or\nstatic check alone does not establish visual correctness.\n"
+        },
+        {
+          "id": "source-e4ec717cb89bde6c-s7",
+          "title": "Authority",
+          "level": 2,
+          "line": 114,
+          "endLine": 118,
+          "text": "## Authority\n\nRepository product definition and RFCs are authoritative for behavior. This\nskill defines the standing visual and interaction direction; it does not\noverride RFC approval, CLI ownership, or disk safety invariants."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:43:14-07:00",
+        "commit": "5f5d4d53a148d35d003d986f240a6e87a7ea932f"
+      }
+    },
+    {
+      "id": "source-a54ff182c7e8acf5",
+      "path": "AGENTS.md",
+      "kind": "instruction",
+      "scope": ".",
+      "discoveredFrom": null,
+      "applicability": "unreviewed",
+      "text": "# Karen — agent guide\n\nKaren is a Rust CLI system monitor with a Tauri 2 + Vue 3 desktop shell. The\nCLI owns scanning, telemetry, tree state, marks, review and removal. The desktop\nforwards JSON lines and renders bounded data. Do not add a second backend in\nVue or Tauri.\n\n## Product layout\n\n| path | responsibility |\n| --- | --- |\n| `apps/cli/` | standalone CLI and `--stream-json` protocol |\n| `apps/desktop/src-tauri/` | Tauri window and scoped CLI sidecar |\n| `apps/desktop/src/` | Vue views, custom window chrome and Canvas treemap |\n| `crates/monitor-core/` | CLI-owned application state and orchestration |\n| `crates/monitor-cpu/` | read-only CPU sampling |\n| `crates/monitor-memory/` | read-only memory sampling |\n| `crates/monitor-disk/` | scan, tree, layout, space and guarded removal |\n| `.agents/skills/karen-design/` | product design constraints and visual review |\n| `.impeccable/` | project design reference; keep at repository root |\n| `scripts/` | repo-root task scripts: sidecar build, scan benchmarks, mount tests |\n| `migration/gpui-reference/` | archived pre-migration GPUI sources; reference only, not compiled |\n\nMonorepo conventions: task orchestration lives at the repository root —\nroot `package.json`, `scripts/` and `xtask/`. Workspace packages declare\nonly minimal lifecycle scripts (`dev`, `build`); do not add per-package\n`scripts/` folders or separate task runners. All Rust and frontend build\noutput is unified under the root `target/`; sidecars stage at\n`target/tauri-sidecars/` and generated Tauri schemas stay untracked.\nNothing generated is committed.\n\n## Commands\n\n```sh\npnpm install\npnpm dev                         # Tauri desktop development app\npnpm build                       # Vue typecheck and production build\npnpm tauri                       # build CLI sidecar and Karen.app bundles\ncargo xtask lint\ncargo xtask test\n```\n\nUse `specify` skill's `scripts/specify.mjs` for RFC lifecycle operations.\nResolve script path from the installed skill, then validate RFCs and run `sync-check` after RFC\nstatus or archive changes. Approved RFCs gate implementation; do not hand-edit\n`.spec/ROADMAP.md` or `.spec/TASK_TRACKING.md`.\n\n## Invariants\n\n1. **Disk sizes use allocated bytes** (`st_blocks * 512`) unless apparent size\n   was requested. Keep platform-specific allocation semantics in the scanner.\n2. **Directory totals are derived.** `tree::aggregate` calculates bytes, files\n   and directories from leaves. Never patch aggregate values directly.\n3. **A directory is built after its scan and every child task finish.** The\n   pending sentinel prevents silently dropping unfinished subtrees.\n4. **Removal is limited to marked paths under the scanned root.** Preserve\n   mount, root, home, parent-of-home and symlink-target guards in\n   `monitor-disk/src/removal.rs`.\n5. **Marks use absolute paths.** Refresh sizes after scans and discard missing\n   paths; never key marks by tile position.\n6. **Treemap is one Canvas.** Draw fills first, then selected/hover/mark\n   outlines, then labels clipped to each tile's owned header or rectangle.\n   Hover changes stroke only; it never changes tile order, DOM order or z-index.\n7. **Tile crumbs are absolute from scan root.** Navigation, selection and\n   marks must resolve from the original root at every depth.\n8. **Zoom changes view transform only.** Keep layout in base coordinates and\n   cache geometry until data, viewport or layout options change.\n9. **Free-space projection follows mount source.** A mark on a nested mounted\n   volume must not inflate free space for the volume shown by the meter.\n10. **Tauri is a shell.** No monitor crate dependencies, filesystem access,\n    arbitrary shell access or duplicated business logic in the desktop host.\n\n## Change ownership\n\n| change | location |\n| --- | --- |\n| scan, filters, parallelism | `crates/monitor-disk/src/scan.rs` |\n| node structure and totals | `crates/monitor-disk/src/tree.rs` |\n| tile geometry | `crates/monitor-disk/src/treemap.rs` |\n| removal safety | `crates/monitor-disk/src/removal.rs` |\n| free-space measurements | `crates/monitor-disk/src/space.rs` |\n| application state and CLI protocol | `crates/monitor-core/`, `apps/cli/` |\n| CPU and memory sampling | `crates/monitor-cpu/`, `crates/monitor-memory/` |\n| screen layout and controls | `apps/desktop/src/App.vue` |\n| treemap paint and hit testing | `apps/desktop/src/treemap.ts` |\n| visual tokens and window chrome | `apps/desktop/src/style.css` |\n\nKeep comments focused on reasons. Preserve disk semantics and removal guards\nwhen changing presentation. Follow `.agents/skills/karen-design/SKILL.md` for\nvisual work and inspect each affected view at practical window sizes.",
+      "sections": [
+        {
+          "id": "source-a54ff182c7e8acf5-s1",
+          "title": "Karen — agent guide",
+          "level": 1,
+          "line": 1,
+          "endLine": 7,
+          "text": "# Karen — agent guide\n\nKaren is a Rust CLI system monitor with a Tauri 2 + Vue 3 desktop shell. The\nCLI owns scanning, telemetry, tree state, marks, review and removal. The desktop\nforwards JSON lines and renders bounded data. Do not add a second backend in\nVue or Tauri.\n"
+        },
+        {
+          "id": "source-a54ff182c7e8acf5-s2",
+          "title": "Product layout",
+          "level": 2,
+          "line": 8,
+          "endLine": 31,
+          "text": "## Product layout\n\n| path | responsibility |\n| --- | --- |\n| `apps/cli/` | standalone CLI and `--stream-json` protocol |\n| `apps/desktop/src-tauri/` | Tauri window and scoped CLI sidecar |\n| `apps/desktop/src/` | Vue views, custom window chrome and Canvas treemap |\n| `crates/monitor-core/` | CLI-owned application state and orchestration |\n| `crates/monitor-cpu/` | read-only CPU sampling |\n| `crates/monitor-memory/` | read-only memory sampling |\n| `crates/monitor-disk/` | scan, tree, layout, space and guarded removal |\n| `.agents/skills/karen-design/` | product design constraints and visual review |\n| `.impeccable/` | project design reference; keep at repository root |\n| `scripts/` | repo-root task scripts: sidecar build, scan benchmarks, mount tests |\n| `migration/gpui-reference/` | archived pre-migration GPUI sources; reference only, not compiled |\n\nMonorepo conventions: task orchestration lives at the repository root —\nroot `package.json`, `scripts/` and `xtask/`. Workspace packages declare\nonly minimal lifecycle scripts (`dev`, `build`); do not add per-package\n`scripts/` folders or separate task runners. All Rust and frontend build\noutput is unified under the root `target/`; sidecars stage at\n`target/tauri-sidecars/` and generated Tauri schemas stay untracked.\nNothing generated is committed.\n"
+        },
+        {
+          "id": "source-a54ff182c7e8acf5-s3",
+          "title": "Commands",
+          "level": 2,
+          "line": 32,
+          "endLine": 47,
+          "text": "## Commands\n\n```sh\npnpm install\npnpm dev                         # Tauri desktop development app\npnpm build                       # Vue typecheck and production build\npnpm tauri                       # build CLI sidecar and Karen.app bundles\ncargo xtask lint\ncargo xtask test\n```\n\nUse `specify` skill's `scripts/specify.mjs` for RFC lifecycle operations.\nResolve script path from the installed skill, then validate RFCs and run `sync-check` after RFC\nstatus or archive changes. Approved RFCs gate implementation; do not hand-edit\n`.spec/ROADMAP.md` or `.spec/TASK_TRACKING.md`.\n"
+        },
+        {
+          "id": "source-a54ff182c7e8acf5-s4",
+          "title": "Invariants",
+          "level": 2,
+          "line": 48,
+          "endLine": 72,
+          "text": "## Invariants\n\n1. **Disk sizes use allocated bytes** (`st_blocks * 512`) unless apparent size\n   was requested. Keep platform-specific allocation semantics in the scanner.\n2. **Directory totals are derived.** `tree::aggregate` calculates bytes, files\n   and directories from leaves. Never patch aggregate values directly.\n3. **A directory is built after its scan and every child task finish.** The\n   pending sentinel prevents silently dropping unfinished subtrees.\n4. **Removal is limited to marked paths under the scanned root.** Preserve\n   mount, root, home, parent-of-home and symlink-target guards in\n   `monitor-disk/src/removal.rs`.\n5. **Marks use absolute paths.** Refresh sizes after scans and discard missing\n   paths; never key marks by tile position.\n6. **Treemap is one Canvas.** Draw fills first, then selected/hover/mark\n   outlines, then labels clipped to each tile's owned header or rectangle.\n   Hover changes stroke only; it never changes tile order, DOM order or z-index.\n7. **Tile crumbs are absolute from scan root.** Navigation, selection and\n   marks must resolve from the original root at every depth.\n8. **Zoom changes view transform only.** Keep layout in base coordinates and\n   cache geometry until data, viewport or layout options change.\n9. **Free-space projection follows mount source.** A mark on a nested mounted\n   volume must not inflate free space for the volume shown by the meter.\n10. **Tauri is a shell.** No monitor crate dependencies, filesystem access,\n    arbitrary shell access or duplicated business logic in the desktop host.\n"
+        },
+        {
+          "id": "source-a54ff182c7e8acf5-s5",
+          "title": "Change ownership",
+          "level": 2,
+          "line": 73,
+          "endLine": 90,
+          "text": "## Change ownership\n\n| change | location |\n| --- | --- |\n| scan, filters, parallelism | `crates/monitor-disk/src/scan.rs` |\n| node structure and totals | `crates/monitor-disk/src/tree.rs` |\n| tile geometry | `crates/monitor-disk/src/treemap.rs` |\n| removal safety | `crates/monitor-disk/src/removal.rs` |\n| free-space measurements | `crates/monitor-disk/src/space.rs` |\n| application state and CLI protocol | `crates/monitor-core/`, `apps/cli/` |\n| CPU and memory sampling | `crates/monitor-cpu/`, `crates/monitor-memory/` |\n| screen layout and controls | `apps/desktop/src/App.vue` |\n| treemap paint and hit testing | `apps/desktop/src/treemap.ts` |\n| visual tokens and window chrome | `apps/desktop/src/style.css` |\n\nKeep comments focused on reasons. Preserve disk semantics and removal guards\nwhen changing presentation. Follow `.agents/skills/karen-design/SKILL.md` for\nvisual work and inspect each affected view at practical window sizes."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 10,
+        "lastEdited": "2026-10-17T19:56:13-07:00",
+        "commit": "d32bf03b687ca1267cf6634b237ea383f8a304af"
+      }
+    },
+    {
+      "id": "source-b688592ee8ed258b",
+      "path": "apps/desktop/PRODUCT.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".agents/skills/karen-design/SKILL.md",
+      "applicability": "unreviewed",
+      "text": "# Product\n\n<!-- impeccable:product-schema 1 -->\n\n## Platform\n\nweb\n\n## Users\n\nPeople monitoring resource use on their local computer and locating directories\nthat occupy disk space.\n\n## Product Purpose\n\nKaren monitors processor load, physical memory, mounted volume capacity, and\ndirectory space. Success means users can read current resource pressure and\nfind where disk space is used without leaving the desktop app.\n\n## Positioning\n\nKaren is a local system monitor whose Tauri window delegates sampling and disk\nscanning to the `karen --stream-json` CLI. The CLI owns measurements and disk\ntree layout; the Vue interface presents its events.\n\n## Operating Context\n\nKaren runs as a desktop app. Users move between focused resource tabs and\nthe disk tree, which supports volume selection and directory zoom.\n\n## Capabilities and Constraints\n\n- Resource views cover processor load, physical memory, and mounted volumes.\n- Disk Tree maps directory sizes and zooms into directories.\n- Tauri is a shell around the CLI stream protocol; it does not sample or scan.\n- Measurements and scans stay local.\n- Deletion and cleanup flows are outside the current monitor UI scope.\n\n## Brand Commitments\n\n- Product name: Karen.\n- Visual direction: luxurious steampunk, explicitly requested by the user.\n- The interface is a system monitor, not a web page or marketing dashboard.\n\n## Evidence on Hand\n\n- Resource and volume events are implemented in `apps/cli/src/stream_json.rs`.\n- Disk scanning and squarified treemap layout live in `crates/monitor-disk`.\n- No third-party performance claims, benchmark data, or user testimonials are\n  available; do not fabricate them.\n\n## Product Principles\n\n- Keep monitoring local.\n- Give each resource a focused view.\n- Keep the disk tree directly accessible.\n- Keep measurement and scan logic in the CLI and core crates.",
+      "sections": [
+        {
+          "id": "source-b688592ee8ed258b-s1",
+          "title": "Product",
+          "level": 1,
+          "line": 1,
+          "endLine": 4,
+          "text": "# Product\n\n<!-- impeccable:product-schema 1 -->\n"
+        },
+        {
+          "id": "source-b688592ee8ed258b-s2",
+          "title": "Platform",
+          "level": 2,
+          "line": 5,
+          "endLine": 8,
+          "text": "## Platform\n\nweb\n"
+        },
+        {
+          "id": "source-b688592ee8ed258b-s3",
+          "title": "Users",
+          "level": 2,
+          "line": 9,
+          "endLine": 13,
+          "text": "## Users\n\nPeople monitoring resource use on their local computer and locating directories\nthat occupy disk space.\n"
+        },
+        {
+          "id": "source-b688592ee8ed258b-s4",
+          "title": "Product Purpose",
+          "level": 2,
+          "line": 14,
+          "endLine": 19,
+          "text": "## Product Purpose\n\nKaren monitors processor load, physical memory, mounted volume capacity, and\ndirectory space. Success means users can read current resource pressure and\nfind where disk space is used without leaving the desktop app.\n"
+        },
+        {
+          "id": "source-b688592ee8ed258b-s5",
+          "title": "Positioning",
+          "level": 2,
+          "line": 20,
+          "endLine": 25,
+          "text": "## Positioning\n\nKaren is a local system monitor whose Tauri window delegates sampling and disk\nscanning to the `karen --stream-json` CLI. The CLI owns measurements and disk\ntree layout; the Vue interface presents its events.\n"
+        },
+        {
+          "id": "source-b688592ee8ed258b-s6",
+          "title": "Operating Context",
+          "level": 2,
+          "line": 26,
+          "endLine": 30,
+          "text": "## Operating Context\n\nKaren runs as a desktop app. Users move between focused resource tabs and\nthe disk tree, which supports volume selection and directory zoom.\n"
+        },
+        {
+          "id": "source-b688592ee8ed258b-s7",
+          "title": "Capabilities and Constraints",
+          "level": 2,
+          "line": 31,
+          "endLine": 38,
+          "text": "## Capabilities and Constraints\n\n- Resource views cover processor load, physical memory, and mounted volumes.\n- Disk Tree maps directory sizes and zooms into directories.\n- Tauri is a shell around the CLI stream protocol; it does not sample or scan.\n- Measurements and scans stay local.\n- Deletion and cleanup flows are outside the current monitor UI scope.\n"
+        },
+        {
+          "id": "source-b688592ee8ed258b-s8",
+          "title": "Brand Commitments",
+          "level": 2,
+          "line": 39,
+          "endLine": 44,
+          "text": "## Brand Commitments\n\n- Product name: Karen.\n- Visual direction: luxurious steampunk, explicitly requested by the user.\n- The interface is a system monitor, not a web page or marketing dashboard.\n"
+        },
+        {
+          "id": "source-b688592ee8ed258b-s9",
+          "title": "Evidence on Hand",
+          "level": 2,
+          "line": 45,
+          "endLine": 51,
+          "text": "## Evidence on Hand\n\n- Resource and volume events are implemented in `apps/cli/src/stream_json.rs`.\n- Disk scanning and squarified treemap layout live in `crates/monitor-disk`.\n- No third-party performance claims, benchmark data, or user testimonials are\n  available; do not fabricate them.\n"
+        },
+        {
+          "id": "source-b688592ee8ed258b-s10",
+          "title": "Product Principles",
+          "level": 2,
+          "line": 52,
+          "endLine": 57,
+          "text": "## Product Principles\n\n- Keep monitoring local.\n- Give each resource a focused view.\n- Keep the disk tree directly accessible.\n- Keep measurement and scan logic in the CLI and core crates."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:43:14-07:00",
+        "commit": "5f5d4d53a148d35d003d986f240a6e87a7ea932f"
+      }
+    },
+    {
+      "id": "source-a1991cf9fd46a233",
+      "path": ".spec/ROADMAP.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": "AGENTS.md",
+      "applicability": "unreviewed",
+      "text": "# Roadmap\n\n| RFC | Title | Status |\n|-----|-------|--------|\n| 0001 | [Karen system resource app (Umbrella)](rfc/0001-karen-system-resource-app.md) | Draft |\n| 0002 | [Superseded application identity transition (child of 0001)](rfc/rejected/0002-rebrand-karen.md) | Superseded |\n| 0003 | [CPU and memory monitoring with disk space management (child of 0001)](rfc/0003-cpu-memory-resource-monitor.md) | Approved |\n| 0004 | [Migrate Karen desktop UI from GPUI to Tauri and Vue 3 (child of 0001)](rfc/0004-tauri-vue3-desktop.md) | Approved |\n| 0005 | [CPU process usage monitor (child of 0001)](rfc/completed/0005-cpu-process-usage.md) | Implemented |\n| 0006 | [Migrate the complete Disk Tree interface and interactions to Vue 3 (child of 0001)](rfc/0006-karen-disk-tree-ui-migration.md) | Approved |\n| 0007 | [Make Karen a usable live system monitor (child of 0001)](rfc/0007-usable-system-monitor-experience.md) | Approved |\n| 0008 | [Report per-process memory usage (child of 0001)](rfc/0008-per-process-memory-usage.md) | Approved |\n| 0009 | [Restore Disktree UI feature parity in Karen (child of 0001)](rfc/0009-disktree-ui-parity.md) | Draft |",
+      "sections": [
+        {
+          "id": "source-a1991cf9fd46a233-s1",
+          "title": "Roadmap",
+          "level": 1,
+          "line": 1,
+          "endLine": 13,
+          "text": "# Roadmap\n\n| RFC | Title | Status |\n|-----|-------|--------|\n| 0001 | [Karen system resource app (Umbrella)](rfc/0001-karen-system-resource-app.md) | Draft |\n| 0002 | [Superseded application identity transition (child of 0001)](rfc/rejected/0002-rebrand-karen.md) | Superseded |\n| 0003 | [CPU and memory monitoring with disk space management (child of 0001)](rfc/0003-cpu-memory-resource-monitor.md) | Approved |\n| 0004 | [Migrate Karen desktop UI from GPUI to Tauri and Vue 3 (child of 0001)](rfc/0004-tauri-vue3-desktop.md) | Approved |\n| 0005 | [CPU process usage monitor (child of 0001)](rfc/completed/0005-cpu-process-usage.md) | Implemented |\n| 0006 | [Migrate the complete Disk Tree interface and interactions to Vue 3 (child of 0001)](rfc/0006-karen-disk-tree-ui-migration.md) | Approved |\n| 0007 | [Make Karen a usable live system monitor (child of 0001)](rfc/0007-usable-system-monitor-experience.md) | Approved |\n| 0008 | [Report per-process memory usage (child of 0001)](rfc/0008-per-process-memory-usage.md) | Approved |\n| 0009 | [Restore Disktree UI feature parity in Karen (child of 0001)](rfc/0009-disktree-ui-parity.md) | Draft |"
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 2,
+        "lastEdited": "2026-10-17T19:56:13-07:00",
+        "commit": "d32bf03b687ca1267cf6634b237ea383f8a304af"
+      }
+    },
+    {
+      "id": "source-e3f47275a764dda2",
+      "path": ".spec/TASK_TRACKING.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": "AGENTS.md",
+      "applicability": "unreviewed",
+      "text": "# Task Tracking\n\n## Active\n\n- [ ] Implement RFC 0001: Karen system resource app (Umbrella) (RFC 0001)\n  - [x] Implement RFC 0002: Superseded application identity transition (child of 0001) (RFC 0002)\n  - [ ] Implement RFC 0003: CPU and memory monitoring with disk space management (child of 0001) (RFC 0003)\n  - [ ] Implement RFC 0004: Migrate Karen desktop UI from GPUI to Tauri and Vue 3 (child of 0001) (RFC 0004)\n  - [x] Implement RFC 0005: CPU process usage monitor (child of 0001) (RFC 0005)\n  - [ ] Implement RFC 0006: Migrate the complete Disk Tree interface and interactions to Vue 3 (child of 0001) (RFC 0006)\n  - [ ] Implement RFC 0007: Make Karen a usable live system monitor (child of 0001) (RFC 0007)\n  - [ ] Implement RFC 0008: Report per-process memory usage (child of 0001) (RFC 0008)\n  - [ ] Implement RFC 0009: Restore Disktree UI feature parity in Karen (child of 0001) (RFC 0009)",
+      "sections": [
+        {
+          "id": "source-e3f47275a764dda2-s1",
+          "title": "Task Tracking",
+          "level": 1,
+          "line": 1,
+          "endLine": 2,
+          "text": "# Task Tracking\n"
+        },
+        {
+          "id": "source-e3f47275a764dda2-s2",
+          "title": "Active",
+          "level": 2,
+          "line": 3,
+          "endLine": 13,
+          "text": "## Active\n\n- [ ] Implement RFC 0001: Karen system resource app (Umbrella) (RFC 0001)\n  - [x] Implement RFC 0002: Superseded application identity transition (child of 0001) (RFC 0002)\n  - [ ] Implement RFC 0003: CPU and memory monitoring with disk space management (child of 0001) (RFC 0003)\n  - [ ] Implement RFC 0004: Migrate Karen desktop UI from GPUI to Tauri and Vue 3 (child of 0001) (RFC 0004)\n  - [x] Implement RFC 0005: CPU process usage monitor (child of 0001) (RFC 0005)\n  - [ ] Implement RFC 0006: Migrate the complete Disk Tree interface and interactions to Vue 3 (child of 0001) (RFC 0006)\n  - [ ] Implement RFC 0007: Make Karen a usable live system monitor (child of 0001) (RFC 0007)\n  - [ ] Implement RFC 0008: Report per-process memory usage (child of 0001) (RFC 0008)\n  - [ ] Implement RFC 0009: Restore Disktree UI feature parity in Karen (child of 0001) (RFC 0009)"
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 2,
+        "lastEdited": "2026-10-17T19:56:13-07:00",
+        "commit": "d32bf03b687ca1267cf6634b237ea383f8a304af"
+      }
+    },
+    {
+      "id": "source-248b606a9e8c6284",
+      "path": ".spec/rfc/0001-karen-system-resource-app.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/ROADMAP.md",
+      "applicability": "unreviewed",
+      "text": "# RFC 0001: Karen system resource app (Umbrella)\n\n**Status:** Draft\n\n**Type:** Umbrella\n\n## Summary\n\nBuild Karen as a Rust desktop resource-monitoring app that combines disk-space analysis and guarded cleanup with CPU and memory monitoring. This umbrella tracks the desktop migration and resource-monitoring work through separate child RFCs.\n\n## Problem\n\nThe product direction spans independently reviewable concerns: migrating the desktop app to Karen's CLI and Tauri/Vue architecture, and adding live CPU/memory views alongside disk-space management.\n\n## Goals\n\nBoth child RFCs are implemented and their acceptance criteria pass. Existing disk scanning, mark/review/removal safeguards, and supported-platform behavior remain intact.\n\n## Non-goals\n\nKernel tuning, process termination, automatic cleanup, privileged collection, remote telemetry, and unrelated platform expansion. New concerns require a new RFC.\n\n## Children\n\n| RFC | Concern |\n|-----|---------|\n| [0009](0009-disktree-ui-parity.md) | Restore Disktree UI feature parity in Karen |\n| [0008](0008-per-process-memory-usage.md) | Report per-process memory usage |\n| [0007](0007-usable-system-monitor-experience.md) | Make Karen a usable live system monitor |\n| [0006](0006-karen-disk-tree-ui-migration.md) | Migrate the complete Disk Tree interface and interactions to Vue 3 |\n| [0005](completed/0005-cpu-process-usage.md) | CPU process usage monitor |\n| [0004](0004-tauri-vue3-desktop.md) | Migrate Karen desktop UI from GPUI to Tauri and Vue 3 |\n| [0003](0003-cpu-memory-resource-monitor.md) | CPU and memory monitoring with disk space management |\n| [0002](rejected/0002-rebrand-karen.md) | Superseded application identity transition |\n\n## Acceptance\n\nClose when both listed children are implemented and their acceptance evidence is recorded. Keep each child independently scoped; never reopen this umbrella for follow-up features.",
+      "sections": [
+        {
+          "id": "source-248b606a9e8c6284-s1",
+          "title": "RFC 0001: Karen system resource app (Umbrella)",
+          "level": 1,
+          "line": 1,
+          "endLine": 6,
+          "text": "# RFC 0001: Karen system resource app (Umbrella)\n\n**Status:** Draft\n\n**Type:** Umbrella\n"
+        },
+        {
+          "id": "source-248b606a9e8c6284-s2",
+          "title": "Summary",
+          "level": 2,
+          "line": 7,
+          "endLine": 10,
+          "text": "## Summary\n\nBuild Karen as a Rust desktop resource-monitoring app that combines disk-space analysis and guarded cleanup with CPU and memory monitoring. This umbrella tracks the desktop migration and resource-monitoring work through separate child RFCs.\n"
+        },
+        {
+          "id": "source-248b606a9e8c6284-s3",
+          "title": "Problem",
+          "level": 2,
+          "line": 11,
+          "endLine": 14,
+          "text": "## Problem\n\nThe product direction spans independently reviewable concerns: migrating the desktop app to Karen's CLI and Tauri/Vue architecture, and adding live CPU/memory views alongside disk-space management.\n"
+        },
+        {
+          "id": "source-248b606a9e8c6284-s4",
+          "title": "Goals",
+          "level": 2,
+          "line": 15,
+          "endLine": 18,
+          "text": "## Goals\n\nBoth child RFCs are implemented and their acceptance criteria pass. Existing disk scanning, mark/review/removal safeguards, and supported-platform behavior remain intact.\n"
+        },
+        {
+          "id": "source-248b606a9e8c6284-s5",
+          "title": "Non-goals",
+          "level": 2,
+          "line": 19,
+          "endLine": 22,
+          "text": "## Non-goals\n\nKernel tuning, process termination, automatic cleanup, privileged collection, remote telemetry, and unrelated platform expansion. New concerns require a new RFC.\n"
+        },
+        {
+          "id": "source-248b606a9e8c6284-s6",
+          "title": "Children",
+          "level": 2,
+          "line": 23,
+          "endLine": 35,
+          "text": "## Children\n\n| RFC | Concern |\n|-----|---------|\n| [0009](0009-disktree-ui-parity.md) | Restore Disktree UI feature parity in Karen |\n| [0008](0008-per-process-memory-usage.md) | Report per-process memory usage |\n| [0007](0007-usable-system-monitor-experience.md) | Make Karen a usable live system monitor |\n| [0006](0006-karen-disk-tree-ui-migration.md) | Migrate the complete Disk Tree interface and interactions to Vue 3 |\n| [0005](completed/0005-cpu-process-usage.md) | CPU process usage monitor |\n| [0004](0004-tauri-vue3-desktop.md) | Migrate Karen desktop UI from GPUI to Tauri and Vue 3 |\n| [0003](0003-cpu-memory-resource-monitor.md) | CPU and memory monitoring with disk space management |\n| [0002](rejected/0002-rebrand-karen.md) | Superseded application identity transition |\n"
+        },
+        {
+          "id": "source-248b606a9e8c6284-s7",
+          "title": "Acceptance",
+          "level": 2,
+          "line": 36,
+          "endLine": 38,
+          "text": "## Acceptance\n\nClose when both listed children are implemented and their acceptance evidence is recorded. Keep each child independently scoped; never reopen this umbrella for follow-up features."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 2,
+        "lastEdited": "2026-10-17T19:56:13-07:00",
+        "commit": "d32bf03b687ca1267cf6634b237ea383f8a304af"
+      }
+    },
+    {
+      "id": "source-2fc4b0f81ae92662",
+      "path": ".spec/rfc/rejected/0002-rebrand-karen.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/ROADMAP.md",
+      "applicability": "unreviewed",
+      "text": "# RFC 0002: Application identity transition (child of 0001)\n\n**Status:** Superseded\n\n**Superseded by:** RFC 0004.\n\n**Parent:** [0001](../0001-karen-system-resource-app.md)\n\n## Summary\n\nThis proposal covered the desktop product identity and compatibility during the original migration. RFC 0004 replaced its compatibility requirements with the Karen CLI, Tauri, and Vue architecture.\n\n## Problem\n\nThe expanded system monitor required a product identity and desktop architecture that covered disk, CPU, and memory workflows.\n\n## Goals\n\nUse Karen consistently for the product, command, desktop bundle, and release artifacts.\n\n## Superseded design\n\nThe original proposal retained prior command, package, installation, and macOS bundle identities. RFC 0004 explicitly replaces that approach. This archived record does not define current naming or compatibility requirements.\n\n## Acceptance\n\nSuperseded by RFC 0004; no implementation remains in scope.",
+      "sections": [
+        {
+          "id": "source-2fc4b0f81ae92662-s1",
+          "title": "RFC 0002: Application identity transition (child of 0001)",
+          "level": 1,
+          "line": 1,
+          "endLine": 8,
+          "text": "# RFC 0002: Application identity transition (child of 0001)\n\n**Status:** Superseded\n\n**Superseded by:** RFC 0004.\n\n**Parent:** [0001](../0001-karen-system-resource-app.md)\n"
+        },
+        {
+          "id": "source-2fc4b0f81ae92662-s2",
+          "title": "Summary",
+          "level": 2,
+          "line": 9,
+          "endLine": 12,
+          "text": "## Summary\n\nThis proposal covered the desktop product identity and compatibility during the original migration. RFC 0004 replaced its compatibility requirements with the Karen CLI, Tauri, and Vue architecture.\n"
+        },
+        {
+          "id": "source-2fc4b0f81ae92662-s3",
+          "title": "Problem",
+          "level": 2,
+          "line": 13,
+          "endLine": 16,
+          "text": "## Problem\n\nThe expanded system monitor required a product identity and desktop architecture that covered disk, CPU, and memory workflows.\n"
+        },
+        {
+          "id": "source-2fc4b0f81ae92662-s4",
+          "title": "Goals",
+          "level": 2,
+          "line": 17,
+          "endLine": 20,
+          "text": "## Goals\n\nUse Karen consistently for the product, command, desktop bundle, and release artifacts.\n"
+        },
+        {
+          "id": "source-2fc4b0f81ae92662-s5",
+          "title": "Superseded design",
+          "level": 2,
+          "line": 21,
+          "endLine": 24,
+          "text": "## Superseded design\n\nThe original proposal retained prior command, package, installation, and macOS bundle identities. RFC 0004 explicitly replaces that approach. This archived record does not define current naming or compatibility requirements.\n"
+        },
+        {
+          "id": "source-2fc4b0f81ae92662-s6",
+          "title": "Acceptance",
+          "level": 2,
+          "line": 25,
+          "endLine": 27,
+          "text": "## Acceptance\n\nSuperseded by RFC 0004; no implementation remains in scope."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:43:14-07:00",
+        "commit": "5f5d4d53a148d35d003d986f240a6e87a7ea932f"
+      }
+    },
+    {
+      "id": "source-9b4f100217209349",
+      "path": ".spec/rfc/0003-cpu-memory-resource-monitor.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/ROADMAP.md",
+      "applicability": "unreviewed",
+      "text": "# RFC 0003: CPU and memory monitoring with disk space management (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n\n## Summary\n\nAdd live CPU and memory monitoring to Karen's existing disk-space management view. Show CPU and memory meters beside the disk panel while retaining the existing disk treemap, marked-path review, deletion guards, and free-space projections.\n\n## Problem\n\nKaren's intended scope is system resource management, but the current app only explores and frees disk space. CPU and memory readings complete the requested resource overview without weakening the disk workflow's safety invariants.\n\n## Goals\n\nProvide readable current CPU utilization and memory usage, refreshed on a bounded interval, alongside navigation to existing disk-space management. Collection is read-only and unprivileged. Define per-platform collection semantics for Linux, macOS, and Windows, including unavailable readings and platform-specific memory definitions. Keep sampling and presentation separate from filesystem scanning.\n\n## Non-goals\n\nPer-process monitoring or termination, performance tuning, alerts, history/recording, remote telemetry, privileged access, swap/cache clearing, and changes to disk deletion behavior.\n\n## Design\n\nAdd a small platform-neutral resource sample model backed by the existing cross-platform `sysinfo` dependency. Keep sampling in its own module and render compact CPU and memory meters in the side panel beside disk space. Do not add a separate screen or embed resource polling into the disk scan or treemap. Use bounded sampling, handle CPU counter warm-up and unavailable memory explicitly, and retain no history. Preserve all current disk-space projections and removal guards.\n\n## Acceptance\n\nUnit-test CPU delta calculations, memory totals/availability handling, warm-up, and unavailable samples with deterministic fixtures. Add window-harness coverage for navigation, rendering valid and unavailable readings, and returning to disk management. Run existing core/app tests, lint, and builds on Linux, macOS, and Windows. Manually confirm readings update while the disk tree remains usable and no collector requires elevated privileges.",
+      "sections": [
+        {
+          "id": "source-9b4f100217209349-s1",
+          "title": "RFC 0003: CPU and memory monitoring with disk space management (child of 0001)",
+          "level": 1,
+          "line": 1,
+          "endLine": 6,
+          "text": "# RFC 0003: CPU and memory monitoring with disk space management (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n"
+        },
+        {
+          "id": "source-9b4f100217209349-s2",
+          "title": "Summary",
+          "level": 2,
+          "line": 7,
+          "endLine": 10,
+          "text": "## Summary\n\nAdd live CPU and memory monitoring to Karen's existing disk-space management view. Show CPU and memory meters beside the disk panel while retaining the existing disk treemap, marked-path review, deletion guards, and free-space projections.\n"
+        },
+        {
+          "id": "source-9b4f100217209349-s3",
+          "title": "Problem",
+          "level": 2,
+          "line": 11,
+          "endLine": 14,
+          "text": "## Problem\n\nKaren's intended scope is system resource management, but the current app only explores and frees disk space. CPU and memory readings complete the requested resource overview without weakening the disk workflow's safety invariants.\n"
+        },
+        {
+          "id": "source-9b4f100217209349-s4",
+          "title": "Goals",
+          "level": 2,
+          "line": 15,
+          "endLine": 18,
+          "text": "## Goals\n\nProvide readable current CPU utilization and memory usage, refreshed on a bounded interval, alongside navigation to existing disk-space management. Collection is read-only and unprivileged. Define per-platform collection semantics for Linux, macOS, and Windows, including unavailable readings and platform-specific memory definitions. Keep sampling and presentation separate from filesystem scanning.\n"
+        },
+        {
+          "id": "source-9b4f100217209349-s5",
+          "title": "Non-goals",
+          "level": 2,
+          "line": 19,
+          "endLine": 22,
+          "text": "## Non-goals\n\nPer-process monitoring or termination, performance tuning, alerts, history/recording, remote telemetry, privileged access, swap/cache clearing, and changes to disk deletion behavior.\n"
+        },
+        {
+          "id": "source-9b4f100217209349-s6",
+          "title": "Design",
+          "level": 2,
+          "line": 23,
+          "endLine": 26,
+          "text": "## Design\n\nAdd a small platform-neutral resource sample model backed by the existing cross-platform `sysinfo` dependency. Keep sampling in its own module and render compact CPU and memory meters in the side panel beside disk space. Do not add a separate screen or embed resource polling into the disk scan or treemap. Use bounded sampling, handle CPU counter warm-up and unavailable memory explicitly, and retain no history. Preserve all current disk-space projections and removal guards.\n"
+        },
+        {
+          "id": "source-9b4f100217209349-s7",
+          "title": "Acceptance",
+          "level": 2,
+          "line": 27,
+          "endLine": 29,
+          "text": "## Acceptance\n\nUnit-test CPU delta calculations, memory totals/availability handling, warm-up, and unavailable samples with deterministic fixtures. Add window-harness coverage for navigation, rendering valid and unavailable readings, and returning to disk management. Run existing core/app tests, lint, and builds on Linux, macOS, and Windows. Manually confirm readings update while the disk tree remains usable and no collector requires elevated privileges."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:43:14-07:00",
+        "commit": "5f5d4d53a148d35d003d986f240a6e87a7ea932f"
+      }
+    },
+    {
+      "id": "source-501ed7f2d3676fd7",
+      "path": ".spec/rfc/0004-tauri-vue3-desktop.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/ROADMAP.md",
+      "applicability": "unreviewed",
+      "text": "# RFC 0004: Migrate Karen desktop UI from GPUI to Tauri and Vue 3 (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n\n## Summary\n\nReplace Karen's GPUI interface with `Karen.app`, a Tauri 2 + Vue 3 desktop\nshell around the standalone Karen CLI. The CLI is sole owner of application\nstate and all work. Karen.app starts the bundled CLI in `--stream-json` mode\nand forwards its JSON stream between the Vue interface and CLI.\n\n## Problem\n\nKaren currently depends on GPUI for its window and interface. Product shape\nis a useful standalone CLI first, then Karen.app as its desktop shell. Tauri\nmust not reimplement business logic or call backend crates directly. The CLI\nneeds a machine-readable streaming mode that can serve an interactive app\nwithout copying the complete tree to Vue or keeping two copies of application\nstate.\n\n## Goals\n\n* Ship `Karen.app` as a Tauri 2 desktop shell with Vue 3 and TypeScript under\n  `apps/desktop/`.\n* Rename the disk library package to `monitor-disk`; add\n  `monitor-core` for app-level orchestration, `monitor-memory` for memory\n  sampling, and `monitor-cpu` for CPU sampling. Keep each crate limited to its\n  named responsibility.\n* Keep standalone `karen` CLI in `apps/cli/` as the only application backend.\n  `Karen.app` starts the bundled CLI with `--stream-json`; Tauri only owns the\n  window, CLI process lifecycle and byte/JSON-line forwarding to Vue.\n* Preserve the current user-visible flows: CPU and memory meters, disk free\n  space, treemap navigation and zoom, filters, selection details, marks,\n  review, confirmation, safe removal, and scan controls.\n* Keep filesystem semantics and destructive-operation guards in\n  `monitor-disk`, called only by the CLI; neither Tauri nor Vue performs file\n  operations.\n* Keep scan and removal work in CLI process. Stream progress and bounded view\n  data to Vue; do not serialize or clone the complete tree for each redraw or\n  interaction.\n* Preserve supported Linux, macOS and Windows builds, existing command-line\n  scan arguments under the `karen` command, installation upgrades and user\n  settings. Use Karen's new application identity consistently.\n* Retain projectify layout boundaries: Rust reusable code in `crates/`,\n  executable desktop app in `apps/desktop/`, TypeScript packages in\n  `packages/` only when shared modules actually exist, and pnpm scripts at the\n  root to coordinate Cargo and frontend commands.\n\n## Non-goals\n\n* New monitoring features, process lists or process termination, resource\n  history, remote telemetry, auto-cleanup, and privileged collection.\n* Changes to scan accounting, mount attribution, marks semantics, or removal\n  policy except fixes required to preserve those contracts across the bridge.\n* Mobile targets, a web-hosted edition, a new CLI product, or a new package\n  publishing workflow.\n* Branding redesign, registry renaming, and domain changes.\n* Compatibility aliases or metadata using the retired product identity,\n  desktop entry, release artifact, or runtime compatibility layer. This\n  migration removes the old identity rather than preserving it.\n\n## Design\n\nCreate `apps/cli/` for standalone `karen` and `apps/desktop/` for `Karen.app`.\nKeep Tauri Rust host and `tauri.conf.json` under\n`apps/desktop/src-tauri/`; keep Vue/Vite app, views, styles, Canvas treemap\nand the pass-through bridge under\n`apps/desktop/src/`. Add a root `pnpm-workspace.yaml` and root scripts only to\ncoordinate the Vue desktop package and existing Cargo commands. Keep\nreusable Rust crates in the Cargo workspace: move the current\ndisk library implementation to `crates/monitor-disk/` and rename\nits Cargo package/library to `monitor-disk`; move app lifecycle and\ncross-domain orchestration into `crates/monitor-core/`; move memory and CPU\nsampling into `crates/monitor-memory/` and `crates/monitor-cpu/`. Put CLI\nargument parsing, terminal output and the `--stream-json` entry point in\n`apps/cli/`. `monitor-core` owns app state and orchestration and is used by CLI\nonly; Tauri must not depend on it or any other monitor crate.\n\nImplement `karen --stream-json` as CLI's long-lived machine interface. It\nreads JSON request lines on stdin, validates each request, and writes typed\nJSON event lines on stdout. Define versioned request and event envelopes for\nscan/start/cancel, tree navigation, filters, marks, review, removal\nconfirmation, CPU/memory samples, errors and shutdown. Send diagnostics only\nto stderr. Stream only progress and bounded visible-tile/selection data; keep\nthe full tree and marks in CLI memory. Vue sends actions to the CLI through\nthe scoped Tauri Shell sidecar child's stdin and renders events from stdout.\nThe CLI owns all validation and destructive-operation guards.\n\nKaren.app bundles the matching-platform `karen` executable as a Tauri sidecar.\nVue uses the scoped Tauri Shell plugin to start it with exactly\n`--stream-json`, keep one process for the app session, write request lines,\nand read event lines. Tauri Rust host contains no app-specific bridge or\nbusiness logic; Vue handles the view and CLI handles all work. Scope shell\npermissions to this sidecar and fixed mode argument. Do not expose general\nshell execution to Vue. Keep frontend code in `apps/desktop/`, not in\n`packages/` unless a second consumer creates a real shared package. Do not\ncreate placeholder crates or a generic plugin framework. Retire\nthe legacy GPUI app crate and dependencies only after the replacement passes\nthe acceptance checks.\n\n`monitor-core`, called by CLI, owns one application state containing active\nscan, `monitor_disk::Node` tree, marks, scan options, CPU/memory samples,\nremoval plan and task handles. `monitor-disk` owns filesystem scanning, tree\naccounting, treemap geometry, disk-space attribution and all removal guards.\n`monitor-memory` and `monitor-cpu` own bounded, read-only metric sampling.\nScan and removal tasks remain asynchronous and emit progress/status events.\nCLI computes layouts with `monitor-disk` and streams only the bounded visible\nresult, selection details and sibling lists. Do not add serde derives to the\ncompact core node solely to serialize the full tree. Use stable absolute paths\nfor marks and revalidate selected removal targets through the core planner\nbefore confirmation and execution.\n\nRebuild interface layout and input in Vue, drawing CLI-provided treemap\nrectangles and labels in one Canvas surface so thousands of tiles do not\nbecome thousands of DOM elements. Use Tauri APIs only for shell behavior such\nas window and sidecar lifecycle. Declare minimum Tauri capabilities needed\nfor the sidecar; do not grant arbitrary shell execution or filesystem access\nto Vue. Preserve platform-specific scan/removal implementations and existing application data\nlocations. Use the Karen application and bundle identity `me.systembug.karen`\nconsistently across platforms. Rename the executable and release artifacts to\nKaren names, remove compatibility aliases and metadata using the retired\nidentity, and update\nthe desktop entry, packaging, docs and workflows to match. This intentionally\nchanges the macOS bundle identifier and therefore requests fresh macOS\npermissions; do not claim old Full Disk Access grants carry over.\n\nUpdate Cargo workspace membership, release workflow, install/bundle commands,\nREADME build/run instructions and CI to build the CLI sidecar and Vue frontend\nbefore Tauri packaging. The\nexisting GPUI changes in the working tree are user-owned input; migration must\nincorporate or explicitly reconcile them, never discard them implicitly.\n\n## Acceptance\n\n* Cargo package boundaries are `monitor-core`, `monitor-disk`,\n  `monitor-memory`, `monitor-cpu`, and the Tauri desktop host; no production\n  dependency, command, bundle, desktop entry or release artifact retains the\n  retired identity.\n* `karen` CLI runs without opening a window. `karen --stream-json` accepts\n  versioned JSON requests and emits parseable JSON event lines for the full\n  interactive workflow; diagnostics stay on stderr.\n* Karen.app bundles and starts `karen --stream-json`; Tauri has no monitor\n  crate dependency and contains no scan, tree, metrics, marks or removal\n  business logic. Vue actions and CLI events traverse the sidecar stream.\n* `pnpm` install, frontend lint/typecheck/build and Tauri dev launch work from\n  the documented root commands; `cargo xtask lint`, core tests and Tauri app\n  tests pass without GPUI in the production dependency graph.\n* Linux, macOS and Windows release builds produce standalone `karen` CLI and\n  launchable `Karen.app` artifacts with matching sidecar architecture. `karen`\n  scan arguments and installer upgrade/uninstall behavior remain verified.\n* Automated frontend/window coverage exercises scan progress, empty/error\n  states, navigation/filtering, marking and review, cancellation, and removal\n  confirmation. Core deletion-guard tests remain authoritative for what may\n  be removed.\n* Exercise a large synthetic tree and demonstrate that the frontend bridge\n  returns bounded view data without serializing the full `Node` tree on every\n  interaction.\n* Verify settings remain available after the new identity is installed, and\n  check that Tauri capabilities expose no direct arbitrary path deletion.\n* Reconcile README, desktop metadata, release names and actual artifact names;\n  run `specify validate` and `sync-check` after this RFC is approved and\n  implementation is complete.",
+      "sections": [
+        {
+          "id": "source-501ed7f2d3676fd7-s1",
+          "title": "RFC 0004: Migrate Karen desktop UI from GPUI to Tauri and Vue 3 (child of 0001)",
+          "level": 1,
+          "line": 1,
+          "endLine": 6,
+          "text": "# RFC 0004: Migrate Karen desktop UI from GPUI to Tauri and Vue 3 (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n"
+        },
+        {
+          "id": "source-501ed7f2d3676fd7-s2",
+          "title": "Summary",
+          "level": 2,
+          "line": 7,
+          "endLine": 13,
+          "text": "## Summary\n\nReplace Karen's GPUI interface with `Karen.app`, a Tauri 2 + Vue 3 desktop\nshell around the standalone Karen CLI. The CLI is sole owner of application\nstate and all work. Karen.app starts the bundled CLI in `--stream-json` mode\nand forwards its JSON stream between the Vue interface and CLI.\n"
+        },
+        {
+          "id": "source-501ed7f2d3676fd7-s3",
+          "title": "Problem",
+          "level": 2,
+          "line": 14,
+          "endLine": 22,
+          "text": "## Problem\n\nKaren currently depends on GPUI for its window and interface. Product shape\nis a useful standalone CLI first, then Karen.app as its desktop shell. Tauri\nmust not reimplement business logic or call backend crates directly. The CLI\nneeds a machine-readable streaming mode that can serve an interactive app\nwithout copying the complete tree to Vue or keeping two copies of application\nstate.\n"
+        },
+        {
+          "id": "source-501ed7f2d3676fd7-s4",
+          "title": "Goals",
+          "level": 2,
+          "line": 23,
+          "endLine": 50,
+          "text": "## Goals\n\n* Ship `Karen.app` as a Tauri 2 desktop shell with Vue 3 and TypeScript under\n  `apps/desktop/`.\n* Rename the disk library package to `monitor-disk`; add\n  `monitor-core` for app-level orchestration, `monitor-memory` for memory\n  sampling, and `monitor-cpu` for CPU sampling. Keep each crate limited to its\n  named responsibility.\n* Keep standalone `karen` CLI in `apps/cli/` as the only application backend.\n  `Karen.app` starts the bundled CLI with `--stream-json`; Tauri only owns the\n  window, CLI process lifecycle and byte/JSON-line forwarding to Vue.\n* Preserve the current user-visible flows: CPU and memory meters, disk free\n  space, treemap navigation and zoom, filters, selection details, marks,\n  review, confirmation, safe removal, and scan controls.\n* Keep filesystem semantics and destructive-operation guards in\n  `monitor-disk`, called only by the CLI; neither Tauri nor Vue performs file\n  operations.\n* Keep scan and removal work in CLI process. Stream progress and bounded view\n  data to Vue; do not serialize or clone the complete tree for each redraw or\n  interaction.\n* Preserve supported Linux, macOS and Windows builds, existing command-line\n  scan arguments under the `karen` command, installation upgrades and user\n  settings. Use Karen's new application identity consistently.\n* Retain projectify layout boundaries: Rust reusable code in `crates/`,\n  executable desktop app in `apps/desktop/`, TypeScript packages in\n  `packages/` only when shared modules actually exist, and pnpm scripts at the\n  root to coordinate Cargo and frontend commands.\n"
+        },
+        {
+          "id": "source-501ed7f2d3676fd7-s5",
+          "title": "Non-goals",
+          "level": 2,
+          "line": 51,
+          "endLine": 63,
+          "text": "## Non-goals\n\n* New monitoring features, process lists or process termination, resource\n  history, remote telemetry, auto-cleanup, and privileged collection.\n* Changes to scan accounting, mount attribution, marks semantics, or removal\n  policy except fixes required to preserve those contracts across the bridge.\n* Mobile targets, a web-hosted edition, a new CLI product, or a new package\n  publishing workflow.\n* Branding redesign, registry renaming, and domain changes.\n* Compatibility aliases or metadata using the retired product identity,\n  desktop entry, release artifact, or runtime compatibility layer. This\n  migration removes the old identity rather than preserving it.\n"
+        },
+        {
+          "id": "source-501ed7f2d3676fd7-s6",
+          "title": "Design",
+          "level": 2,
+          "line": 64,
+          "endLine": 134,
+          "text": "## Design\n\nCreate `apps/cli/` for standalone `karen` and `apps/desktop/` for `Karen.app`.\nKeep Tauri Rust host and `tauri.conf.json` under\n`apps/desktop/src-tauri/`; keep Vue/Vite app, views, styles, Canvas treemap\nand the pass-through bridge under\n`apps/desktop/src/`. Add a root `pnpm-workspace.yaml` and root scripts only to\ncoordinate the Vue desktop package and existing Cargo commands. Keep\nreusable Rust crates in the Cargo workspace: move the current\ndisk library implementation to `crates/monitor-disk/` and rename\nits Cargo package/library to `monitor-disk`; move app lifecycle and\ncross-domain orchestration into `crates/monitor-core/`; move memory and CPU\nsampling into `crates/monitor-memory/` and `crates/monitor-cpu/`. Put CLI\nargument parsing, terminal output and the `--stream-json` entry point in\n`apps/cli/`. `monitor-core` owns app state and orchestration and is used by CLI\nonly; Tauri must not depend on it or any other monitor crate.\n\nImplement `karen --stream-json` as CLI's long-lived machine interface. It\nreads JSON request lines on stdin, validates each request, and writes typed\nJSON event lines on stdout. Define versioned request and event envelopes for\nscan/start/cancel, tree navigation, filters, marks, review, removal\nconfirmation, CPU/memory samples, errors and shutdown. Send diagnostics only\nto stderr. Stream only progress and bounded visible-tile/selection data; keep\nthe full tree and marks in CLI memory. Vue sends actions to the CLI through\nthe scoped Tauri Shell sidecar child's stdin and renders events from stdout.\nThe CLI owns all validation and destructive-operation guards.\n\nKaren.app bundles the matching-platform `karen` executable as a Tauri sidecar.\nVue uses the scoped Tauri Shell plugin to start it with exactly\n`--stream-json`, keep one process for the app session, write request lines,\nand read event lines. Tauri Rust host contains no app-specific bridge or\nbusiness logic; Vue handles the view and CLI handles all work. Scope shell\npermissions to this sidecar and fixed mode argument. Do not expose general\nshell execution to Vue. Keep frontend code in `apps/desktop/`, not in\n`packages/` unless a second consumer creates a real shared package. Do not\ncreate placeholder crates or a generic plugin framework. Retire\nthe legacy GPUI app crate and dependencies only after the replacement passes\nthe acceptance checks.\n\n`monitor-core`, called by CLI, owns one application state containing active\nscan, `monitor_disk::Node` tree, marks, scan options, CPU/memory samples,\nremoval plan and task handles. `monitor-disk` owns filesystem scanning, tree\naccounting, treemap geometry, disk-space attribution and all removal guards.\n`monitor-memory` and `monitor-cpu` own bounded, read-only metric sampling.\nScan and removal tasks remain asynchronous and emit progress/status events.\nCLI computes layouts with `monitor-disk` and streams only the bounded visible\nresult, selection details and sibling lists. Do not add serde derives to the\ncompact core node solely to serialize the full tree. Use stable absolute paths\nfor marks and revalidate selected removal targets through the core planner\nbefore confirmation and execution.\n\nRebuild interface layout and input in Vue, drawing CLI-provided treemap\nrectangles and labels in one Canvas surface so thousands of tiles do not\nbecome thousands of DOM elements. Use Tauri APIs only for shell behavior such\nas window and sidecar lifecycle. Declare minimum Tauri capabilities needed\nfor the sidecar; do not grant arbitrary shell execution or filesystem access\nto Vue. Preserve platform-specific scan/removal implementations and existing application data\nlocations. Use the Karen application and bundle identity `me.systembug.karen`\nconsistently across platforms. Rename the executable and release artifacts to\nKaren names, remove compatibility aliases and metadata using the retired\nidentity, and update\nthe desktop entry, packaging, docs and workflows to match. This intentionally\nchanges the macOS bundle identifier and therefore requests fresh macOS\npermissions; do not claim old Full Disk Access grants carry over.\n\nUpdate Cargo workspace membership, release workflow, install/bundle commands,\nREADME build/run instructions and CI to build the CLI sidecar and Vue frontend\nbefore Tauri packaging. The\nexisting GPUI changes in the working tree are user-owned input; migration must\nincorporate or explicitly reconcile them, never discard them implicitly.\n"
+        },
+        {
+          "id": "source-501ed7f2d3676fd7-s7",
+          "title": "Acceptance",
+          "level": 2,
+          "line": 135,
+          "endLine": 164,
+          "text": "## Acceptance\n\n* Cargo package boundaries are `monitor-core`, `monitor-disk`,\n  `monitor-memory`, `monitor-cpu`, and the Tauri desktop host; no production\n  dependency, command, bundle, desktop entry or release artifact retains the\n  retired identity.\n* `karen` CLI runs without opening a window. `karen --stream-json` accepts\n  versioned JSON requests and emits parseable JSON event lines for the full\n  interactive workflow; diagnostics stay on stderr.\n* Karen.app bundles and starts `karen --stream-json`; Tauri has no monitor\n  crate dependency and contains no scan, tree, metrics, marks or removal\n  business logic. Vue actions and CLI events traverse the sidecar stream.\n* `pnpm` install, frontend lint/typecheck/build and Tauri dev launch work from\n  the documented root commands; `cargo xtask lint`, core tests and Tauri app\n  tests pass without GPUI in the production dependency graph.\n* Linux, macOS and Windows release builds produce standalone `karen` CLI and\n  launchable `Karen.app` artifacts with matching sidecar architecture. `karen`\n  scan arguments and installer upgrade/uninstall behavior remain verified.\n* Automated frontend/window coverage exercises scan progress, empty/error\n  states, navigation/filtering, marking and review, cancellation, and removal\n  confirmation. Core deletion-guard tests remain authoritative for what may\n  be removed.\n* Exercise a large synthetic tree and demonstrate that the frontend bridge\n  returns bounded view data without serializing the full `Node` tree on every\n  interaction.\n* Verify settings remain available after the new identity is installed, and\n  check that Tauri capabilities expose no direct arbitrary path deletion.\n* Reconcile README, desktop metadata, release names and actual artifact names;\n  run `specify validate` and `sync-check` after this RFC is approved and\n  implementation is complete."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:43:14-07:00",
+        "commit": "5f5d4d53a148d35d003d986f240a6e87a7ea932f"
+      }
+    },
+    {
+      "id": "source-176c9576f40b3236",
+      "path": ".spec/rfc/completed/0005-cpu-process-usage.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/ROADMAP.md",
+      "applicability": "unreviewed",
+      "text": "# RFC 0005: CPU process usage monitor (child of 0001)\n\n**Status:** Implemented\n\n**Parent:** [0001](../0001-karen-system-resource-app.md)\n\n## Summary\n\nExpose a bounded, live list of processes ranked by CPU usage on Karen's\nRuntime tab. The CLI owns process sampling and sends process rows through its\nexisting `--stream-json` protocol; the Tauri shell remains a transport and the\nVue UI renders the result.\n\n## Problem\n\nThe Runtime tab currently reports only whole-machine CPU utilization. That\nshows load but cannot identify which process causes it. RFC 0003 explicitly\nexcluded per-process monitoring, so this capability needs its own RFC and\nacceptance boundary.\n\n## Goals\n\nShow the highest CPU-consuming processes, with process name, PID, and CPU\npercentage. Refresh on the existing bounded resource-sampling cadence, keep\nthe list capped, and handle process names or CPU readings unavailable from the\noperating system.\n\n## Non-goals\n\nProcess memory, process termination or control, alerts, history/recording,\nremote telemetry, elevated collection, and changes to disk scanning or\ndeletion behavior.\n\n## Design\n\nExtend `monitor-cpu` to sample per-process CPU using the existing `sysinfo`\ndependency and emit normalized rows through `monitor-core`. Add a versioned\nresource event to the `karen --stream-json` protocol and update the Vue Runtime\ntab to render the bounded, descending-CPU list. Keep process collection in the\nCLI/core path; Tauri only forwards stream events. Preserve the current total\nCPU and memory fields and the stream protocol's backward-compatible handling\nof unknown events. Label process CPU with `sysinfo`'s per-core percentage\nsemantics: one fully used core is 100%, so a process may exceed 100% on a\nmulti-core system. Treat first-sample CPU deltas as unavailable until the\ncollector has a baseline; exclude non-finite or negative readings, use a safe\nfallback for empty process names, and sort ties by PID for stable display.\n\n## Acceptance\n\nOn Linux, macOS, and Windows, the CLI stream reports a bounded process CPU\nlist while retaining existing total CPU and memory readings. Rows contain a\nstable PID, display name (with a safe fallback when the OS provides none), and\nfinite CPU percentage in the documented range. The list is ordered by CPU\nusage, updates on the resource cadence, and remains empty or explicitly\nunavailable during collector warm-up. The Runtime tab visibly renders the\nprocess list and handles no-process/unavailable states. Existing disk tree\nnavigation and stream consumers continue to work unchanged. Validate with\nfocused collector/protocol coverage, lint, and desktop build; manually inspect\nthe running Runtime tab.",
+      "sections": [
+        {
+          "id": "source-176c9576f40b3236-s1",
+          "title": "RFC 0005: CPU process usage monitor (child of 0001)",
+          "level": 1,
+          "line": 1,
+          "endLine": 6,
+          "text": "# RFC 0005: CPU process usage monitor (child of 0001)\n\n**Status:** Implemented\n\n**Parent:** [0001](../0001-karen-system-resource-app.md)\n"
+        },
+        {
+          "id": "source-176c9576f40b3236-s2",
+          "title": "Summary",
+          "level": 2,
+          "line": 7,
+          "endLine": 13,
+          "text": "## Summary\n\nExpose a bounded, live list of processes ranked by CPU usage on Karen's\nRuntime tab. The CLI owns process sampling and sends process rows through its\nexisting `--stream-json` protocol; the Tauri shell remains a transport and the\nVue UI renders the result.\n"
+        },
+        {
+          "id": "source-176c9576f40b3236-s3",
+          "title": "Problem",
+          "level": 2,
+          "line": 14,
+          "endLine": 20,
+          "text": "## Problem\n\nThe Runtime tab currently reports only whole-machine CPU utilization. That\nshows load but cannot identify which process causes it. RFC 0003 explicitly\nexcluded per-process monitoring, so this capability needs its own RFC and\nacceptance boundary.\n"
+        },
+        {
+          "id": "source-176c9576f40b3236-s4",
+          "title": "Goals",
+          "level": 2,
+          "line": 21,
+          "endLine": 27,
+          "text": "## Goals\n\nShow the highest CPU-consuming processes, with process name, PID, and CPU\npercentage. Refresh on the existing bounded resource-sampling cadence, keep\nthe list capped, and handle process names or CPU readings unavailable from the\noperating system.\n"
+        },
+        {
+          "id": "source-176c9576f40b3236-s5",
+          "title": "Non-goals",
+          "level": 2,
+          "line": 28,
+          "endLine": 33,
+          "text": "## Non-goals\n\nProcess memory, process termination or control, alerts, history/recording,\nremote telemetry, elevated collection, and changes to disk scanning or\ndeletion behavior.\n"
+        },
+        {
+          "id": "source-176c9576f40b3236-s6",
+          "title": "Design",
+          "level": 2,
+          "line": 34,
+          "endLine": 47,
+          "text": "## Design\n\nExtend `monitor-cpu` to sample per-process CPU using the existing `sysinfo`\ndependency and emit normalized rows through `monitor-core`. Add a versioned\nresource event to the `karen --stream-json` protocol and update the Vue Runtime\ntab to render the bounded, descending-CPU list. Keep process collection in the\nCLI/core path; Tauri only forwards stream events. Preserve the current total\nCPU and memory fields and the stream protocol's backward-compatible handling\nof unknown events. Label process CPU with `sysinfo`'s per-core percentage\nsemantics: one fully used core is 100%, so a process may exceed 100% on a\nmulti-core system. Treat first-sample CPU deltas as unavailable until the\ncollector has a baseline; exclude non-finite or negative readings, use a safe\nfallback for empty process names, and sort ties by PID for stable display.\n"
+        },
+        {
+          "id": "source-176c9576f40b3236-s7",
+          "title": "Acceptance",
+          "level": 2,
+          "line": 48,
+          "endLine": 59,
+          "text": "## Acceptance\n\nOn Linux, macOS, and Windows, the CLI stream reports a bounded process CPU\nlist while retaining existing total CPU and memory readings. Rows contain a\nstable PID, display name (with a safe fallback when the OS provides none), and\nfinite CPU percentage in the documented range. The list is ordered by CPU\nusage, updates on the resource cadence, and remains empty or explicitly\nunavailable during collector warm-up. The Runtime tab visibly renders the\nprocess list and handles no-process/unavailable states. Existing disk tree\nnavigation and stream consumers continue to work unchanged. Validate with\nfocused collector/protocol coverage, lint, and desktop build; manually inspect\nthe running Runtime tab."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:43:14-07:00",
+        "commit": "5f5d4d53a148d35d003d986f240a6e87a7ea932f"
+      }
+    },
+    {
+      "id": "source-cd772afa8730c301",
+      "path": ".spec/rfc/0006-karen-disk-tree-ui-migration.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/ROADMAP.md",
+      "applicability": "unreviewed",
+      "text": "# RFC 0006: Migrate the complete Karen interface and interactions to Vue 3 (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n\n## Summary\n\nComplete the Vue 3 migration of Karen's disk space management interface and\ninteraction model. Match the source app's screen structure and navigation:\nbreadcrumb trail with sibling jumps, volume and scan controls, scan totals,\ntreemap, selection details, marks, review, and guarded removal confirmation.\nKeep Karen's established visual identity around that structure. Directory\nnavigation and returning through breadcrumbs must use the cached scan tree,\nnot start another filesystem scan.\n\n## Problem\n\nRFC 0004 requires preserving Disk Tree navigation, selection, marks,\nreview, removal and scan controls in Karen.app. The current Vue screen only\nrenders a simplified treemap. Tile clicks start new scans, the screen has no\nbreadcrumb trail, selection panel, sibling jumps, marks or review flow, and\nswitching volumes can discard the visible tree without loading the selected\nvolume. This is an incomplete migration of the already-approved product\nbehavior.\n\n## Goals\n\nReproduce the source screen hierarchy and all existing disk\nworkflow behavior in Vue 3. Preserve treemap proportions, colors and labels;\nprovide clickable breadcrumbs and sibling navigation; show selected-node\ndetails and scan totals; preserve mark, review, confirmation, removal guards,\nvolume free-space projections and scan controls. Cache completed trees in the\nCLI for the app session so descending, ascending, sibling jumps and returning\nto a previously scanned volume do not repeat the scan. Provide an explicit\nrescan action to refresh one volume's cached tree.\n\n## Non-goals\n\nChanges to file-size accounting, scan filtering semantics, deletion policy,\nresource telemetry, process monitoring, persistent cache across app restarts,\nnew disk-management capabilities, or a redesign of the established Karen\nbrand and steampunk visual identity.\n\n## Design\n\nUse the preserved GPUI implementation in `migration/gpui-reference/` as the\nbehavioral reference. Use its README\nscreen description as the layout reference. Keep the full `Node` tree, marks,\nselection, scan root and review plan in the CLI/core. Extend the CLI JSON-line\nprotocol with bounded requests and events for cached tree navigation,\nbreadcrumbs, sibling choices, selection, marks, review and removal\nconfirmation. Keep Vue as a renderer and input surface; do not move filesystem\noperations, tree ownership or deletion policy into Tauri or Vue.\n\nThe CLI retains completed per-volume trees for the lifetime of the app process.\nNavigating within a cached tree resolves paths against that tree and returns\nonly the current bounded treemap tiles, breadcrumbs, sibling list, selection\ndetails, totals and marks summary. A cache miss starts a scan. Explicit rescan\nreplaces only that volume's cached tree after successful completion; failed or\ncancelled scans leave the prior completed tree available. Tile and breadcrumb\nactions address absolute paths so tree layout sorting cannot redirect a\nselection. Vue reproduces the source screen's hierarchy: controls and trail at\ntop, totals/filter/legend above the mosaic, mosaic as the main work surface,\nand selection/mark/volume information in its side panel, followed by a\nseparate review and confirmation flow.\n\n## Acceptance\n\nCompare each Disk Tree state and interaction against the preserved source:\ninitial scan, scan progress, root mosaic, nested directory, breadcrumb\nreturn, sibling jump, volume switch, cached revisit, explicit rescan,\nselection, mark/unmark, review, cancel, confirm and removal result. Confirm\ntile navigation, breadcrumb return and cached volume revisit issue no scan\nrequest. Confirm cache miss scans once and failed/cancelled rescan preserves\nthe prior tree. Confirm Vue receives bounded view payloads rather than a\nserialized full tree. Preserve core removal guards and free-space attribution.\nRun focused CLI/protocol and desktop coverage, Rust lint/build and desktop\nbuild; manually inspect the running app against the source screen at normal\nand large viewport sizes. Validate RFC 0004 and RFC 0006 consistency after\nimplementation.",
+      "sections": [
+        {
+          "id": "source-cd772afa8730c301-s1",
+          "title": "RFC 0006: Migrate the complete Karen interface and interactions to Vue 3 (child of 0001)",
+          "level": 1,
+          "line": 1,
+          "endLine": 6,
+          "text": "# RFC 0006: Migrate the complete Karen interface and interactions to Vue 3 (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n"
+        },
+        {
+          "id": "source-cd772afa8730c301-s2",
+          "title": "Summary",
+          "level": 2,
+          "line": 7,
+          "endLine": 16,
+          "text": "## Summary\n\nComplete the Vue 3 migration of Karen's disk space management interface and\ninteraction model. Match the source app's screen structure and navigation:\nbreadcrumb trail with sibling jumps, volume and scan controls, scan totals,\ntreemap, selection details, marks, review, and guarded removal confirmation.\nKeep Karen's established visual identity around that structure. Directory\nnavigation and returning through breadcrumbs must use the cached scan tree,\nnot start another filesystem scan.\n"
+        },
+        {
+          "id": "source-cd772afa8730c301-s3",
+          "title": "Problem",
+          "level": 2,
+          "line": 17,
+          "endLine": 26,
+          "text": "## Problem\n\nRFC 0004 requires preserving Disk Tree navigation, selection, marks,\nreview, removal and scan controls in Karen.app. The current Vue screen only\nrenders a simplified treemap. Tile clicks start new scans, the screen has no\nbreadcrumb trail, selection panel, sibling jumps, marks or review flow, and\nswitching volumes can discard the visible tree without loading the selected\nvolume. This is an incomplete migration of the already-approved product\nbehavior.\n"
+        },
+        {
+          "id": "source-cd772afa8730c301-s4",
+          "title": "Goals",
+          "level": 2,
+          "line": 27,
+          "endLine": 37,
+          "text": "## Goals\n\nReproduce the source screen hierarchy and all existing disk\nworkflow behavior in Vue 3. Preserve treemap proportions, colors and labels;\nprovide clickable breadcrumbs and sibling navigation; show selected-node\ndetails and scan totals; preserve mark, review, confirmation, removal guards,\nvolume free-space projections and scan controls. Cache completed trees in the\nCLI for the app session so descending, ascending, sibling jumps and returning\nto a previously scanned volume do not repeat the scan. Provide an explicit\nrescan action to refresh one volume's cached tree.\n"
+        },
+        {
+          "id": "source-cd772afa8730c301-s5",
+          "title": "Non-goals",
+          "level": 2,
+          "line": 38,
+          "endLine": 44,
+          "text": "## Non-goals\n\nChanges to file-size accounting, scan filtering semantics, deletion policy,\nresource telemetry, process monitoring, persistent cache across app restarts,\nnew disk-management capabilities, or a redesign of the established Karen\nbrand and steampunk visual identity.\n"
+        },
+        {
+          "id": "source-cd772afa8730c301-s6",
+          "title": "Design",
+          "level": 2,
+          "line": 45,
+          "endLine": 67,
+          "text": "## Design\n\nUse the preserved GPUI implementation in `migration/gpui-reference/` as the\nbehavioral reference. Use its README\nscreen description as the layout reference. Keep the full `Node` tree, marks,\nselection, scan root and review plan in the CLI/core. Extend the CLI JSON-line\nprotocol with bounded requests and events for cached tree navigation,\nbreadcrumbs, sibling choices, selection, marks, review and removal\nconfirmation. Keep Vue as a renderer and input surface; do not move filesystem\noperations, tree ownership or deletion policy into Tauri or Vue.\n\nThe CLI retains completed per-volume trees for the lifetime of the app process.\nNavigating within a cached tree resolves paths against that tree and returns\nonly the current bounded treemap tiles, breadcrumbs, sibling list, selection\ndetails, totals and marks summary. A cache miss starts a scan. Explicit rescan\nreplaces only that volume's cached tree after successful completion; failed or\ncancelled scans leave the prior completed tree available. Tile and breadcrumb\nactions address absolute paths so tree layout sorting cannot redirect a\nselection. Vue reproduces the source screen's hierarchy: controls and trail at\ntop, totals/filter/legend above the mosaic, mosaic as the main work surface,\nand selection/mark/volume information in its side panel, followed by a\nseparate review and confirmation flow.\n"
+        },
+        {
+          "id": "source-cd772afa8730c301-s7",
+          "title": "Acceptance",
+          "level": 2,
+          "line": 68,
+          "endLine": 81,
+          "text": "## Acceptance\n\nCompare each Disk Tree state and interaction against the preserved source:\ninitial scan, scan progress, root mosaic, nested directory, breadcrumb\nreturn, sibling jump, volume switch, cached revisit, explicit rescan,\nselection, mark/unmark, review, cancel, confirm and removal result. Confirm\ntile navigation, breadcrumb return and cached volume revisit issue no scan\nrequest. Confirm cache miss scans once and failed/cancelled rescan preserves\nthe prior tree. Confirm Vue receives bounded view payloads rather than a\nserialized full tree. Preserve core removal guards and free-space attribution.\nRun focused CLI/protocol and desktop coverage, Rust lint/build and desktop\nbuild; manually inspect the running app against the source screen at normal\nand large viewport sizes. Validate RFC 0004 and RFC 0006 consistency after\nimplementation."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:43:14-07:00",
+        "commit": "5f5d4d53a148d35d003d986f240a6e87a7ea932f"
+      }
+    },
+    {
+      "id": "source-8261097cd58664b1",
+      "path": ".spec/rfc/0007-usable-system-monitor-experience.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/ROADMAP.md",
+      "applicability": "unreviewed",
+      "text": "# RFC 0007: Make Karen a usable live system monitor (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n\n## Summary\n\nRedesign Karen's monitoring views as a usable live system monitor with a\nhighly visual Runtime instrument panel and dedicated CPU, Memory and Disk Tree\ndetail tabs. Runtime visualizes every supported resource together; a compact\nreadout table may support exact values but must not dominate the screen. CPU\ndetail shows per-process CPU usage; Memory detail shows per-process memory\nusage; Disk Tree shows the original Karen space view specified by RFC 0006.\nRuntime disk instruments open the corresponding Disk Tree/space view. Do not\nadd a separate Volumes tab. The interface must feel richly luxurious and\nornamented, not clean or minimal.\n\n## Problem\n\nThe current desktop is too clean and presents resource readings as sparse\ndashboard cards. It lacks the visual richness and instrument-like hierarchy\nneeded for a luxurious steampunk monitor, while also failing to make\nper-process CPU/memory usage and disk space legible. Disk information needs a\ndirect route into the dedicated space treemap.\n\n## Goals\n\nMake all resources Karen currently supports legible, visual and actionable at\na glance. Runtime shows CPU utilization, physical-memory usage, and every\nmounted disk/volume's used and available space together. CPU and memory\ninstruments include concise process-usage summaries; their detail tabs show\nthe full bounded process lists. Pair gauges, live traces, segmented capacity\nrings/bars, engraved scales and luminous state indicators with exact numeric\nreadouts. Disk instruments are clickable and open the matching Disk Tree/space\nview. Disk Tree remains a dedicated view. The app opens on Runtime and does\nnot start a filesystem scan until the user opens Disk Tree.\n\n## Non-goals\n\nProcess CPU collection and stream schema (RFC 0005), Disk Tree behavior and\ncached navigation (RFC 0006), process memory collection/schema (RFC 0008),\ndisk I/O throughput, network telemetry, alerts, historical recording, remote\nmonitoring, new sampling backends, and changes to deletion or filesystem\npolicies.\n\n## Design\n\nRestructure `apps/desktop/src/App.vue` into Runtime, CPU, Memory and Disk Tree\nviews and update `apps/desktop/src/style.css` to create a dense, richly\nornamented instrument console. Runtime is the default visual monitor panel\nand contains every supported resource: CPU, physical memory and each mounted\ndisk/volume. Show CPU load as a mechanical dial/gauge with a live trace;\nmemory as a capacity instrument with used/available portions; each mounted\ndisk as an engraved capacity meter or ring with free-space reading and a click\ntarget into Disk Tree. Include concise CPU-process and memory-process usage\nsummaries, with full bounded lists in their respective detail tabs. Add a\ncompact exact-value ledger as supporting detail, never as the dominant visual.\nUse layered brass/copper frames, engraved ticks,\nfiligree corners, inset enamel panels, warm specular highlights, and selective\nindicator glow. Preserve readable typography and clear visual hierarchy; do\nnot simplify the visual treatment into generic flat cards, large whitespace,\nor a plain table. CPU detail includes a bounded per-process CPU table supplied\nby RFC 0005. Memory detail includes system totals/availability and a bounded\nper-process memory table supplied by RFC 0008. Disk Tree owns its dedicated\nlayout and controls from RFC 0006. Do not create a separate Volumes tab.\n\nUse CLI stream data only; Vue formats and displays it. Keep existing\nthree-second sample cadence unless RFC 0003 or RFC 0005 implementation\nconstraints require a documented adjustment. Preserve the custom title bar,\nmacOS traffic lights, tab navigation, accessibility labels and luxuriously\nornamented steampunk palette. Do not automatically launch a disk scan from\nRuntime or Volumes.\n\n## Acceptance\n\nOn launch, Runtime is selected and visualizes every supported resource:\nsystem CPU, physical memory, and every mounted disk/volume. Each resource has\ndistinct instrument graphics, exact readings, and concise process-usage\nsummaries where process data applies. CPU and Memory detail tabs show bounded\nper-process usage lists with stable identity and explicit unavailable states.\nDisk instruments open their matching Disk Tree/space view. Runtime visibly\nreads as a richly ornamented luxury steampunk\ninstrument panel, not a clean dashboard or table. Disk Tree retains original\nKaren behavior; no Volumes tab exists. Launching or switching monitor tabs\ndoes not start a disk scan. The window keeps custom chrome and macOS traffic\nlights. Verify live updates, empty/unavailable states, narrow and large\nwindow layouts, and keyboard-accessible tabs. Build the desktop and manually\ninspect each view; run `specify validate` after dependent RFCs 0005, 0006 and\n0008 are approved and integrated.",
+      "sections": [
+        {
+          "id": "source-8261097cd58664b1-s1",
+          "title": "RFC 0007: Make Karen a usable live system monitor (child of 0001)",
+          "level": 1,
+          "line": 1,
+          "endLine": 6,
+          "text": "# RFC 0007: Make Karen a usable live system monitor (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n"
+        },
+        {
+          "id": "source-8261097cd58664b1-s2",
+          "title": "Summary",
+          "level": 2,
+          "line": 7,
+          "endLine": 18,
+          "text": "## Summary\n\nRedesign Karen's monitoring views as a usable live system monitor with a\nhighly visual Runtime instrument panel and dedicated CPU, Memory and Disk Tree\ndetail tabs. Runtime visualizes every supported resource together; a compact\nreadout table may support exact values but must not dominate the screen. CPU\ndetail shows per-process CPU usage; Memory detail shows per-process memory\nusage; Disk Tree shows the original Karen space view specified by RFC 0006.\nRuntime disk instruments open the corresponding Disk Tree/space view. Do not\nadd a separate Volumes tab. The interface must feel richly luxurious and\nornamented, not clean or minimal.\n"
+        },
+        {
+          "id": "source-8261097cd58664b1-s3",
+          "title": "Problem",
+          "level": 2,
+          "line": 19,
+          "endLine": 26,
+          "text": "## Problem\n\nThe current desktop is too clean and presents resource readings as sparse\ndashboard cards. It lacks the visual richness and instrument-like hierarchy\nneeded for a luxurious steampunk monitor, while also failing to make\nper-process CPU/memory usage and disk space legible. Disk information needs a\ndirect route into the dedicated space treemap.\n"
+        },
+        {
+          "id": "source-8261097cd58664b1-s4",
+          "title": "Goals",
+          "level": 2,
+          "line": 27,
+          "endLine": 38,
+          "text": "## Goals\n\nMake all resources Karen currently supports legible, visual and actionable at\na glance. Runtime shows CPU utilization, physical-memory usage, and every\nmounted disk/volume's used and available space together. CPU and memory\ninstruments include concise process-usage summaries; their detail tabs show\nthe full bounded process lists. Pair gauges, live traces, segmented capacity\nrings/bars, engraved scales and luminous state indicators with exact numeric\nreadouts. Disk instruments are clickable and open the matching Disk Tree/space\nview. Disk Tree remains a dedicated view. The app opens on Runtime and does\nnot start a filesystem scan until the user opens Disk Tree.\n"
+        },
+        {
+          "id": "source-8261097cd58664b1-s5",
+          "title": "Non-goals",
+          "level": 2,
+          "line": 39,
+          "endLine": 46,
+          "text": "## Non-goals\n\nProcess CPU collection and stream schema (RFC 0005), Disk Tree behavior and\ncached navigation (RFC 0006), process memory collection/schema (RFC 0008),\ndisk I/O throughput, network telemetry, alerts, historical recording, remote\nmonitoring, new sampling backends, and changes to deletion or filesystem\npolicies.\n"
+        },
+        {
+          "id": "source-8261097cd58664b1-s6",
+          "title": "Design",
+          "level": 2,
+          "line": 47,
+          "endLine": 74,
+          "text": "## Design\n\nRestructure `apps/desktop/src/App.vue` into Runtime, CPU, Memory and Disk Tree\nviews and update `apps/desktop/src/style.css` to create a dense, richly\nornamented instrument console. Runtime is the default visual monitor panel\nand contains every supported resource: CPU, physical memory and each mounted\ndisk/volume. Show CPU load as a mechanical dial/gauge with a live trace;\nmemory as a capacity instrument with used/available portions; each mounted\ndisk as an engraved capacity meter or ring with free-space reading and a click\ntarget into Disk Tree. Include concise CPU-process and memory-process usage\nsummaries, with full bounded lists in their respective detail tabs. Add a\ncompact exact-value ledger as supporting detail, never as the dominant visual.\nUse layered brass/copper frames, engraved ticks,\nfiligree corners, inset enamel panels, warm specular highlights, and selective\nindicator glow. Preserve readable typography and clear visual hierarchy; do\nnot simplify the visual treatment into generic flat cards, large whitespace,\nor a plain table. CPU detail includes a bounded per-process CPU table supplied\nby RFC 0005. Memory detail includes system totals/availability and a bounded\nper-process memory table supplied by RFC 0008. Disk Tree owns its dedicated\nlayout and controls from RFC 0006. Do not create a separate Volumes tab.\n\nUse CLI stream data only; Vue formats and displays it. Keep existing\nthree-second sample cadence unless RFC 0003 or RFC 0005 implementation\nconstraints require a documented adjustment. Preserve the custom title bar,\nmacOS traffic lights, tab navigation, accessibility labels and luxuriously\nornamented steampunk palette. Do not automatically launch a disk scan from\nRuntime or Volumes.\n"
+        },
+        {
+          "id": "source-8261097cd58664b1-s7",
+          "title": "Acceptance",
+          "level": 2,
+          "line": 75,
+          "endLine": 90,
+          "text": "## Acceptance\n\nOn launch, Runtime is selected and visualizes every supported resource:\nsystem CPU, physical memory, and every mounted disk/volume. Each resource has\ndistinct instrument graphics, exact readings, and concise process-usage\nsummaries where process data applies. CPU and Memory detail tabs show bounded\nper-process usage lists with stable identity and explicit unavailable states.\nDisk instruments open their matching Disk Tree/space view. Runtime visibly\nreads as a richly ornamented luxury steampunk\ninstrument panel, not a clean dashboard or table. Disk Tree retains original\nKaren behavior; no Volumes tab exists. Launching or switching monitor tabs\ndoes not start a disk scan. The window keeps custom chrome and macOS traffic\nlights. Verify live updates, empty/unavailable states, narrow and large\nwindow layouts, and keyboard-accessible tabs. Build the desktop and manually\ninspect each view; run `specify validate` after dependent RFCs 0005, 0006 and\n0008 are approved and integrated."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:43:14-07:00",
+        "commit": "5f5d4d53a148d35d003d986f240a6e87a7ea932f"
+      }
+    },
+    {
+      "id": "source-f34da18b92e4671a",
+      "path": ".spec/rfc/0008-per-process-memory-usage.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/ROADMAP.md",
+      "applicability": "unreviewed",
+      "text": "# RFC 0008: Report per-process memory usage (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n\n## Summary\n\nAdd read-only per-process memory sampling to Karen's CLI monitor stream so the\nMemory tab can show which processes currently hold the most memory. Keep\ncollection in `monitor-memory`/`monitor-core` and deliver bounded process rows\nto the Vue shell, with platform-specific meaning documented.\n\n## Problem\n\nKaren currently reports only whole-machine memory totals. Users cannot tell\nwhich processes account for memory use, leaving the Memory view without the\nper-process breakdown required by the monitoring design. RFC 0003 excluded\nprocess monitoring, and RFC 0005 covers CPU process usage only.\n\n## Goals\n\nCollect each visible process's stable identifier, display name and memory\nusage. Return a bounded list ordered by descending memory use on the normal\nresource sampling interval. Define consistent unavailable, permission-limited\nand process-exit behavior across Linux, macOS and Windows. Keep total physical\nmemory readings intact.\n\n## Non-goals\n\nProcess CPU sampling (RFC 0005), process termination/control, per-process\nvirtual-memory breakdown, swap attribution, alerts, history/recording, remote\ntelemetry, privileged collection, and UI layout (RFC 0007).\n\n## Design\n\nExtend `monitor-memory`'s sampler to refresh process memory readings using the\nexisting `sysinfo` dependency and return a bounded, normalized process list\nalongside current physical-memory totals. Extend `monitor-core`'s resource\nsnapshot and the CLI `resources` event with process rows. Document the exact\nmemory metric exposed by `sysinfo` on each supported platform; do not combine\nincompatible metrics under one label. Sort descending by bytes, then PID for\nstable ties. Bound the serialized list to the top 20 processes. Exclude\nnon-finite or unavailable values, and use a safe fallback when process names\ncannot be read. Keep the Tauri shell as pass-through and leave presentation to\nRFC 0007.\n\n`Process::memory()` reports resident set size on Linux and macOS (Linux\nresident pages from `/proc`, macOS `pti_resident_size`) and working set size\non Windows (`WorkingSetSize`). The UI labels this value `RSS / WORKING SET`;\nit is physical resident memory, not virtual size or a sum that can be compared\ndirectly with system-wide used memory. `sysinfo` exposes this as an unsigned\nbyte count and uses zero when a platform query fails; omit zero-valued rows so\nan inaccessible process is not shown as a measured zero. The list remains\nbest-effort and unprivileged: inaccessible processes may be absent.\n\n## Acceptance\n\nOn Linux, macOS and Windows, the CLI resource event returns at most 20\nprocesses, each with stable PID, display name and non-negative memory bytes,\nordered by memory descending with deterministic ties. Existing total memory\nfields and resource cadence remain compatible. Permission-denied, warm-up,\nprocess-exit and unavailable readings do not crash sampling or mislabel\nunknown data. Focused sampler/protocol coverage, Rust lint/build and manual\nstream inspection pass. The Memory tab integration is verified under RFC\n0007 after both RFCs are approved.",
+      "sections": [
+        {
+          "id": "source-f34da18b92e4671a-s1",
+          "title": "RFC 0008: Report per-process memory usage (child of 0001)",
+          "level": 1,
+          "line": 1,
+          "endLine": 6,
+          "text": "# RFC 0008: Report per-process memory usage (child of 0001)\n\n**Status:** Approved\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n"
+        },
+        {
+          "id": "source-f34da18b92e4671a-s2",
+          "title": "Summary",
+          "level": 2,
+          "line": 7,
+          "endLine": 13,
+          "text": "## Summary\n\nAdd read-only per-process memory sampling to Karen's CLI monitor stream so the\nMemory tab can show which processes currently hold the most memory. Keep\ncollection in `monitor-memory`/`monitor-core` and deliver bounded process rows\nto the Vue shell, with platform-specific meaning documented.\n"
+        },
+        {
+          "id": "source-f34da18b92e4671a-s3",
+          "title": "Problem",
+          "level": 2,
+          "line": 14,
+          "endLine": 20,
+          "text": "## Problem\n\nKaren currently reports only whole-machine memory totals. Users cannot tell\nwhich processes account for memory use, leaving the Memory view without the\nper-process breakdown required by the monitoring design. RFC 0003 excluded\nprocess monitoring, and RFC 0005 covers CPU process usage only.\n"
+        },
+        {
+          "id": "source-f34da18b92e4671a-s4",
+          "title": "Goals",
+          "level": 2,
+          "line": 21,
+          "endLine": 28,
+          "text": "## Goals\n\nCollect each visible process's stable identifier, display name and memory\nusage. Return a bounded list ordered by descending memory use on the normal\nresource sampling interval. Define consistent unavailable, permission-limited\nand process-exit behavior across Linux, macOS and Windows. Keep total physical\nmemory readings intact.\n"
+        },
+        {
+          "id": "source-f34da18b92e4671a-s5",
+          "title": "Non-goals",
+          "level": 2,
+          "line": 29,
+          "endLine": 34,
+          "text": "## Non-goals\n\nProcess CPU sampling (RFC 0005), process termination/control, per-process\nvirtual-memory breakdown, swap attribution, alerts, history/recording, remote\ntelemetry, privileged collection, and UI layout (RFC 0007).\n"
+        },
+        {
+          "id": "source-f34da18b92e4671a-s6",
+          "title": "Design",
+          "level": 2,
+          "line": 35,
+          "endLine": 56,
+          "text": "## Design\n\nExtend `monitor-memory`'s sampler to refresh process memory readings using the\nexisting `sysinfo` dependency and return a bounded, normalized process list\nalongside current physical-memory totals. Extend `monitor-core`'s resource\nsnapshot and the CLI `resources` event with process rows. Document the exact\nmemory metric exposed by `sysinfo` on each supported platform; do not combine\nincompatible metrics under one label. Sort descending by bytes, then PID for\nstable ties. Bound the serialized list to the top 20 processes. Exclude\nnon-finite or unavailable values, and use a safe fallback when process names\ncannot be read. Keep the Tauri shell as pass-through and leave presentation to\nRFC 0007.\n\n`Process::memory()` reports resident set size on Linux and macOS (Linux\nresident pages from `/proc`, macOS `pti_resident_size`) and working set size\non Windows (`WorkingSetSize`). The UI labels this value `RSS / WORKING SET`;\nit is physical resident memory, not virtual size or a sum that can be compared\ndirectly with system-wide used memory. `sysinfo` exposes this as an unsigned\nbyte count and uses zero when a platform query fails; omit zero-valued rows so\nan inaccessible process is not shown as a measured zero. The list remains\nbest-effort and unprivileged: inaccessible processes may be absent.\n"
+        },
+        {
+          "id": "source-f34da18b92e4671a-s7",
+          "title": "Acceptance",
+          "level": 2,
+          "line": 57,
+          "endLine": 66,
+          "text": "## Acceptance\n\nOn Linux, macOS and Windows, the CLI resource event returns at most 20\nprocesses, each with stable PID, display name and non-negative memory bytes,\nordered by memory descending with deterministic ties. Existing total memory\nfields and resource cadence remain compatible. Permission-denied, warm-up,\nprocess-exit and unavailable readings do not crash sampling or mislabel\nunknown data. Focused sampler/protocol coverage, Rust lint/build and manual\nstream inspection pass. The Memory tab integration is verified under RFC\n0007 after both RFCs are approved."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:43:14-07:00",
+        "commit": "5f5d4d53a148d35d003d986f240a6e87a7ea932f"
+      }
+    },
+    {
+      "id": "source-9df65130de2a0cb0",
+      "path": ".spec/rfc/0009-disktree-ui-parity.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/ROADMAP.md",
+      "applicability": "unreviewed",
+      "text": "# RFC 0009: Restore Disktree UI feature parity in Karen (child of 0001)\n\n**Status:** Draft\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n\n## Summary\n\nDefine the complete Disk Tree screen and interaction contract for Karen.app,\nusing the preserved GPUI implementation and Disktree v0.10.1 as references.\nThis RFC closes the detail left open by RFC 0006: Karen must retain the actual\nDisktree workflow and screen structure while rendering it in Vue 3 and Karen's\nluxury steampunk visual language. It covers Explore, Review, Running and Done\nstates, their controls, pointer and keyboard behavior, and acceptance evidence.\n\n## Problem\n\nRFC 0006 correctly requires the source hierarchy, cached tree navigation,\nselection, marks and guarded removal, but describes those requirements at a\nhigh level. That left room for a new dashboard-like layout and incomplete\ninteraction behavior. The current Disk Tree surface still lacks parts of the\nreference workflow and has had treemap tiles overlap or change stacking order\non hover. A visual resemblance alone is not parity: users need the same\nnavigation, scanning, inspection and safe-removal loop.\n\n## Goals\n\n1. Port the user-visible Disk Tree features in pinned upstream Disktree\n   v0.10.1. Use Karen's archived GPUI implementation to understand the Vue\n   migration, not as authority to silently add controls absent upstream.\n2. Preserve RFC 0006's CLI ownership, bounded view payloads, per-session tree\n   cache, absolute-path identity, explicit rescan and removal safeguards.\n3. Preserve Karen's custom title bar, traffic lights and established luxury\n   steampunk palette without changing Disktree's information hierarchy or\n   interaction semantics.\n4. Make tile geometry stable: hover, selection and mark feedback never reorder\n   tiles, promote a tile, alter DOM stacking, or cover neighboring tiles.\n\n## Non-goals\n\n1. Changes to scan accounting, filters' core semantics, caching policy,\n   deletion guards, free-space attribution, or CLI protocol ownership; RFC\n   0006 owns those decisions.\n2. Runtime CPU, memory or other resource-monitor tabs; RFCs 0003, 0007 and\n   0008 own those screens.\n3. New disk-cleaning features absent from the reference, or a new page/card\n   dashboard that replaces the treemap workflow.\n4. Reintroducing Disktree as a separate product, executable or app identity.\n\n## Design\n\n### Reference and ownership\n\nThe product baseline is upstream Disktree tag `v0.10.1`, commit\n`747cb77766b5254827e09782f083bcf42fa07249`. Relevant source: `README.md`,\n`crates/disktree-app/src/views.rs`, `state.rs`, `treemap_view.rs`, and\n`crates/disktree-core/src/treemap.rs` and `removal.rs`. The pinned README is\n[here](https://github.com/tobi/disktree/blob/v0.10.1/README.md). Karen's\n`migration/gpui-reference/` is the porting reference; its extra scan-efficiency\ncontrol and right-click reveal are Karen-specific extensions, absent from this\nupstream version, and are not requirements of this parity RFC. RFC 0006 remains\nauthoritative for scan/cache/protocol and deletion safety. Where this RFC is\nmore specific about screen behavior, it adds requirements to RFC 0006 without\nchanging its core semantics.\n\nCLI/core owns the scan tree, paths, scan progress, marks, selection identity,\nhistory, review plan and removal state. Vue renders bounded snapshots and\nsends user intent through the existing stream protocol. Vue must not duplicate\nfilesystem work, derive destructive plans, or address a tile by its current\narray index. Actions identify absolute paths; visual tree position is only a\nlayout result.\n\n### Explore screen composition\n\nThe Disk Tree tab is a working disk-space explorer, not a landing page. Its\ncontent order is:\n\n1. **Top bar.** Show Karen identity, absolute breadcrumb trail, then\n   back/forward history, Size / Files / Age view choices, Hidden files,\n   Apparent size and depth stepper. Do not add the archived Karen-only\n   scan-efficiency control to claim Disktree parity. Breadcrumbs remain visible at\n   every tree depth. Long trails collapse middle segments while retaining root\n   and current directory. Each in-tree crumb opens that ancestor from the\n   cached tree. Its sibling picker lists sibling directories by selected metric\n   with size/share information and direct-jump behavior. Choosing an ancestor\n   above the current scan root widens the scan root per existing source\n   behavior; it does not reinterpret a relative crumb.\n2. **Totals and legend.** Show scanned bytes, file and directory counts,\n   unreadable-entry count when nonzero, active name filter, and current color\n   legend. Kind mode identifies Code, Agent scratch, Toolchains, Synced, Git,\n   Media, Documents, Cache and Other. Age mode replaces that legend with age\n   buckets. Reclaimable hatching remains independently visible in both modes.\n3. **Treemap work surface.** One canvas-like rendering surface dominates the\n   available width. Squarified tile area represents the selected metric;\n   nesting shows directory structure. Top-level directories have a clear\n   name/header band; deeper labels clip inside their own tile. Depth control\n   sets the number of visible levels. The view panel does not become a grid of\n   independent cards.\n4. **Resizable inspection panel.** Place selection details, Worth a look,\n   marks and current-volume capacity beside the treemap. Drag its left edge to\n   resize; double-click the edge restores default width. At narrow widths,\n   constrain or hide the panel before squeezing the mosaic into unusable tiles.\n5. **Status/key bar.** Keep scan state, current volume and the context-relevant\n   keyboard hints visible without covering the mosaic.\n\nThe toolbar and custom title bar are part of Karen.app. Keep the macOS traffic\nlights. Do not restore a native/default title bar or browser-native select.\n\n### Treemap appearance and behavior\n\nThe mosaic is a single stable layout. Each tile has a fixed rectangle and\npaint order for a given tree, metric, depth and viewport. Category determines\nhue; nesting depth adjusts fill lightness. Age mode uses recency colors.\nReclaimable content gets a hatch overlay independent of hue. Filter matches\nretain full color; non-matching tiles recede while ancestor tiles remain\nreadable. Unreadable entries have a warning marker. Marked paths use the marked\nfill/border and marked descendants show that they are covered by the parent.\n\nSelection uses an outline. Hover uses a separate outline and a pointer-following\ntooltip containing name, size, category and reclaimability when applicable.\nTooltip stays within the window and never changes tile geometry. Hover and\nselection must not change z-order, DOM order, paint order, or tile position;\nthere is no “bring hovered node to front” behavior. These rules are explicit\nregressions guards because overlapping tiles make sizes and labels unreadable.\n\nFiltering is incremental by name. While editing, only matching tiles keep full\ncolor and their containing directories remain subdued. Enter applies the\nfiltered result; Escape clears the filter before it performs any other Explore\naction. Rescanning is explicit except when the user changes scan options such\nas Hidden files or Apparent size, which restart the current scan as in the\nsource.\n\n### Selection panel contents\n\nWith a tile selected, show its absolute/relative path, name, size, share of the\nscan root, files, last write, kind, reclaimability reason and unreadable/mark\ncoverage state when known. Show Git working-tree details for recognized Git\ncheckouts when available. “Worth a look” lists a bounded set of large or\nreclaimable candidates with reason and relative-size bars; choosing one selects\nand reveals that path in the treemap. Marks section shows marked paths, nested\nor covered counts, sizes, remove controls, and an affordance to open Review.\nVolume section shows device/mount identity, used/free/total values, projected\nspace after eligible marks, and the volume-switch affordance. Projection must\nfollow RFC 0006 attribution; a mark on another mounted volume must not inflate\nthe current volume's projected free space.\n\n### Pointer and keyboard contract\n\nAll controls must return focus to the treemap after activation unless a dialog,\nmenu or text filter explicitly owns input. When a menu is open, its arrows,\nEnter and Escape are consumed by that menu; the underlying tree must not act.\nThe action target is the tile under the pointer if the pointer moved most\nrecently, otherwise the keyboard selection. Keyboard actions that operate on a\ntile adopt that pointer target as the selection first.\n\n| Input | Required behavior |\n| --- | --- |\n| Click tile | Select tile; clicking the already selected directory opens it. |\n| Double-click tile | Select and open directory. |\n| Ctrl/Cmd-click or middle-click | Toggle mark without moving selection. |\n| Right-click tile | No Disk Tree action is defined by upstream v0.10.1. Do not add one as part of parity. |\n| Hover tile | Show tooltip and hover outline only; never reorder or raise tile. |\n| Enter | Open selected/pointed directory at any depth. |\n| Space or `x` | Toggle mark on selected/pointed tile. |\n| Arrow keys or `h/j/k/l` | Move selection geometrically among tiles at current level; at an edge, move to parent. |\n| Tab / Shift-Tab | Move to next / previous sibling. |\n| Backspace or `u` | Go to parent directory. |\n| Escape | Clear active filter first; otherwise clear selection or go up one level. |\n| Scroll | Zoom toward pointer; at the source-defined threshold, descend into directory under pointer. Reverse zoom walks back out. |\n| Shift-scroll | Pan the magnified view. |\n| `-`, `=`, `+`, `0` | Shrink, magnify, or reset treemap view. |\n| `[` / `]` | Show fewer / more tree levels. |\n| Cmd/Ctrl `+`, `-`, `0` | Change interface zoom, not treemap zoom. |\n| Alt-Left/Right; Cmd-[ / Cmd-] on macOS; mouse side buttons | Navigate Explore history back / forward. |\n| `/` or `s` | Open incremental name filter. |\n| `t` | Cycle Size, Files and Age display modes. |\n| `d` / `i` | Toggle Apparent size / Hidden files and rescan current root. |\n| `r` | Explicitly rescan current root. |\n| `v` | Open custom volume picker; choose a volume and use cached tree if available. |\n| Cmd/Ctrl-O | Choose a directory to scan. |\n| `g` | Widen to whole disk; clicking an ancestor crumb above scan root also widens. |\n| `p` | Toggle selection/status line. |\n| `o` | Reveal action target in system file manager. |\n| `c` | Open Review when at least one path is marked. |\n| `?` | Open keyboard help overlay. |\n| `q` | Quit app, subject to platform menu conventions. |\n\nThe help overlay must document actual bindings and platform modifiers, not a\nsecond invented keymap. The volume picker and breadcrumb sibling picker are\ncustom themed popovers/dialogs with visible keyboard highlight, path and device\ndetails; they must not use native HTML `<select>` controls.\n\n### Review, removal and completion\n\nReview is a separate full-screen state, not a panel hidden below the mosaic.\nList every marked path with size and full path, including nested/covered and\nblocked status; if presentation has a display cap, state the omitted count and\nkeep the actual plan complete. Explain Trash versus permanent deletion and\nwhich backends are available. Show marked bytes, actionable bytes, nested and\nblocked counts, and projected free space on the measured volume. A blocked\nentry must include its reason. Provide Back, clear marks, save path list, copy\nagent prompt, removal-mode selection, and commit controls.\n\nTrash is the reversible default when supported. Permanent deletion always\nopens explicit confirmation naming affected paths and total bytes. Marking is\nnever destructive. During removal, show progress and allow Escape to stop after\nthe current item where the core supports it. Done state reports actual\ncompleted/failed items and measured free-space change, then returns to Explore\nwith a refreshed tree. Existing removal guards remain enforced in CLI/core;\nthe renderer cannot bypass them.\n\n### Layout and implementation constraints\n\nPort the source hierarchy and behavior into the existing Vue Disk Tree surface\nand CLI stream events. Keep tile painting in one canvas/SVG rendering layer or\nequivalent stable renderer; do not create independently reordered tile cards.\nIf SVG is used, render sibling rectangles in deterministic layout order and\nrender hover/selection feedback as non-layout overlays that do not participate\nin hit testing. Tooltip is a separate overlay and is the only element allowed\nto float above the mosaic. Clip labels to each tile. Never use z-index changes\nto fix hover, selection or overlap.\n\nDo not add a second tree model in Vue. Keep absolute paths as action identity,\nbound the data sent to Vue, and reuse completed in-session volume trees per RFC\n0006. Switching to a cached volume, following a breadcrumb, descending,\nascending or choosing a sibling must not issue a scan. Explicit rescan replaces\nonly that volume cache after success; failed/cancelled rescans preserve its\nlast completed tree.\n\n## Acceptance\n\n1. **Feature inventory:** Explore, Review, Running and Done states contain all\n   controls and information named in this RFC; compare each screen against the\n   archived GPUI screenshot and source. The UI retains Disktree's treemap-first\n   hierarchy and Karen's custom title bar/traffic lights.\n2. **No tile overlap/order drift:** At normal, large and narrow window sizes,\n   labels stay clipped to their own tiles and layout rectangles do not overlap\n   because of hover/selection. Repeated hover over small and large tiles never\n   changes sibling order, paint order, geometry or z-index. Tooltip remains\n   readable and inside the window.\n3. **Navigation:** Click, repeat-click, double-click, Enter, arrows, Tab,\n   breadcrumb navigation, sibling jumps, history, volume switch and ancestor\n   widening all target the same absolute paths as the source behavior.\n   Cached navigation and cached volume revisit issue no scan request.\n4. **View controls:** Size/Files/Age, Hidden files, Apparent size, depth,\n   filter, wheel zoom/descend, reverse zoom, pan and interface zoom show correct\n   state and do not steal tree focus after activation.\n5. **Pointer and marks:** Hover only changes outline/tooltip. Modifier-click\n   marks without changing selection. Keyboard mark/open actions use the\n   pointer target when pointer moved last and otherwise the selected tile.\n6. **Safe review:** Marking changes no files. Review shows full paths and\n   accurate bytes, nested/blocked state and volume-attributed projection.\n   Trash/permanent choices, permanent confirmation, cancel, save-list,\n   copy-prompt, progress, interruption and Done state preserve core guards.\n7. **Protocol and ownership:** Vue receives bounded snapshots; CLI/core remains\n   authority for tree, marks, review plan, removal and cache. All tile actions\n   use absolute paths, not layout indexes.\n8. **Evidence:** Run relevant CLI/protocol and desktop checks already defined by\n   RFC 0006, then manually inspect the live Karen.app at normal and large\n   window sizes. Attach screenshots covering root mosaic, nested directory,\n   hover tooltip, side panel, sibling picker and Review. Run `specify validate`\n   and `specify sync-check` after implementation.",
+      "sections": [
+        {
+          "id": "source-9df65130de2a0cb0-s1",
+          "title": "RFC 0009: Restore Disktree UI feature parity in Karen (child of 0001)",
+          "level": 1,
+          "line": 1,
+          "endLine": 6,
+          "text": "# RFC 0009: Restore Disktree UI feature parity in Karen (child of 0001)\n\n**Status:** Draft\n\n**Parent:** [0001](0001-karen-system-resource-app.md)\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s2",
+          "title": "Summary",
+          "level": 2,
+          "line": 7,
+          "endLine": 15,
+          "text": "## Summary\n\nDefine the complete Disk Tree screen and interaction contract for Karen.app,\nusing the preserved GPUI implementation and Disktree v0.10.1 as references.\nThis RFC closes the detail left open by RFC 0006: Karen must retain the actual\nDisktree workflow and screen structure while rendering it in Vue 3 and Karen's\nluxury steampunk visual language. It covers Explore, Review, Running and Done\nstates, their controls, pointer and keyboard behavior, and acceptance evidence.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s3",
+          "title": "Problem",
+          "level": 2,
+          "line": 16,
+          "endLine": 25,
+          "text": "## Problem\n\nRFC 0006 correctly requires the source hierarchy, cached tree navigation,\nselection, marks and guarded removal, but describes those requirements at a\nhigh level. That left room for a new dashboard-like layout and incomplete\ninteraction behavior. The current Disk Tree surface still lacks parts of the\nreference workflow and has had treemap tiles overlap or change stacking order\non hover. A visual resemblance alone is not parity: users need the same\nnavigation, scanning, inspection and safe-removal loop.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s4",
+          "title": "Goals",
+          "level": 2,
+          "line": 26,
+          "endLine": 38,
+          "text": "## Goals\n\n1. Port the user-visible Disk Tree features in pinned upstream Disktree\n   v0.10.1. Use Karen's archived GPUI implementation to understand the Vue\n   migration, not as authority to silently add controls absent upstream.\n2. Preserve RFC 0006's CLI ownership, bounded view payloads, per-session tree\n   cache, absolute-path identity, explicit rescan and removal safeguards.\n3. Preserve Karen's custom title bar, traffic lights and established luxury\n   steampunk palette without changing Disktree's information hierarchy or\n   interaction semantics.\n4. Make tile geometry stable: hover, selection and mark feedback never reorder\n   tiles, promote a tile, alter DOM stacking, or cover neighboring tiles.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s5",
+          "title": "Non-goals",
+          "level": 2,
+          "line": 39,
+          "endLine": 49,
+          "text": "## Non-goals\n\n1. Changes to scan accounting, filters' core semantics, caching policy,\n   deletion guards, free-space attribution, or CLI protocol ownership; RFC\n   0006 owns those decisions.\n2. Runtime CPU, memory or other resource-monitor tabs; RFCs 0003, 0007 and\n   0008 own those screens.\n3. New disk-cleaning features absent from the reference, or a new page/card\n   dashboard that replaces the treemap workflow.\n4. Reintroducing Disktree as a separate product, executable or app identity.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s6",
+          "title": "Design",
+          "level": 2,
+          "line": 50,
+          "endLine": 51,
+          "text": "## Design\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s7",
+          "title": "Reference and ownership",
+          "level": 3,
+          "line": 52,
+          "endLine": 72,
+          "text": "### Reference and ownership\n\nThe product baseline is upstream Disktree tag `v0.10.1`, commit\n`747cb77766b5254827e09782f083bcf42fa07249`. Relevant source: `README.md`,\n`crates/disktree-app/src/views.rs`, `state.rs`, `treemap_view.rs`, and\n`crates/disktree-core/src/treemap.rs` and `removal.rs`. The pinned README is\n[here](https://github.com/tobi/disktree/blob/v0.10.1/README.md). Karen's\n`migration/gpui-reference/` is the porting reference; its extra scan-efficiency\ncontrol and right-click reveal are Karen-specific extensions, absent from this\nupstream version, and are not requirements of this parity RFC. RFC 0006 remains\nauthoritative for scan/cache/protocol and deletion safety. Where this RFC is\nmore specific about screen behavior, it adds requirements to RFC 0006 without\nchanging its core semantics.\n\nCLI/core owns the scan tree, paths, scan progress, marks, selection identity,\nhistory, review plan and removal state. Vue renders bounded snapshots and\nsends user intent through the existing stream protocol. Vue must not duplicate\nfilesystem work, derive destructive plans, or address a tile by its current\narray index. Actions identify absolute paths; visual tree position is only a\nlayout result.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s8",
+          "title": "Explore screen composition",
+          "level": 3,
+          "line": 73,
+          "endLine": 108,
+          "text": "### Explore screen composition\n\nThe Disk Tree tab is a working disk-space explorer, not a landing page. Its\ncontent order is:\n\n1. **Top bar.** Show Karen identity, absolute breadcrumb trail, then\n   back/forward history, Size / Files / Age view choices, Hidden files,\n   Apparent size and depth stepper. Do not add the archived Karen-only\n   scan-efficiency control to claim Disktree parity. Breadcrumbs remain visible at\n   every tree depth. Long trails collapse middle segments while retaining root\n   and current directory. Each in-tree crumb opens that ancestor from the\n   cached tree. Its sibling picker lists sibling directories by selected metric\n   with size/share information and direct-jump behavior. Choosing an ancestor\n   above the current scan root widens the scan root per existing source\n   behavior; it does not reinterpret a relative crumb.\n2. **Totals and legend.** Show scanned bytes, file and directory counts,\n   unreadable-entry count when nonzero, active name filter, and current color\n   legend. Kind mode identifies Code, Agent scratch, Toolchains, Synced, Git,\n   Media, Documents, Cache and Other. Age mode replaces that legend with age\n   buckets. Reclaimable hatching remains independently visible in both modes.\n3. **Treemap work surface.** One canvas-like rendering surface dominates the\n   available width. Squarified tile area represents the selected metric;\n   nesting shows directory structure. Top-level directories have a clear\n   name/header band; deeper labels clip inside their own tile. Depth control\n   sets the number of visible levels. The view panel does not become a grid of\n   independent cards.\n4. **Resizable inspection panel.** Place selection details, Worth a look,\n   marks and current-volume capacity beside the treemap. Drag its left edge to\n   resize; double-click the edge restores default width. At narrow widths,\n   constrain or hide the panel before squeezing the mosaic into unusable tiles.\n5. **Status/key bar.** Keep scan state, current volume and the context-relevant\n   keyboard hints visible without covering the mosaic.\n\nThe toolbar and custom title bar are part of Karen.app. Keep the macOS traffic\nlights. Do not restore a native/default title bar or browser-native select.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s9",
+          "title": "Treemap appearance and behavior",
+          "level": 3,
+          "line": 109,
+          "endLine": 132,
+          "text": "### Treemap appearance and behavior\n\nThe mosaic is a single stable layout. Each tile has a fixed rectangle and\npaint order for a given tree, metric, depth and viewport. Category determines\nhue; nesting depth adjusts fill lightness. Age mode uses recency colors.\nReclaimable content gets a hatch overlay independent of hue. Filter matches\nretain full color; non-matching tiles recede while ancestor tiles remain\nreadable. Unreadable entries have a warning marker. Marked paths use the marked\nfill/border and marked descendants show that they are covered by the parent.\n\nSelection uses an outline. Hover uses a separate outline and a pointer-following\ntooltip containing name, size, category and reclaimability when applicable.\nTooltip stays within the window and never changes tile geometry. Hover and\nselection must not change z-order, DOM order, paint order, or tile position;\nthere is no “bring hovered node to front” behavior. These rules are explicit\nregressions guards because overlapping tiles make sizes and labels unreadable.\n\nFiltering is incremental by name. While editing, only matching tiles keep full\ncolor and their containing directories remain subdued. Enter applies the\nfiltered result; Escape clears the filter before it performs any other Explore\naction. Rescanning is explicit except when the user changes scan options such\nas Hidden files or Apparent size, which restart the current scan as in the\nsource.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s10",
+          "title": "Selection panel contents",
+          "level": 3,
+          "line": 133,
+          "endLine": 146,
+          "text": "### Selection panel contents\n\nWith a tile selected, show its absolute/relative path, name, size, share of the\nscan root, files, last write, kind, reclaimability reason and unreadable/mark\ncoverage state when known. Show Git working-tree details for recognized Git\ncheckouts when available. “Worth a look” lists a bounded set of large or\nreclaimable candidates with reason and relative-size bars; choosing one selects\nand reveals that path in the treemap. Marks section shows marked paths, nested\nor covered counts, sizes, remove controls, and an affordance to open Review.\nVolume section shows device/mount identity, used/free/total values, projected\nspace after eligible marks, and the volume-switch affordance. Projection must\nfollow RFC 0006 attribution; a mark on another mounted volume must not inflate\nthe current volume's projected free space.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s11",
+          "title": "Pointer and keyboard contract",
+          "level": 3,
+          "line": 147,
+          "endLine": 192,
+          "text": "### Pointer and keyboard contract\n\nAll controls must return focus to the treemap after activation unless a dialog,\nmenu or text filter explicitly owns input. When a menu is open, its arrows,\nEnter and Escape are consumed by that menu; the underlying tree must not act.\nThe action target is the tile under the pointer if the pointer moved most\nrecently, otherwise the keyboard selection. Keyboard actions that operate on a\ntile adopt that pointer target as the selection first.\n\n| Input | Required behavior |\n| --- | --- |\n| Click tile | Select tile; clicking the already selected directory opens it. |\n| Double-click tile | Select and open directory. |\n| Ctrl/Cmd-click or middle-click | Toggle mark without moving selection. |\n| Right-click tile | No Disk Tree action is defined by upstream v0.10.1. Do not add one as part of parity. |\n| Hover tile | Show tooltip and hover outline only; never reorder or raise tile. |\n| Enter | Open selected/pointed directory at any depth. |\n| Space or `x` | Toggle mark on selected/pointed tile. |\n| Arrow keys or `h/j/k/l` | Move selection geometrically among tiles at current level; at an edge, move to parent. |\n| Tab / Shift-Tab | Move to next / previous sibling. |\n| Backspace or `u` | Go to parent directory. |\n| Escape | Clear active filter first; otherwise clear selection or go up one level. |\n| Scroll | Zoom toward pointer; at the source-defined threshold, descend into directory under pointer. Reverse zoom walks back out. |\n| Shift-scroll | Pan the magnified view. |\n| `-`, `=`, `+`, `0` | Shrink, magnify, or reset treemap view. |\n| `[` / `]` | Show fewer / more tree levels. |\n| Cmd/Ctrl `+`, `-`, `0` | Change interface zoom, not treemap zoom. |\n| Alt-Left/Right; Cmd-[ / Cmd-] on macOS; mouse side buttons | Navigate Explore history back / forward. |\n| `/` or `s` | Open incremental name filter. |\n| `t` | Cycle Size, Files and Age display modes. |\n| `d` / `i` | Toggle Apparent size / Hidden files and rescan current root. |\n| `r` | Explicitly rescan current root. |\n| `v` | Open custom volume picker; choose a volume and use cached tree if available. |\n| Cmd/Ctrl-O | Choose a directory to scan. |\n| `g` | Widen to whole disk; clicking an ancestor crumb above scan root also widens. |\n| `p` | Toggle selection/status line. |\n| `o` | Reveal action target in system file manager. |\n| `c` | Open Review when at least one path is marked. |\n| `?` | Open keyboard help overlay. |\n| `q` | Quit app, subject to platform menu conventions. |\n\nThe help overlay must document actual bindings and platform modifiers, not a\nsecond invented keymap. The volume picker and breadcrumb sibling picker are\ncustom themed popovers/dialogs with visible keyboard highlight, path and device\ndetails; they must not use native HTML `<select>` controls.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s12",
+          "title": "Review, removal and completion",
+          "level": 3,
+          "line": 193,
+          "endLine": 211,
+          "text": "### Review, removal and completion\n\nReview is a separate full-screen state, not a panel hidden below the mosaic.\nList every marked path with size and full path, including nested/covered and\nblocked status; if presentation has a display cap, state the omitted count and\nkeep the actual plan complete. Explain Trash versus permanent deletion and\nwhich backends are available. Show marked bytes, actionable bytes, nested and\nblocked counts, and projected free space on the measured volume. A blocked\nentry must include its reason. Provide Back, clear marks, save path list, copy\nagent prompt, removal-mode selection, and commit controls.\n\nTrash is the reversible default when supported. Permanent deletion always\nopens explicit confirmation naming affected paths and total bytes. Marking is\nnever destructive. During removal, show progress and allow Escape to stop after\nthe current item where the core supports it. Done state reports actual\ncompleted/failed items and measured free-space change, then returns to Explore\nwith a refreshed tree. Existing removal guards remain enforced in CLI/core;\nthe renderer cannot bypass them.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s13",
+          "title": "Layout and implementation constraints",
+          "level": 3,
+          "line": 212,
+          "endLine": 229,
+          "text": "### Layout and implementation constraints\n\nPort the source hierarchy and behavior into the existing Vue Disk Tree surface\nand CLI stream events. Keep tile painting in one canvas/SVG rendering layer or\nequivalent stable renderer; do not create independently reordered tile cards.\nIf SVG is used, render sibling rectangles in deterministic layout order and\nrender hover/selection feedback as non-layout overlays that do not participate\nin hit testing. Tooltip is a separate overlay and is the only element allowed\nto float above the mosaic. Clip labels to each tile. Never use z-index changes\nto fix hover, selection or overlap.\n\nDo not add a second tree model in Vue. Keep absolute paths as action identity,\nbound the data sent to Vue, and reuse completed in-session volume trees per RFC\n0006. Switching to a cached volume, following a breadcrumb, descending,\nascending or choosing a sibling must not issue a scan. Explicit rescan replaces\nonly that volume cache after success; failed/cancelled rescans preserve its\nlast completed tree.\n"
+        },
+        {
+          "id": "source-9df65130de2a0cb0-s14",
+          "title": "Acceptance",
+          "level": 2,
+          "line": 230,
+          "endLine": 262,
+          "text": "## Acceptance\n\n1. **Feature inventory:** Explore, Review, Running and Done states contain all\n   controls and information named in this RFC; compare each screen against the\n   archived GPUI screenshot and source. The UI retains Disktree's treemap-first\n   hierarchy and Karen's custom title bar/traffic lights.\n2. **No tile overlap/order drift:** At normal, large and narrow window sizes,\n   labels stay clipped to their own tiles and layout rectangles do not overlap\n   because of hover/selection. Repeated hover over small and large tiles never\n   changes sibling order, paint order, geometry or z-index. Tooltip remains\n   readable and inside the window.\n3. **Navigation:** Click, repeat-click, double-click, Enter, arrows, Tab,\n   breadcrumb navigation, sibling jumps, history, volume switch and ancestor\n   widening all target the same absolute paths as the source behavior.\n   Cached navigation and cached volume revisit issue no scan request.\n4. **View controls:** Size/Files/Age, Hidden files, Apparent size, depth,\n   filter, wheel zoom/descend, reverse zoom, pan and interface zoom show correct\n   state and do not steal tree focus after activation.\n5. **Pointer and marks:** Hover only changes outline/tooltip. Modifier-click\n   marks without changing selection. Keyboard mark/open actions use the\n   pointer target when pointer moved last and otherwise the selected tile.\n6. **Safe review:** Marking changes no files. Review shows full paths and\n   accurate bytes, nested/blocked state and volume-attributed projection.\n   Trash/permanent choices, permanent confirmation, cancel, save-list,\n   copy-prompt, progress, interruption and Done state preserve core guards.\n7. **Protocol and ownership:** Vue receives bounded snapshots; CLI/core remains\n   authority for tree, marks, review plan, removal and cache. All tile actions\n   use absolute paths, not layout indexes.\n8. **Evidence:** Run relevant CLI/protocol and desktop checks already defined by\n   RFC 0006, then manually inspect the live Karen.app at normal and large\n   window sizes. Attach screenshots covering root mosaic, nested directory,\n   hover tooltip, side panel, sibling picker and Review. Run `specify validate`\n   and `specify sync-check` after implementation."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 1,
+        "lastEdited": "2026-10-17T19:56:13-07:00",
+        "commit": "d32bf03b687ca1267cf6634b237ea383f8a304af"
+      }
+    },
+    {
+      "id": "source-b335630551682c19",
+      "path": "README.md",
+      "kind": "reference",
+      "scope": null,
+      "discoveredFrom": ".spec/rfc/0009-disktree-ui-parity.md",
+      "applicability": "unreviewed",
+      "text": "# Karen\n\n![Karen desktop app: the Runtime console with live CPU, memory and mounted-volume instruments](assets/screenshot.png)\n\nKaren is a cross-platform system monitor and disk-space explorer. Runtime\nshows live CPU, physical memory and mounted-volume usage. CPU and Memory tabs\nshow per-process usage. Disk Tree maps allocated file space and provides a\nreview-before-removal workflow.\n\n## Desktop\n\nRequires Rust 1.97+, Node.js 22+, and pnpm 10+.\n\n```sh\npnpm install\npnpm dev\n```\n\nRuntime opens first and does not scan files. Open **Disk Tree** to choose a\nvolume and start its first scan. Cached tree navigation does not rescan.\nMarking a path is non-destructive. Review marks and confirm before moving\nitems to Trash or deleting permanently.\n\nBuild release bundles with:\n\n```sh\npnpm tauri\n```\n\nTauri bundles the Vue interface and the matching-platform `karen` CLI sidecar.\nRust outputs, including desktop bundles and sidecar staging, live under the\nroot `target/` directory.\n\n## CLI\n\nBuild and run standalone CLI:\n\n```sh\ncargo build --release -p karen-cli\ntarget/release/karen --help\ntarget/release/karen /path/to/scan\n```\n\n`karen --stream-json` starts the versioned JSON-lines interface used by the\ndesktop app. It accepts requests on stdin, emits events on stdout and keeps\ndiagnostics on stderr. CLI owns scan state, telemetry, tree navigation, marks,\nreview and guarded removal. Tauri only manages the window and scoped sidecar.\n\n## Checks\n\n```sh\ncargo xtask lint\ncargo xtask test\npnpm --dir apps/desktop build\n```\n\nLinux desktop builds need Tauri's WebKitGTK 4.1 and GTK development libraries.\nSee [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).\n\n## Project structure\n\n- `apps/cli/` — standalone CLI and JSON-lines protocol\n- `apps/desktop/` — Tauri 2, Vue 3 and custom window chrome\n- `crates/monitor-core/` — CLI-owned resource and disk state\n- `crates/monitor-cpu/` — CPU sampling\n- `crates/monitor-memory/` — memory sampling\n- `crates/monitor-disk/` — scan, treemap, space and removal safety\n- `.agents/skills/karen-design/` — interface design rules and review checklist\n- `.impeccable/` — project visual reference\n\nRFCs live in `.spec/`. Use the Specify skill CLI for status changes and\narchiving; run `sync-check` after updates.",
+      "sections": [
+        {
+          "id": "source-b335630551682c19-s1",
+          "title": "Karen",
+          "level": 1,
+          "line": 1,
+          "endLine": 9,
+          "text": "# Karen\n\n![Karen desktop app: the Runtime console with live CPU, memory and mounted-volume instruments](assets/screenshot.png)\n\nKaren is a cross-platform system monitor and disk-space explorer. Runtime\nshows live CPU, physical memory and mounted-volume usage. CPU and Memory tabs\nshow per-process usage. Disk Tree maps allocated file space and provides a\nreview-before-removal workflow.\n"
+        },
+        {
+          "id": "source-b335630551682c19-s2",
+          "title": "Desktop",
+          "level": 2,
+          "line": 10,
+          "endLine": 33,
+          "text": "## Desktop\n\nRequires Rust 1.97+, Node.js 22+, and pnpm 10+.\n\n```sh\npnpm install\npnpm dev\n```\n\nRuntime opens first and does not scan files. Open **Disk Tree** to choose a\nvolume and start its first scan. Cached tree navigation does not rescan.\nMarking a path is non-destructive. Review marks and confirm before moving\nitems to Trash or deleting permanently.\n\nBuild release bundles with:\n\n```sh\npnpm tauri\n```\n\nTauri bundles the Vue interface and the matching-platform `karen` CLI sidecar.\nRust outputs, including desktop bundles and sidecar staging, live under the\nroot `target/` directory.\n"
+        },
+        {
+          "id": "source-b335630551682c19-s3",
+          "title": "CLI",
+          "level": 2,
+          "line": 34,
+          "endLine": 48,
+          "text": "## CLI\n\nBuild and run standalone CLI:\n\n```sh\ncargo build --release -p karen-cli\ntarget/release/karen --help\ntarget/release/karen /path/to/scan\n```\n\n`karen --stream-json` starts the versioned JSON-lines interface used by the\ndesktop app. It accepts requests on stdin, emits events on stdout and keeps\ndiagnostics on stderr. CLI owns scan state, telemetry, tree navigation, marks,\nreview and guarded removal. Tauri only manages the window and scoped sidecar.\n"
+        },
+        {
+          "id": "source-b335630551682c19-s4",
+          "title": "Checks",
+          "level": 2,
+          "line": 49,
+          "endLine": 59,
+          "text": "## Checks\n\n```sh\ncargo xtask lint\ncargo xtask test\npnpm --dir apps/desktop build\n```\n\nLinux desktop builds need Tauri's WebKitGTK 4.1 and GTK development libraries.\nSee [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/).\n"
+        },
+        {
+          "id": "source-b335630551682c19-s5",
+          "title": "Project structure",
+          "level": 2,
+          "line": 60,
+          "endLine": 72,
+          "text": "## Project structure\n\n- `apps/cli/` — standalone CLI and JSON-lines protocol\n- `apps/desktop/` — Tauri 2, Vue 3 and custom window chrome\n- `crates/monitor-core/` — CLI-owned resource and disk state\n- `crates/monitor-cpu/` — CPU sampling\n- `crates/monitor-memory/` — memory sampling\n- `crates/monitor-disk/` — scan, treemap, space and removal safety\n- `.agents/skills/karen-design/` — interface design rules and review checklist\n- `.impeccable/` — project visual reference\n\nRFCs live in `.spec/`. Use the Specify skill CLI for status changes and\narchiving; run `sync-check` after updates."
+        }
+      ],
+      "history": {
+        "complete": true,
+        "version": 31,
+        "lastEdited": "2026-10-17T20:03:24-07:00",
+        "commit": "8c3be9aa313c7db00dedb5c71e5d86c49d7c3b34"
+      }
+    }
+  ]
+}

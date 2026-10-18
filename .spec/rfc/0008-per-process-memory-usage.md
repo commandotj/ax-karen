@@ -2,7 +2,7 @@
 
 **Status:** Approved
 
-**Parent:** [0001](0001-karen-system-resource-app.md)
+**Parent:** [0001](completed/0001-karen-system-resource-app.md)
 
 ## Summary
 

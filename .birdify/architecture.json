@@ -1,0 +1,431 @@
+{
+  "schemaVersion": 1,
+  "mapId": "karen-desktop",
+  "revision": 2,
+  "project": {
+    "id": "karen",
+    "name": "Karen",
+    "revision": "8c3be9aa313c7db00dedb5c71e5d86c49d7c3b34"
+  },
+  "language": "en",
+  "modules": [
+    {
+      "id": "console-ui",
+      "role": "frontend",
+      "name": "Instrument Console UI",
+      "kind": "local",
+      "responsibility": "Vue views for Runtime, CPU, Memory and Space (explore, Review, removal progress, help); holds view state, history, filter, zoom and keyboard/pointer handling; renders CLI events.",
+      "ownership": [
+        {
+          "kind": "file",
+          "path": "apps/desktop/src/App.vue"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "apps/desktop/src/App.vue",
+          "note": "Single-file template and script for all four tabs and custom masthead.",
+          "symbol": "KarenCli"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "visual-system",
+      "role": "frontend",
+      "name": "Visual System and Chrome",
+      "kind": "local",
+      "responsibility": "Luxury steampunk tokens, fonts, enamel and brass panel materials, window chrome and responsive layout rules (Runtime fits one screen).",
+      "ownership": [
+        {
+          "kind": "file",
+          "path": "apps/desktop/src/style.css"
+        },
+        {
+          "kind": "file",
+          "path": "apps/desktop/src/main.ts"
+        },
+        {
+          "kind": "file",
+          "path": "apps/desktop/index.html"
+        },
+        {
+          "kind": "directory",
+          "path": "apps/desktop/public"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "apps/desktop/src/style.css",
+          "note": "Root tokens (--brass, --gold, --copper) and all component styles."
+        },
+        {
+          "path": "apps/desktop/src/main.ts",
+          "note": "Loads font packages and style.css."
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 0,
+        "column": 1
+      }
+    },
+    {
+      "id": "treemap-canvas",
+      "role": "frontend",
+      "name": "Treemap Canvas Painter",
+      "kind": "local",
+      "responsibility": "Draws CLI-provided tile geometry on one Canvas: fills, outlines, labels, hit testing. Holds its own category palette literals.",
+      "ownership": [
+        {
+          "kind": "file",
+          "path": "apps/desktop/src/treemap.ts"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "apps/desktop/src/treemap.ts",
+          "note": "Category colour table and paintTile; palette is hex literals, not CSS tokens.",
+          "symbol": "drawTreemap"
+        },
+        {
+          "path": "apps/desktop/src/treemap.ts",
+          "note": "Hit testing.",
+          "symbol": "tileAt"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "cli-bridge",
+      "role": "frontend",
+      "name": "CLI Stream Bridge",
+      "kind": "local",
+      "responsibility": "Spawns the karen sidecar, writes JSON-line requests, parses JSON-line events.",
+      "ownership": [
+        {
+          "kind": "file",
+          "path": "apps/desktop/src/cli.ts"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "apps/desktop/src/cli.ts",
+          "note": "Sidecar spawn, line framing.",
+          "symbol": "KarenCli"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 1,
+        "column": 2
+      }
+    },
+    {
+      "id": "tauri-shell",
+      "role": "backend",
+      "name": "Tauri Shell",
+      "kind": "local",
+      "responsibility": "Native window and scoped sidecar permission; no business logic.",
+      "ownership": [
+        {
+          "kind": "directory",
+          "path": "apps/desktop/src-tauri"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "apps/desktop/src-tauri/tauri.conf.json",
+          "note": "externalBin sidecar and window config."
+        },
+        {
+          "path": "apps/desktop/src-tauri/src/main.rs",
+          "note": "Registers the shell plugin."
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 1,
+        "column": 3
+      }
+    },
+    {
+      "id": "karen-cli",
+      "role": "backend",
+      "name": "Karen CLI Stream Protocol",
+      "kind": "local",
+      "responsibility": "Standalone CLI and --stream-json protocol; dispatches requests to core and emits events, including reveal, mark export, directory chooser and scan power presets.",
+      "ownership": [
+        {
+          "kind": "directory",
+          "path": "apps/cli"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "apps/cli/src/stream_json.rs",
+          "note": "Stream loop.",
+          "symbol": "run_stream"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 1,
+        "column": 4
+      }
+    },
+    {
+      "id": "monitor-core",
+      "role": "backend",
+      "name": "Monitor Core",
+      "kind": "local",
+      "responsibility": "CLI-owned application state: resource snapshots, disk marks, orchestration.",
+      "ownership": [
+        {
+          "kind": "directory",
+          "path": "crates/monitor-core"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "crates/monitor-core/src/lib.rs",
+          "note": "Snapshots and orchestrator.",
+          "symbol": "MonitorCore"
+        },
+        {
+          "path": "crates/monitor-core/src/disk_marks.rs",
+          "note": "Absolute-path marks.",
+          "symbol": "DiskMarks"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 1,
+        "column": 5
+      }
+    },
+    {
+      "id": "samplers",
+      "role": "backend",
+      "name": "CPU and Memory Samplers",
+      "kind": "local",
+      "responsibility": "Read-only CPU and physical memory sampling.",
+      "ownership": [
+        {
+          "kind": "directory",
+          "path": "crates/monitor-cpu"
+        },
+        {
+          "kind": "directory",
+          "path": "crates/monitor-memory"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "crates/monitor-cpu/src/lib.rs",
+          "note": "CPU sampling."
+        },
+        {
+          "path": "crates/monitor-memory/src/lib.rs",
+          "note": "Memory sampling."
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 0,
+        "column": 5
+      }
+    },
+    {
+      "id": "monitor-disk",
+      "role": "backend",
+      "name": "Disk Scan, Tree and Layout",
+      "kind": "local",
+      "responsibility": "Scan, tree aggregation, squarified layout, free space, guarded removal.",
+      "ownership": [
+        {
+          "kind": "directory",
+          "path": "crates/monitor-disk"
+        }
+      ],
+      "evidence": [
+        {
+          "path": "crates/monitor-disk/src/treemap.rs",
+          "note": "Tile geometry."
+        },
+        {
+          "path": "crates/monitor-disk/src/removal.rs",
+          "note": "Removal guards."
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "layout": {
+        "row": 2,
+        "column": 5
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "ui-bridge",
+      "from": "console-ui",
+      "to": "cli-bridge",
+      "label": "sends requests, receives events",
+      "evidence": [
+        {
+          "path": "apps/desktop/src/App.vue",
+          "note": "sends requests, receives events"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "request",
+      "visibility": "overview"
+    },
+    {
+      "id": "ui-treemap",
+      "from": "console-ui",
+      "to": "treemap-canvas",
+      "label": "asks to paint tiles",
+      "evidence": [
+        {
+          "path": "apps/desktop/src/App.vue",
+          "note": "asks to paint tiles"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "request",
+      "visibility": "overview"
+    },
+    {
+      "id": "ui-style",
+      "from": "console-ui",
+      "to": "visual-system",
+      "label": "styled by tokens and classes",
+      "evidence": [
+        {
+          "path": "apps/desktop/src/style.css",
+          "note": "styled by tokens and classes"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "dependency",
+      "visibility": "overview"
+    },
+    {
+      "id": "bridge-shell",
+      "from": "cli-bridge",
+      "to": "tauri-shell",
+      "label": "spawns sidecar via shell plugin",
+      "evidence": [
+        {
+          "path": "apps/desktop/src/cli.ts",
+          "note": "spawns sidecar via shell plugin"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "request",
+      "visibility": "overview"
+    },
+    {
+      "id": "shell-cli",
+      "from": "tauri-shell",
+      "to": "karen-cli",
+      "label": "launches karen --stream-json",
+      "evidence": [
+        {
+          "path": "apps/desktop/src-tauri/tauri.conf.json",
+          "note": "launches karen --stream-json"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "control",
+      "visibility": "overview"
+    },
+    {
+      "id": "cli-bridge-evt",
+      "from": "karen-cli",
+      "to": "cli-bridge",
+      "label": "JSON-line events over stdout",
+      "evidence": [
+        {
+          "path": "apps/cli/src/stream_json.rs",
+          "note": "JSON-line events over stdout"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "result",
+      "visibility": "detail"
+    },
+    {
+      "id": "cli-core",
+      "from": "karen-cli",
+      "to": "monitor-core",
+      "label": "dispatches commands",
+      "evidence": [
+        {
+          "path": "apps/cli/src/stream_json.rs",
+          "note": "dispatches commands"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "request",
+      "visibility": "overview"
+    },
+    {
+      "id": "core-samplers",
+      "from": "monitor-core",
+      "to": "samplers",
+      "label": "reads CPU and memory",
+      "evidence": [
+        {
+          "path": "crates/monitor-core/src/lib.rs",
+          "note": "reads CPU and memory"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "dependency",
+      "visibility": "overview"
+    },
+    {
+      "id": "core-disk",
+      "from": "monitor-core",
+      "to": "monitor-disk",
+      "label": "scans, lays out, removes",
+      "evidence": [
+        {
+          "path": "crates/monitor-core/src/lib.rs",
+          "note": "scans, lays out, removes"
+        }
+      ],
+      "status": "supported",
+      "openQuestions": [],
+      "kind": "request",
+      "visibility": "overview"
+    }
+  ]
+}

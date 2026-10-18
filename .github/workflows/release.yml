@@ -110,7 +110,7 @@ jobs:
           echo "APPLE_API_KEY_PATH=$key" >> "$GITHUB_ENV"
 
       - run: pnpm install --frozen-lockfile
-      - run: cargo xtask test
+      - run: pnpm test
       - run: pnpm tauri
 
       - name: Package standalone CLI and desktop bundle

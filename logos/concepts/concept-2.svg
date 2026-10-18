@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Karen Concept 2 — Centrifugal Steam Governor</title>
+  <g id="background">
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#181510"/>
+    <rect x="28" y="28" width="456" height="456" rx="96" fill="none" stroke="#C9A24D" stroke-width="12"/>
+  </g>
+  <g id="icon">
+    <!-- Upper and lower linkage arms forming diamond negative space -->
+    <path d="M 256 144 L 136 248 L 256 336 L 376 248 Z" fill="none" stroke="#C9A24D" stroke-width="24" stroke-linejoin="round"/>
+    <!-- Central vertical spindle -->
+    <rect x="238" y="112" width="36" height="264" rx="8" fill="#EFCB70"/>
+    <!-- Top finial crown -->
+    <circle cx="256" cy="104" r="24" fill="#C9A24D"/>
+    <circle cx="256" cy="104" r="9" fill="#F0E4C6"/>
+    <!-- Twin flyball weights -->
+    <circle cx="128" cy="248" r="44" fill="#C9A24D"/>
+    <circle cx="128" cy="248" r="16" fill="#F0E4C6"/>
+    <circle cx="384" cy="248" r="44" fill="#C9A24D"/>
+    <circle cx="384" cy="248" r="16" fill="#F0E4C6"/>
+    <!-- Sliding collar and stepped pedestal base -->
+    <rect x="196" y="324" width="120" height="28" rx="10" fill="#C4703F"/>
+    <rect x="148" y="368" width="216" height="52" rx="18" fill="#C9A24D"/>
+  </g>
+</svg>

@@ -240,6 +240,206 @@ fn cached_tree_navigation_marks_and_review_stay_in_cli_without_rescan() {
     assert!(result.status.success());
 }
 
+#[test]
+fn scan_power_preset_reports_workers_and_completion_stats() {
+    let root = tempfile::tempdir().expect("create scan root");
+    fs::write(root.path().join("note.txt"), "hello").expect("create file");
+    let events = run_stream(&[
+        serde_json::json!({
+            "version": 1, "id": "scan", "command": "scan",
+            "root": root.path().to_string_lossy(), "power": "miser"
+        }),
+        serde_json::json!({"version":1,"id":"exit","command":"shutdown"}),
+    ]);
+    let started = events
+        .iter()
+        .find(|event| event["event"] == "scan_started")
+        .expect("scan_started");
+    let workers = started["workers"].as_u64().expect("workers count");
+    assert!((1..=2).contains(&workers));
+    let complete = events
+        .iter()
+        .find(|event| event["event"] == "scan_complete")
+        .expect("scan_complete");
+    assert_eq!(complete["unreadable"], 0);
+    assert!(complete["elapsed_ms"].as_u64().is_some());
+}
+
+#[test]
+fn breadcrumbs_carry_largest_first_siblings_and_selection_details() {
+    let root = tempfile::tempdir().expect("create tree root");
+    let big = root.path().join("big");
+    fs::create_dir(&big).expect("create big");
+    fs::write(big.join("blob.bin"), vec![1_u8; 64 * 1024]).expect("write");
+    let small = root.path().join("small");
+    fs::create_dir(&small).expect("create small");
+    fs::write(small.join("a.txt"), "a").expect("write");
+    let root_string = root.path().to_string_lossy().into_owned();
+    let small_string = small.to_string_lossy().into_owned();
+    let events = run_stream_after_scan(
+        &root_string,
+        &[serde_json::json!({
+            "id":"view","command":"tree_view","root":root_string,
+            "path":small_string
+        })],
+    );
+    let view = events
+        .iter()
+        .find(|event| event["id"] == "view")
+        .expect("tree_view");
+    let crumbs = view["breadcrumbs"].as_array().expect("breadcrumbs");
+    assert_eq!(crumbs.len(), 2);
+    assert_eq!(crumbs[0]["siblings"], serde_json::json!([]));
+    let siblings = crumbs[1]["siblings"].as_array().expect("siblings");
+    let names: Vec<_> = siblings.iter().map(|item| &item["name"]).collect();
+    assert_eq!(names, ["big", "small"]);
+    assert!(siblings.iter().all(|item| {
+        item["path"].is_string()
+            && item["bytes"].is_u64()
+            && item["is_dir"] == true
+            && item["category"].is_string()
+    }));
+    assert_eq!(view["unreadable"], 0);
+    let selection = &view["selection"];
+    assert_eq!(selection["dirs"], 0);
+    assert!(selection["modified"].is_i64() || selection["modified"].is_null());
+    let share = selection["share"].as_f64().expect("share");
+    assert!(share > 0.0 && share < 0.5);
+    assert!(selection.get("reason").is_some());
+}
+
+#[test]
+fn export_marks_returns_paths_and_prompt_and_saves_to_downloads() {
+    let root = tempfile::tempdir().expect("create tree root");
+    let file = root.path().join("blob.bin");
+    fs::write(&file, vec![7_u8; 4096]).expect("write file");
+    let home = tempfile::tempdir().expect("create home");
+    fs::create_dir(home.path().join("Downloads")).expect("create Downloads");
+    let root_string = root.path().to_string_lossy().into_owned();
+    let file_string = file.to_string_lossy().into_owned();
+    let mut child = Command::new(env!("CARGO_BIN_EXE_karen"))
+        .arg("--stream-json")
+        .env("HOME", home.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("start Karen CLI");
+    let mut input = child.stdin.take().expect("CLI stdin");
+    let mut output = BufReader::new(child.stdout.take().expect("CLI stdout"));
+    let mut next_event = || {
+        let mut line = String::new();
+        output.read_line(&mut line).expect("read CLI event");
+        serde_json::from_str::<Value>(&line).expect("parse CLI event")
+    };
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"scan","command":"scan","root":root_string}),
+    );
+    while read_event_for(&mut next_event, "scan")["event"] != "scan_complete" {}
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"empty","command":"export_marks","root":root_string,"format":"paths","save":false}),
+    );
+    assert_eq!(read_event_for(&mut next_event, "empty")["code"], "no_marks");
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"mark","command":"toggle_mark","root":root_string,"path":file_string}),
+    );
+    assert_eq!(read_event_for(&mut next_event, "mark")["marked"], true);
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"paths","command":"export_marks","root":root_string,"format":"paths","save":false}),
+    );
+    let paths = read_event_for(&mut next_event, "paths");
+    assert_eq!(paths["event"], "marks_export");
+    assert_eq!(paths["format"], "paths");
+    assert_eq!(paths["text"], format!("{file_string}\n"));
+    assert!(paths["saved_path"].is_null());
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"prompt","command":"export_marks","root":root_string,"format":"prompt","save":true}),
+    );
+    let prompt = read_event_for(&mut next_event, "prompt");
+    assert_eq!(prompt["format"], "prompt");
+    let text = prompt["text"].as_str().expect("prompt text");
+    assert!(text.contains(&format!("- {file_string}")));
+    let saved = prompt["saved_path"].as_str().expect("saved path");
+    let saved = std::path::Path::new(saved);
+    assert!(saved.starts_with(home.path().join("Downloads")));
+    let name = saved.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    assert!(name.starts_with("karen-marks-"));
+    assert_eq!(saved.extension().and_then(|ext| ext.to_str()), Some("md"));
+    assert_eq!(fs::read_to_string(saved).expect("read saved"), text);
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"exit","command":"shutdown"}),
+    );
+    assert_eq!(read_event_for(&mut next_event, "exit")["event"], "shutdown");
+    drop(input);
+    assert!(child.wait().expect("wait for Karen CLI").success());
+}
+
+#[test]
+fn reveal_rejects_paths_outside_scanned_roots() {
+    let root = tempfile::tempdir().expect("create tree root");
+    let outside = tempfile::tempdir().expect("create outside dir");
+    let root_string = root.path().to_string_lossy().into_owned();
+    let escape = root.path().join("..").join("etc");
+    let events = run_stream_after_scan(
+        &root_string,
+        &[
+            serde_json::json!({"id":"out","command":"reveal","path":outside.path().to_string_lossy()}),
+            serde_json::json!({"id":"escape","command":"reveal","path":escape.to_string_lossy()}),
+            serde_json::json!({"id":"relative","command":"reveal","path":"relative/path"}),
+        ],
+    );
+    for id in ["out", "escape", "relative"] {
+        let event = events
+            .iter()
+            .find(|event| event["id"] == id)
+            .expect("reveal response");
+        assert_eq!(event["code"], "reveal_rejected", "{id}");
+    }
+}
+
+/// Scans `root` to completion, then sends `requests` and shuts down.
+fn run_stream_after_scan(root: &str, requests: &[Value]) -> Vec<Value> {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_karen"))
+        .arg("--stream-json")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("start Karen CLI");
+    let mut input = child.stdin.take().expect("CLI stdin");
+    let mut output = BufReader::new(child.stdout.take().expect("CLI stdout"));
+    let mut next_event = || {
+        let mut line = String::new();
+        output.read_line(&mut line).expect("read CLI event");
+        serde_json::from_str::<Value>(&line).expect("parse CLI event")
+    };
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"scan","command":"scan","root":root}),
+    );
+    while read_event_for(&mut next_event, "scan")["event"] != "scan_complete" {}
+    let mut events = Vec::new();
+    for request in requests {
+        let id = request["id"].as_str().expect("request id").to_owned();
+        send_request(&mut input, request.clone());
+        events.push(read_event_for(&mut next_event, &id));
+    }
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"exit","command":"shutdown"}),
+    );
+    read_event_for(&mut next_event, "exit");
+    drop(input);
+    assert!(child.wait().expect("wait for Karen CLI").success());
+    events
+}
+
 fn send_request(input: &mut impl Write, request: Value) {
     let mut request = request;
     request["version"] = serde_json::json!(1);
@@ -285,4 +485,119 @@ fn run_stream(requests: &[Value]) -> Vec<Value> {
         .map(|line| serde_json::from_str(line).expect("each line is JSON"))
         .collect();
     events
+}
+
+#[test]
+fn large_tree_view_stays_bounded_instead_of_serializing_every_node() {
+    let root = tempfile::tempdir().expect("create tree root");
+    let wide = root.path().join("wide");
+    fs::create_dir(&wide).expect("create wide directory");
+    for index in 0..3000 {
+        fs::write(wide.join(format!("file-{index:04}.dat")), [1_u8; 8])
+            .expect("write file");
+    }
+    for dir in 0..20 {
+        let nested = root.path().join(format!("dir-{dir:02}"));
+        fs::create_dir(&nested).expect("create nested directory");
+        for index in 0..50 {
+            fs::write(nested.join(format!("f{index}.dat")), [1_u8; 8])
+                .expect("write file");
+        }
+    }
+    let root_string = root.path().to_string_lossy().into_owned();
+
+    let events = run_stream_after_scan(
+        &root_string,
+        &[serde_json::json!({
+            "id": "view", "command": "tree_view", "root": root_string,
+            "path": root_string, "width": 1600, "height": 1000, "depth": 6
+        })],
+    );
+
+    let view = &events[0];
+    let tiles = view["tiles"].as_array().expect("tiles array");
+    assert_eq!(view["files"], 4000);
+    // Each directory keeps at most 96 children plus one Others tile, so the
+    // view grows with directories shown, never with the 4,000 files scanned.
+    let directories =
+        tiles.iter().filter(|tile| tile["is_dir"] == true).count();
+    assert!(
+        tiles.len() <= 97 * (directories + 1),
+        "{} tiles for {directories} directories",
+        tiles.len()
+    );
+    assert!(tiles.len() < 2000, "view carried {} tiles", tiles.len());
+    assert!(
+        tiles.iter().any(|tile| tile["path"].is_null()),
+        "the long tail must merge into an Others tile"
+    );
+    assert!(
+        view.to_string().len() < 600_000,
+        "event was {} bytes",
+        view.to_string().len()
+    );
+}
+
+#[test]
+fn settings_persist_to_home_config_and_a_broken_file_is_never_overwritten() {
+    let home = tempfile::tempdir().expect("temp home");
+    let config = home.path().join(".karen").join("config.toml");
+    let request = |request: Value| {
+        let mut child = Command::new(env!("CARGO_BIN_EXE_karen"))
+            .arg("--stream-json")
+            .env("HOME", home.path())
+            .env_remove("USERPROFILE")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("start Karen CLI");
+        let mut input = child.stdin.take().expect("CLI stdin");
+        let mut output =
+            BufReader::new(child.stdout.take().expect("CLI stdout"));
+        let mut next_event = || {
+            let mut line = String::new();
+            output.read_line(&mut line).expect("read CLI event");
+            serde_json::from_str::<Value>(&line).expect("parse CLI event")
+        };
+        send_request(&mut input, request);
+        let event = read_event_for(&mut next_event, "settings-request");
+        send_request(
+            &mut input,
+            serde_json::json!({"id":"exit","command":"shutdown"}),
+        );
+        read_event_for(&mut next_event, "exit");
+        drop(input);
+        assert!(child.wait().expect("wait for Karen CLI").success());
+        event
+    };
+
+    let defaults = request(
+        serde_json::json!({"id":"settings-request","command":"get_settings"}),
+    );
+    assert_eq!(
+        (defaults["power"].as_str(), defaults["ui_zoom"].as_f64()),
+        (Some("balanced"), Some(1.0))
+    );
+    assert!(
+        !config.exists(),
+        "reading settings must not create the file"
+    );
+
+    let saved = request(serde_json::json!({
+        "id":"settings-request","command":"set_settings","power":"miser","ui_zoom":1.3
+    }));
+    assert_eq!(saved["power"], "miser");
+    let text = fs::read_to_string(&config).expect("config written");
+    assert!(text.contains("miser"), "{text}");
+
+    fs::write(&config, "power = [broken").expect("hand edit");
+    let failed = request(serde_json::json!({
+        "id":"settings-request","command":"set_settings","power":"aggressive"
+    }));
+    assert_eq!(failed["code"], "settings_invalid");
+    assert_eq!(
+        fs::read_to_string(&config).expect("config kept"),
+        "power = [broken"
+    );
 }

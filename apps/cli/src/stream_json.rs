@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 use std::io::{self, BufRead, Write};
 use std::path::{Component, Path, PathBuf};
+use std::process::Command;
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use anyhow::Result;
 use monitor_core::MonitorCore;
+use monitor_core::settings::{Settings, SettingsError};
 use monitor_disk::removal::{RemovalEvent, RemovalHandle, RemovalMode};
 use monitor_disk::scan::ScanOptions;
+use monitor_disk::scan_threads::ScanThreads;
 use monitor_disk::tree::{Metric, Node};
 use monitor_disk::treemap::{self, LayoutOptions, Rect, TileKind};
 use serde_json::{Value, json};
@@ -38,10 +41,12 @@ fn run_stream(mut output: impl Write) -> Result<()> {
     let mut monitor = MonitorCore::new();
     let mut tree_cache = HashMap::new();
     let mut finding_cache = HashMap::new();
+    let mut unreadable_cache = HashMap::new();
     let mut pending_removal = None;
     let mut removal = None;
     let mut active_scan_id: Option<Value> = None;
     let mut active_scan_root: Option<PathBuf> = None;
+    let mut scan_started_at = None;
     let mut last_progress = None;
     let mut last_preview_revision = 0;
     let mut input_closed = false;
@@ -57,10 +62,12 @@ fn run_stream(mut output: impl Write) -> Result<()> {
                         &mut monitor,
                         &tree_cache,
                         &finding_cache,
+                        &unreadable_cache,
                         &mut pending_removal,
                         &mut removal,
                         &mut active_scan_id,
                         &mut active_scan_root,
+                        &mut scan_started_at,
                         &mut last_progress,
                         &mut last_preview_revision,
                     )?;
@@ -79,8 +86,10 @@ fn run_stream(mut output: impl Write) -> Result<()> {
             &mut monitor,
             &mut tree_cache,
             &mut finding_cache,
+            &mut unreadable_cache,
             &mut active_scan_id,
             &mut active_scan_root,
+            &mut scan_started_at,
             &mut last_progress,
             &mut last_preview_revision,
         )?;
@@ -102,10 +111,12 @@ fn handle_request(
     monitor: &mut MonitorCore,
     tree_cache: &HashMap<PathBuf, Node>,
     finding_cache: &HashMap<PathBuf, Vec<Value>>,
+    unreadable_cache: &HashMap<PathBuf, u64>,
     pending_removal: &mut Option<monitor_disk::removal::Plan>,
     removal: &mut Option<RemovalHandle>,
     active_scan_id: &mut Option<Value>,
     active_scan_root: &mut Option<PathBuf>,
+    scan_started_at: &mut Option<Instant>,
     last_progress: &mut Option<(u64, u64, u64, u64)>,
     last_preview_revision: &mut u64,
 ) -> Result<bool> {
@@ -145,17 +156,25 @@ fn handle_request(
             if let Some(apparent_size) = request["apparent_size"].as_bool() {
                 options.apparent_size = apparent_size;
             }
+            let workers = power_workers(request["power"].as_str());
+            options.threads = ScanThreads {
+                max_threads: workers,
+                adaptive: false,
+                system_cpu_limit: None,
+                ..ScanThreads::default()
+            };
             if !monitor.start_scan(PathBuf::from(root), options) {
                 write_event(output, &error_event(Some(id), "scan_busy"))?;
                 return Ok(false);
             }
             *active_scan_id = Some(id.clone());
             *active_scan_root = Some(PathBuf::from(root));
+            *scan_started_at = Some(Instant::now());
             *last_progress = None;
             *last_preview_revision = 0;
             write_event(
                 output,
-                &json!({"version": 1, "id": id, "event": "scan_started"}),
+                &json!({"version": 1, "id": id, "event": "scan_started", "workers": workers}),
             )?;
             Ok(false)
         }
@@ -246,6 +265,7 @@ fn handle_request(
                     node,
                     monitor.disk_marks().items(&root),
                     finding_cache.get(&root).map_or(&[], Vec::as_slice),
+                    unreadable_cache.get(&root).copied().unwrap_or(0),
                     metric,
                     depth,
                     width,
@@ -350,6 +370,153 @@ fn handle_request(
             write_event(
                 output,
                 &json!({"version":1,"id":id,"event":"removal_started","mode":mode.label()}),
+            )?;
+            Ok(false)
+        }
+        Some("reveal") => {
+            let Some(path) = request["path"].as_str().map(PathBuf::from) else {
+                write_event(output, &error_event(Some(id), "invalid_path"))?;
+                return Ok(false);
+            };
+            // Lexical check only: `..` could climb out of a root that the
+            // prefix test would otherwise accept.
+            let allowed = path.is_absolute()
+                && !path
+                    .components()
+                    .any(|component| component == Component::ParentDir)
+                && tree_cache
+                    .keys()
+                    .chain(active_scan_root.iter())
+                    .any(|root| path.starts_with(root));
+            if !allowed {
+                write_event(output, &error_event(Some(id), "reveal_rejected"))?;
+                return Ok(false);
+            }
+            match reveal(&path) {
+                Ok(()) => write_event(
+                    output,
+                    &json!({"version":1,"id":id,"event":"reveal_done","path":path}),
+                )?,
+                Err(error) => write_event(
+                    output,
+                    &json!({"version":1,"id":id,"event":"error","code":"reveal_failed","message":error.to_string()}),
+                )?,
+            }
+            Ok(false)
+        }
+        Some("export_marks") => {
+            let Some(root) = request["root"].as_str().map(PathBuf::from) else {
+                write_event(output, &error_event(Some(id), "invalid_root"))?;
+                return Ok(false);
+            };
+            let marks = monitor.disk_marks().items(&root);
+            if marks.is_empty() {
+                write_event(output, &error_event(Some(id), "no_marks"))?;
+                return Ok(false);
+            }
+            let (format, text, extension) = match request["format"].as_str() {
+                Some("paths") => {
+                    ("paths", monitor_disk::export::delete_list(marks), "txt")
+                }
+                Some("prompt") => (
+                    "prompt",
+                    monitor_disk::export::agent_prompt(
+                        marks,
+                        &root,
+                        monitor_disk::space::space_info(&root).ok(),
+                    ),
+                    "md",
+                ),
+                _ => {
+                    write_event(
+                        output,
+                        &error_event(Some(id), "invalid_format"),
+                    )?;
+                    return Ok(false);
+                }
+            };
+            let saved_path = if request["save"].as_bool().unwrap_or(false) {
+                match save_export(&text, extension) {
+                    Ok(path) => Some(path),
+                    Err(error) => {
+                        write_event(
+                            output,
+                            &json!({"version":1,"id":id,"event":"error","code":"export_failed","message":error.to_string()}),
+                        )?;
+                        return Ok(false);
+                    }
+                }
+            } else {
+                None
+            };
+            write_event(
+                output,
+                &json!({"version":1,"id":id,"event":"marks_export","format":format,"text":text,"saved_path":saved_path}),
+            )?;
+            Ok(false)
+        }
+        Some("choose_directory") => {
+            if !cfg!(target_os = "macos") {
+                write_event(output, &error_event(Some(id), "unsupported"))?;
+                return Ok(false);
+            }
+            // ponytail: blocks the stream loop while the dialog is open;
+            // move to a thread if scan progress must keep flowing meanwhile.
+            match choose_directory() {
+                Ok(path) => write_event(
+                    output,
+                    &json!({"version":1,"id":id,"event":"directory_chosen","path":path}),
+                )?,
+                Err(error) => write_event(
+                    output,
+                    &json!({"version":1,"id":id,"event":"error","code":"choose_failed","message":error.to_string()}),
+                )?,
+            }
+            Ok(false)
+        }
+        Some("open_full_disk_access") => {
+            if !cfg!(target_os = "macos") {
+                write_event(output, &error_event(Some(id), "unsupported"))?;
+                return Ok(false);
+            }
+            match run_status(Command::new("open").arg(
+                "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
+            )) {
+                Ok(()) => write_event(
+                    output,
+                    &json!({"version":1,"id":id,"event":"settings_opened"}),
+                )?,
+                Err(error) => write_event(
+                    output,
+                    &json!({"version":1,"id":id,"event":"error","code":"settings_failed","message":error.to_string()}),
+                )?,
+            }
+            Ok(false)
+        }
+        Some("get_settings") => {
+            write_settings_event(
+                output,
+                id,
+                load_settings().map(|(settings, _)| settings),
+            )?;
+            Ok(false)
+        }
+        Some("set_settings") => {
+            let result = load_settings().and_then(|(mut settings, path)| {
+                if let Some(power) = request["power"].as_str() {
+                    power.clone_into(&mut settings.power);
+                }
+                if let Some(zoom) = request["ui_zoom"].as_f64() {
+                    settings.ui_zoom = zoom;
+                }
+                settings.save(&path).map_err(SettingsError::Io)?;
+                // Re-read so the event reports what was actually stored after validation.
+                Settings::load(&path).map(|stored| (stored, path))
+            });
+            write_settings_event(
+                output,
+                id,
+                result.map(|(settings, _)| settings),
             )?;
             Ok(false)
         }
@@ -467,8 +634,10 @@ fn report_scan(
     monitor: &mut MonitorCore,
     tree_cache: &mut HashMap<PathBuf, Node>,
     finding_cache: &mut HashMap<PathBuf, Vec<Value>>,
+    unreadable_cache: &mut HashMap<PathBuf, u64>,
     active_scan_id: &mut Option<Value>,
     active_scan_root: &mut Option<PathBuf>,
+    scan_started_at: &mut Option<Instant>,
     last_progress: &mut Option<(u64, u64, u64, u64)>,
     last_preview_revision: &mut u64,
 ) -> Result<()> {
@@ -481,8 +650,14 @@ fn report_scan(
                 let root = active_scan_root
                     .take()
                     .unwrap_or_else(|| PathBuf::from("."));
-                let event = scan_complete_event(id, &root, &tree);
+                let unreadable = unreadable_count(&tree);
+                let elapsed_ms = scan_started_at
+                    .map_or(0, |started| started.elapsed().as_millis());
+                let event = scan_complete_event(
+                    id, &root, &tree, unreadable, elapsed_ms,
+                );
                 monitor.disk_marks_mut().refresh(&root, &tree);
+                unreadable_cache.insert(root.clone(), unreadable);
                 finding_cache
                     .insert(root.clone(), cached_findings(&root, &tree));
                 tree_cache.insert(root, tree);
@@ -499,6 +674,7 @@ fn report_scan(
         write_event(output, &event)?;
         *active_scan_id = None;
         *active_scan_root = None;
+        *scan_started_at = None;
         *last_progress = None;
         *last_preview_revision = 0;
         return Ok(());
@@ -544,6 +720,8 @@ fn scan_complete_event(
     id: &Value,
     root: &std::path::Path,
     tree: &Node,
+    unreadable: u64,
+    elapsed_ms: u128,
 ) -> Value {
     json!({
         "version": 1,
@@ -553,6 +731,8 @@ fn scan_complete_event(
         "files": tree.files,
         "dirs": tree.dirs,
         "bytes": tree.bytes,
+        "unreadable": unreadable,
+        "elapsed_ms": elapsed_ms,
         "tiles": tree_tiles(root, tree)
     })
 }
@@ -571,11 +751,27 @@ fn tree_view_event(
     selected_node: &Node,
     marks: &[monitor_disk::removal::Target],
     worth_a_look: &[Value],
+    unreadable: u64,
     metric: Metric,
     depth: u32,
     width: f32,
     height: f32,
 ) -> Value {
+    let path_string = path.display().to_string();
+    let reason = worth_a_look
+        .iter()
+        .find(|finding| finding["path"] == path_string.as_str())
+        .and_then(|finding| finding["reason"].as_str().map(str::to_owned))
+        .or_else(|| {
+            selected_node
+                .reclaim
+                .map(|reclaim| reclaim.label().to_owned())
+        });
+    let share = if tree.bytes == 0 {
+        0.0
+    } else {
+        selected_node.bytes as f64 / tree.bytes as f64
+    };
     let selected_crumbs =
         crumbs_for_any_path(root, tree, path).unwrap_or_default();
     let sibling_parent_crumbs = selected_crumbs
@@ -606,10 +802,11 @@ fn tree_view_event(
         "files": view_node.files,
         "dirs": view_node.dirs,
         "bytes": view_node.bytes,
-        "selection": {"name": selected_node.name, "path": path, "category": selected_node.category.label(), "bytes": selected_node.bytes, "files": selected_node.files, "is_dir": selected_node.is_dir(), "marked": marks.iter().any(|mark| mark.path == path)},
+        "selection": {"name": selected_node.name, "path": path, "category": selected_node.category.label(), "bytes": selected_node.bytes, "files": selected_node.files, "dirs": selected_node.dirs.saturating_sub(u32::from(selected_node.is_dir())), "modified": (selected_node.modified != 0).then_some(selected_node.modified), "share": share, "reason": reason, "is_dir": selected_node.is_dir(), "marked": marks.iter().any(|mark| mark.path == path)},
         "siblings": siblings,
         "marks": mark_summaries(marks),
         "worth_a_look": worth_a_look,
+        "unreadable": unreadable,
         "breadcrumbs": breadcrumbs(root, tree, crumbs),
         "metric": metric.label(),
         "depth": depth,
@@ -897,20 +1094,160 @@ fn breadcrumbs(root: &Path, tree: &Node, crumbs: &[usize]) -> Vec<Value> {
     let mut node = tree;
     let mut result = vec![json!({
         "path": path.display().to_string(),
-        "label": root.file_name().and_then(|name| name.to_str()).unwrap_or_else(|| root.to_str().unwrap_or("Volume"))
+        "label": root.file_name().and_then(|name| name.to_str()).unwrap_or_else(|| root.to_str().unwrap_or("Volume")),
+        "siblings": []
     })];
     for &index in crumbs {
         let Some(child) = node.children.get(index) else {
             break;
         };
+        let siblings = crumb_siblings(&path, node);
         path.push(&*child.name);
         node = child;
         result.push(json!({
             "path": path.display().to_string(),
-            "label": child.name.as_ref()
+            "label": child.name.as_ref(),
+            "siblings": siblings
         }));
     }
     result
+}
+
+/// The parent's children, largest first: children are ordered by the scan
+/// metric, which may be file count rather than bytes.
+fn crumb_siblings(parent_path: &Path, parent: &Node) -> Vec<Value> {
+    let mut children: Vec<&Node> = parent.children.iter().collect();
+    children.sort_by(|left, right| {
+        right
+            .bytes
+            .cmp(&left.bytes)
+            .then_with(|| left.name.cmp(&right.name))
+    });
+    children
+        .into_iter()
+        .take(24)
+        .map(|child| {
+            json!({
+                "name": child.name,
+                "path": parent_path.join(&*child.name).display().to_string(),
+                "bytes": child.bytes,
+                "is_dir": child.is_dir(),
+                "category": child.category.label()
+            })
+        })
+        .collect()
+}
+
+fn unreadable_count(node: &Node) -> u64 {
+    u64::from(node.read_error)
+        + node.children.iter().map(unreadable_count).sum::<u64>()
+}
+
+/// Fixed worker presets ported from the GPUI Power Efficiency control;
+/// unknown or missing presets fall back to balanced.
+fn power_workers(power: Option<&str>) -> usize {
+    let cpus = thread::available_parallelism().map_or(1, usize::from);
+    let workers = match power {
+        Some("miser") => 2,
+        Some("aggressive") => 8,
+        Some("drain") => cpus,
+        _ => 4,
+    };
+    workers.min(cpus)
+}
+
+fn run_status(command: &mut Command) -> io::Result<()> {
+    let status = command.status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(io::Error::other(format!("{status}")))
+    }
+}
+
+#[cfg(windows)]
+fn reveal(path: &Path) -> io::Result<()> {
+    use std::os::windows::process::CommandExt as _;
+    // Explorer parses `/select,` itself and exits non-zero even when the
+    // window opens, so pass the argument raw and only check that it started.
+    Command::new("explorer")
+        .raw_arg(format!("/select,\"{}\"", path.display()))
+        .spawn()
+        .map(drop)
+}
+
+#[cfg(not(windows))]
+fn reveal(path: &Path) -> io::Result<()> {
+    if cfg!(target_os = "macos") {
+        run_status(Command::new("open").arg("-R").arg(path))
+    } else {
+        run_status(Command::new("xdg-open").arg(path.parent().unwrap_or(path)))
+    }
+}
+
+fn save_export(text: &str, extension: &str) -> io::Result<PathBuf> {
+    let home = std::env::home_dir()
+        .ok_or_else(|| io::Error::other("no home directory"))?;
+    let seconds = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_secs());
+    let path = home
+        .join("Downloads")
+        .join(format!("karen-marks-{seconds}.{extension}"));
+    std::fs::write(&path, text)?;
+    Ok(path)
+}
+
+/// `None` when the user cancels the dialog (error -128).
+fn choose_directory() -> io::Result<Option<String>> {
+    let output = Command::new("osascript")
+        .args(["-e", "POSIX path of (choose folder)"])
+        .output()?;
+    if output.status.success() {
+        let path = String::from_utf8_lossy(&output.stdout);
+        let path = path.trim_end_matches('\n');
+        // Roots are cache keys; keep them in the slash-free form other
+        // requests use.
+        let path = if path == "/" {
+            path
+        } else {
+            path.trim_end_matches('/')
+        };
+        return Ok(Some(path.to_owned()));
+    }
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if stderr.contains("(-128)") {
+        Ok(None)
+    } else {
+        Err(io::Error::other(stderr.trim().to_owned()))
+    }
+}
+
+fn load_settings() -> Result<(Settings, PathBuf), SettingsError> {
+    let path = Settings::default_path().ok_or_else(|| {
+        SettingsError::Io(std::io::Error::other(
+            "no home directory for ~/.karen/config.toml",
+        ))
+    })?;
+    Settings::load(&path).map(|settings| (settings, path))
+}
+
+fn write_settings_event(
+    output: &mut impl Write,
+    id: &Value,
+    result: Result<Settings, SettingsError>,
+) -> Result<()> {
+    let event = match result {
+        Ok(settings) => json!({
+            "version": 1, "id": id, "event": "settings",
+            "power": settings.power, "ui_zoom": settings.ui_zoom,
+        }),
+        Err(error) => json!({
+            "version": 1, "id": id, "event": "error",
+            "code": "settings_invalid", "message": error.to_string(),
+        }),
+    };
+    write_event(output, &event)
 }
 
 fn error_event(id: Option<&Value>, code: &str) -> Value {

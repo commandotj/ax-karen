@@ -1,10 +1,10 @@
-# Karen
+# <img src="assets/icon.svg" width="32" height="32" alt="Karen brass panel-meter icon" align="top" /> Karen
 
 ![Karen desktop app: the Runtime console with live CPU, memory and mounted-volume instruments](assets/screenshot.png)
 
 Karen is a cross-platform system monitor and disk-space explorer. Runtime
 shows live CPU, physical memory and mounted-volume usage. CPU and Memory tabs
-show per-process usage. Disk Tree maps allocated file space and provides a
+show per-process usage. Space maps allocated file space and provides a
 review-before-removal workflow.
 
 ## Desktop
@@ -16,7 +16,7 @@ pnpm install
 pnpm dev
 ```
 
-Runtime opens first and does not scan files. Open **Disk Tree** to choose a
+Runtime opens first and does not scan files. Open **Space** to choose a
 volume and start its first scan. Cached tree navigation does not rescan.
 Marking a path is non-destructive. Review marks and confirm before moving
 items to Trash or deleting permanently.
@@ -49,8 +49,8 @@ review and guarded removal. Tauri only manages the window and scoped sidecar.
 ## Checks
 
 ```sh
-cargo xtask lint
-cargo xtask test
+pnpm lint
+pnpm test
 pnpm --dir apps/desktop build
 ```
 

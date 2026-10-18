@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Karen Iteration 1 — Enlarged Brass Sector Panel Meter</title>
+  <g id="background">
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#181510"/>
+    <rect x="28" y="28" width="456" height="456" rx="96" fill="none" stroke="#C9A24D" stroke-width="12"/>
+  </g>
+  <g id="icon">
+    <!-- Expanded brass panel meter housing -->
+    <rect x="60" y="84" width="392" height="344" rx="48" fill="#C9A24D"/>
+    <!-- Corner rivets -->
+    <circle cx="98" cy="122" r="12" fill="#181510"/>
+    <circle cx="414" cy="122" r="12" fill="#181510"/>
+    <circle cx="98" cy="390" r="12" fill="#181510"/>
+    <circle cx="414" cy="390" r="12" fill="#181510"/>
+    <!-- Sector dial window -->
+    <path d="M 256 336 L 104 184 A 215 215 0 0 1 408 184 Z" fill="#14181A"/>
+    <!-- Copper high-load zone -->
+    <path d="M 314 134 A 180 180 0 0 1 382 184" fill="none" stroke="#C4703F" stroke-width="16" stroke-linecap="round"/>
+    <!-- Scale ticks -->
+    <path d="M 140 198 L 164 222 M 192 156 L 208 186 M 256 140 L 256 174 M 320 156 L 304 186 M 372 198 L 348 222" stroke="#F0E4C6" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <!-- Tapered gold indicator needle -->
+    <polygon points="312,158 270,336 242,336" fill="#EFCB70"/>
+    <!-- Pivot boss -->
+    <circle cx="256" cy="336" r="34" fill="#C9A24D"/>
+    <circle cx="256" cy="336" r="14" fill="#F0E4C6"/>
+    <!-- Recessed enamel nameplate bar -->
+    <rect x="164" y="382" width="184" height="22" rx="11" fill="#181510"/>
+  </g>
+</svg>

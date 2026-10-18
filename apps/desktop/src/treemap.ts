@@ -31,19 +31,25 @@ type DrawOptions = {
   mode: "size" | "files" | "age";
   width: number;
   height: number;
+  filter?: string;
+  zoom?: { scale: number; x: number; y: number };
 };
 
 const colors: Record<string, string> = {
-  Code: "#668d78",
-  "Agent scratch": "#ba7446",
-  Toolchains: "#ad8950",
-  Synced: "#677fa0",
-  Git: "#8b6c9c",
-  Media: "#a55f57",
-  Documents: "#ad9d66",
-  Cache: "#726b4d",
-  Other: "#526357",
+  Code: "#4f9582",
+  "Agent scratch": "#c4703f",
+  Toolchains: "#b8923f",
+  Synced: "#5b7f9c",
+  Git: "#7d5f8c",
+  Media: "#9a4a3f",
+  Documents: "#b3a266",
+  Cache: "#6d6a52",
+  Other: "#4a5f5a",
 };
+
+export function categoryColor(category: string): string {
+  return colors[category] ?? colors.Other;
+}
 
 export function drawTreemap(options: DrawOptions): void {
   const { canvas, tiles, marks, width, height } = options;
@@ -55,6 +61,10 @@ export function drawTreemap(options: DrawOptions): void {
   canvas.height = Math.round(height * ratio);
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
   context.clearRect(0, 0, width, height);
+  // Zoom is a view transform only; tile geometry stays in base coordinates.
+  const zoom = options.zoom ?? { scale: 1, x: 0, y: 0 };
+  context.translate(zoom.x, zoom.y);
+  context.scale(zoom.scale, zoom.scale);
 
   for (const tile of tiles) paintTile(context, tile, options, marks);
   paintOutlines(context, tiles, options, marks);
@@ -67,13 +77,8 @@ function paintTile(
   options: DrawOptions,
   marks: { path: string }[],
 ): void {
-  const color = colorFor(tile, options.mode);
   const markFill = isMarked(tile, marks);
-  const base = markFill
-    ? mix(color, "#a55f57", 0.3)
-    : tile.depth === 0
-      ? color
-      : mix(color, "#15140f", Math.min(0.12 + tile.depth * 0.045, 0.34));
+  const base = tileBase(tile, options, markFill);
   const gradient = context.createLinearGradient(tile.x, tile.y, tile.x + tile.width, tile.y + tile.height);
   gradient.addColorStop(0, mix(base, "#e4c886", 0.13));
   gradient.addColorStop(0.45, base);
@@ -82,14 +87,34 @@ function paintTile(
   context.fillRect(tile.x, tile.y, tile.width, tile.height);
 
   if (tile.reclaimable && !markFill) paintHatch(context, tile);
+  const filter = options.filter?.trim().toLowerCase();
+  if (filter && tile.path !== null && !tile.is_dir && !tile.name.toLowerCase().includes(filter)) {
+    context.fillStyle = "#0a0c0dc4";
+    context.fillRect(tile.x, tile.y, tile.width, tile.height);
+  }
   if (tile.depth === 0 && options.mode !== "age") {
-    context.fillStyle = mix(color, "#e4c886", 0.32);
+    context.fillStyle = mix(colorFor(tile, options.mode), "#e4c886", 0.32);
     context.fillRect(tile.x, tile.y, tile.width, Math.min(2, tile.height));
   }
   if (tile.unreadable && tile.width > 12 && tile.height > 12) {
     context.fillStyle = "#e4bd68";
     context.fillRect(tile.x + tile.width - 7, tile.y + 2, 4, 4);
   }
+}
+
+// Marked tiles shift toward oxblood so they read as marked, not as another category hue.
+function tileBase(tile: TreeTile, options: DrawOptions, markFill: boolean): string {
+  const color = colorFor(tile, options.mode);
+  return markFill
+    ? mix(color, "#8f3b32", 0.55)
+    : tile.depth === 0
+      ? color
+      : mix(color, "#15140f", Math.min(0.12 + tile.depth * 0.045, 0.34));
+}
+
+function isLight(hex: string): boolean {
+  const [red, green, blue] = hex.match(/[\da-f]{2}/gi)?.map((value) => Number.parseInt(value, 16)) ?? [0, 0, 0];
+  return (0.299 * red + 0.587 * green + 0.114 * blue) / 255 > 0.58;
 }
 
 function paintHatch(context: CanvasRenderingContext2D, tile: TreeTile): void {
@@ -141,13 +166,17 @@ function paintLabels(
   const sorted = [...tiles]
     .sort((left, right) => right.width * right.height - left.width * left.height)
     .slice(0, 150);
-  for (const tile of sorted) paintLabel(context, tile, options.mode);
+  for (const tile of sorted) {
+    const light = isLight(tileBase(tile, options, isMarked(tile, options.marks)));
+    paintLabel(context, tile, options.mode, light);
+  }
 }
 
 function paintLabel(
   context: CanvasRenderingContext2D,
   tile: TreeTile,
   mode: "size" | "files" | "age",
+  lightFill: boolean,
 ): void {
   const region = tile.header ?? tile;
   const nameSize = 12;
@@ -172,13 +201,13 @@ function paintLabel(
   context.clip();
   context.textBaseline = "top";
   context.textAlign = "left";
-  context.fillStyle = tile.path === null ? "#c9bb92" : "#e5dcc6";
+  context.fillStyle = lightFill ? "#1b1409" : tile.path === null ? "#c9bb92" : "#f0e6cd";
   context.font = `${tile.depth === 0 && tile.has_header ? 700 : 500} ${nameSize}px Manrope, sans-serif`;
   context.fillText(name, region.x + pad, region.y + inset, Math.max(0, region.width - pad * 2));
 
   if (value && region.width > nameSize * 6) {
-    context.font = `400 ${sizeSize}px "DM Mono", monospace`;
-    context.fillStyle = "#b6a47c";
+    context.font = `400 ${sizeSize}px "Spline Sans Mono", monospace`;
+    context.fillStyle = lightFill ? "#3a2c14" : "#c4b48c";
     if (tile.has_header && tile.depth === 0) {
       context.textAlign = "right";
       context.fillText(value, region.x + region.width - pad, region.y + inset, region.width * 0.45);

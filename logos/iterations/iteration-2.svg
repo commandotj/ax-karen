@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Karen — Brass Sector Panel Meter Icon</title>
+  <g id="background">
+    <rect x="0" y="0" width="512" height="512" rx="112" fill="#181510"/>
+    <rect x="20" y="20" width="472" height="472" rx="94" fill="none" stroke="#8C6B2B" stroke-width="8"/>
+  </g>
+  <g id="icon">
+    <!-- Solid antique-brass panel meter casing with high-contrast silhouette -->
+    <rect x="52" y="76" width="408" height="360" rx="56" fill="#C9A24D"/>
+    <rect x="68" y="92" width="376" height="328" rx="42" fill="none" stroke="#EFCB70" stroke-width="8"/>
+    <!-- Four heavy corner rivets knocked out in dark enamel -->
+    <circle cx="96" cy="120" r="14" fill="#181510"/>
+    <circle cx="416" cy="120" r="14" fill="#181510"/>
+    <circle cx="96" cy="392" r="14" fill="#181510"/>
+    <circle cx="416" cy="392" r="14" fill="#181510"/>
+    <!-- Deep enamel fan-shaped sector window (figure-ground) -->
+    <path d="M 256 356 L 92 192 A 232 232 0 0 1 420 192 Z" fill="#121618"/>
+    <!-- Verdigris nominal arc and copper pressure arc inside the sector window -->
+    <path d="M 126 202 A 192 192 0 0 1 298 140" fill="none" stroke="#62A794" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 326 148 A 192 192 0 0 1 386 202" fill="none" stroke="#C4703F" stroke-width="16" stroke-linecap="round"/>
+    <!-- Chunky ivory engraved major ticks that survive 16px/32px downscaling -->
+    <path d="M 136 208 L 166 236 M 256 142 L 256 184 M 376 208 L 346 236" stroke="#F0E4C6" stroke-width="16" stroke-linecap="round" fill="none"/>
+    <!-- Bold burnished-gold needle angled at ~68% reading so it stands clear of the center tick -->
+    <polygon points="328,154 274,356 238,356" fill="#EFCB70"/>
+    <!-- Heavy brass pivot boss and ivory center jewel -->
+    <circle cx="256" cy="356" r="42" fill="#C9A24D"/>
+    <circle cx="256" cy="356" r="18" fill="#181510"/>
+    <circle cx="256" cy="356" r="8" fill="#F0E4C6"/>
+  </g>
+</svg>
