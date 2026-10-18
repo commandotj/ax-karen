@@ -1,5 +1,7 @@
 # Karen
 
+![Karen desktop app: the Runtime console with live CPU, memory and mounted-volume instruments](assets/screenshot.png)
+
 Karen is a cross-platform system monitor and disk-space explorer. Runtime
 shows live CPU, physical memory and mounted-volume usage. CPU and Memory tabs
 show per-process usage. Disk Tree maps allocated file space and provides a
