@@ -27,6 +27,22 @@
         {
           "kind": "file",
           "path": "apps/desktop/src/tabWheel.ts"
+        },
+        {
+          "kind": "file",
+          "path": "apps/desktop/src/format.ts"
+        },
+        {
+          "kind": "file",
+          "path": "apps/desktop/src/types.ts"
+        },
+        {
+          "kind": "directory",
+          "path": "apps/desktop/src/components"
+        },
+        {
+          "kind": "directory",
+          "path": "apps/desktop/src/views"
         }
       ],
       "evidence": [

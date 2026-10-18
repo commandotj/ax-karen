@@ -53,4 +53,3 @@ export function formatTraySummary(
   const batText = batteryPresent && typeof batteryPercent === "number" ? ` · BAT ${batteryPercent}%` : "";
   return `Karen · CPU ${cpuText} · MEM ${memText}${batText}`;
 }
-

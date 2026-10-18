@@ -1,7 +1,7 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
-import TabWheel from "./TabWheel.vue";
-import { formatTraySummary, formatTrayTitle, stepTab, wheelDeltaStep, wheelOffset, wheelStyle, type TabItem } from "./tabWheel";
+import TabWheel from "./components/TabWheel.vue";
+import { formatTraySummary, formatTrayTitle, stepTab, wheelDeltaStep, wheelOffset, wheelStyle, type TabItem } from "./components/tabWheel";
 
 const sampleTabs: TabItem[] = [
   { id: "runtime", index: "01", label: "Runtime", badge: "LIVE" },

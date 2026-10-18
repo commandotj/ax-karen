@@ -20,4 +20,4 @@
 | 0016 | [Windows desktop support](rfc/pending/0016-windows-support.md) | Pending |
 | 0017 | [Reach full test coverage with a CI gate](rfc/completed/0017-full-test-coverage.md) | Implemented |
 | 0018 | [Cover platform-dependent code with integration tests](rfc/pending/0018-platform-integration-tests.md) | Pending |
-| 0019 | [Modularize desktop views to reduce App.vue size](rfc/0019-modularize-desktop-views.md) | Draft |
+| 0019 | [Modularize desktop views to reduce App.vue size](rfc/completed/0019-modularize-desktop-views.md) | Implemented |
