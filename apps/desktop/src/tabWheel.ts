@@ -35,3 +35,22 @@ export function wheelStyle(offset: number): Record<string, string> {
     pointerEvents: abs > 2 ? "none" : "auto",
   };
 }
+
+export function formatTrayTitle(cpuPercent: number | null | undefined, memPercent: number | null | undefined): string {
+  const cpuText = typeof cpuPercent === "number" ? `${Math.round(cpuPercent)}%` : "—%";
+  const memText = typeof memPercent === "number" ? `${Math.round(memPercent)}%` : "—%";
+  return `CPU ${cpuText}  MEM ${memText}`;
+}
+
+export function formatTraySummary(
+  cpuPercent: number | null | undefined,
+  memPercent: number | null | undefined,
+  batteryPresent?: boolean,
+  batteryPercent?: number | null,
+): string {
+  const cpuText = typeof cpuPercent === "number" ? `${cpuPercent}%` : "—%";
+  const memText = typeof memPercent === "number" ? `${memPercent.toFixed(0)}%` : "—%";
+  const batText = batteryPresent && typeof batteryPercent === "number" ? ` · BAT ${batteryPercent}%` : "";
+  return `Karen · CPU ${cpuText} · MEM ${memText}${batText}`;
+}
+

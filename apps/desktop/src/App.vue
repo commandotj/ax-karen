@@ -5,7 +5,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { KarenCli, type CliEvent } from "./cli";
 import TabWheel from "./TabWheel.vue";
-import type { TabId, TabItem } from "./tabWheel";
+import { formatTraySummary, formatTrayTitle, type TabId, type TabItem } from "./tabWheel";
 import { categoryColor, drawTreemap, tileAt, type TreeTile } from "./treemap";
 
 type Volume = {
@@ -251,7 +251,8 @@ function receive(event: CliEvent): void {
       if (typeof network.value.tx_bytes_per_sec === "number") pushSample(networkTxSamples.value, network.value.tx_bytes_per_sec);
     }
     void invoke("update_tray_status", {
-      summary: `Karen · CPU ${cpu.value ?? "—"}% · MEM ${usedMemoryPercent.value.toFixed(0)}%${battery.value.present && battery.value.percent != null ? ` · BAT ${battery.value.percent}%` : ""}`,
+      title: formatTrayTitle(cpu.value, usedMemoryPercent.value),
+      summary: formatTraySummary(cpu.value, usedMemoryPercent.value, battery.value.present, battery.value.percent),
     });
   }
   if (event.event === "volumes" && Array.isArray(event.volumes)) {

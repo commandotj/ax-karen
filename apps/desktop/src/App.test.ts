@@ -15,8 +15,10 @@ const host = vi.hoisted(() => ({
 
 vi.mock("@tauri-apps/api/core", () => ({
   isTauri: () => host.tauri,
-  invoke: async (cmd: string, args?: { summary?: string }) => {
-    if (cmd === "update_tray_status" && args?.summary) host.trayStatus.push(args.summary);
+  invoke: async (cmd: string, args?: { title?: string; summary?: string }) => {
+    if (cmd === "update_tray_status" && args?.summary) {
+      host.trayStatus.push(`${args.title ?? ""} | ${args.summary}`);
+    }
   },
 }));
 vi.mock("@tauri-apps/api/event", () => ({
@@ -1369,6 +1371,7 @@ describe("Karen desktop interface", () => {
       host.emitTray("unknown");
       await flushPromises();
       expect(wrapper.find(".disk-view").exists()).toBe(true);
+      expect(host.trayStatus.some((status) => status.includes("CPU 12%  MEM 25%"))).toBe(true);
     });
   });
 });

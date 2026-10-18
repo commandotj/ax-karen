@@ -12,6 +12,7 @@ struct TrayState {
 fn update_tray_status(
     app: tauri::AppHandle,
     state: tauri::State<'_, TrayState>,
+    title: Option<String>,
     summary: String,
 ) {
     let label = if summary.trim().is_empty() {
@@ -22,6 +23,9 @@ fn update_tray_status(
     let _ = state.status_item.set_text(&label);
     if let Some(tray) = app.tray_by_id("karen-tray") {
         let _ = tray.set_tooltip(Some(&label));
+        if let Some(ref t) = title {
+            let _ = tray.set_title(Some(t));
+        }
     }
 }
 

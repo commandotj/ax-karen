@@ -1,7 +1,7 @@
 import { mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import TabWheel from "./TabWheel.vue";
-import { stepTab, wheelDeltaStep, wheelOffset, wheelStyle, type TabItem } from "./tabWheel";
+import { formatTraySummary, formatTrayTitle, stepTab, wheelDeltaStep, wheelOffset, wheelStyle, type TabItem } from "./tabWheel";
 
 const sampleTabs: TabItem[] = [
   { id: "runtime", index: "01", label: "Runtime", badge: "LIVE" },
@@ -46,6 +46,14 @@ describe("tabWheel pure functions", () => {
     const far = wheelStyle(3);
     expect(far.opacity).toBe("0");
     expect(far.pointerEvents).toBe("none");
+  });
+
+  it("formats tray title and summary side by side", () => {
+    expect(formatTrayTitle(null, null)).toBe("CPU —%  MEM —%");
+    expect(formatTrayTitle(12.4, 45.8)).toBe("CPU 12%  MEM 46%");
+    expect(formatTraySummary(null, null)).toBe("Karen · CPU —% · MEM —%");
+    expect(formatTraySummary(15.2, 50, true, 85)).toBe("Karen · CPU 15.2% · MEM 50% · BAT 85%");
+    expect(formatTraySummary(15.2, 50, false, null)).toBe("Karen · CPU 15.2% · MEM 50%");
   });
 });
 
