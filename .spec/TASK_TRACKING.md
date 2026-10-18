@@ -23,6 +23,8 @@
 - [x] Implement RFC 0020: Network process attribution and connection topology (RFC 0020)
 - [x] Implement RFC 0021: Single-instance desktop application guard (RFC 0021)
 - [x] Implement RFC 0022: Desktop application multi-language internationalization (RFC 0022)
+- [x] Implement RFC 0023: Publishify CI/CD Pipeline and Distribution Setup (RFC 0023)
+
 
 
 

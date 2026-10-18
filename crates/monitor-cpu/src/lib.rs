@@ -114,6 +114,7 @@ mod tests {
     };
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn process_rows_sort_by_cpu_then_pid_and_stay_bounded() {
         let rows: Vec<_> = (0_u8..23)
             .map(|pid| ProcessUsage {

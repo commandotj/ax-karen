@@ -125,7 +125,7 @@ fn is_dashboard_volume(point: &Path) -> bool {
 }
 
 #[cfg(not(target_os = "macos"))]
-fn is_dashboard_volume(_point: &Path) -> bool {
+const fn is_dashboard_volume(_point: &Path) -> bool {
     true
 }
 
@@ -166,6 +166,13 @@ mod tests {
     #[test]
     fn volumes_include_the_root_volume() {
         let volumes = MonitorCore::new().sample_volumes();
-        assert!(volumes.iter().any(|volume| volume.mount_point == "/"));
+        if cfg!(windows) {
+            assert!(volumes.iter().any(|volume| {
+                volume.mount_point.starts_with("C:")
+                    || volume.mount_point.starts_with("c:")
+            }));
+        } else {
+            assert!(volumes.iter().any(|volume| volume.mount_point == "/"));
+        }
     }
 }

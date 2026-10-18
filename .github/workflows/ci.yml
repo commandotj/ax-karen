@@ -2,8 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -16,6 +17,48 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  promotion-guard:
+    name: Promotion source guard (main)
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Verify PR source branch and repository
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          echo "Checking promotion pull request..."
+          echo "  Base repository: $BASE_REPO"
+          echo "  Head repository: $HEAD_REPO"
+          echo "  Head ref:        $HEAD_REF"
+
+          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "Error: Direct PRs into main from forks are not allowed. PR must originate from internal repository '$BASE_REPO'." >&2
+            exit 1
+          fi
+
+          if [ "$HEAD_REF" != "develop" ]; then
+            echo "Error: Only 'develop' branch may be promoted into 'main'. Received source ref: '$HEAD_REF'." >&2
+            exit 1
+          fi
+
+          echo "Promotion source guard passed: PR targets main from internal develop branch."
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate synchronized versioning
+        run: node scripts/check-versions.mjs
+
   check:
     name: Build and test (${{ matrix.name }})
     strategy:
@@ -24,7 +67,6 @@ jobs:
         include:
           - { name: Linux, runner: ubuntu-24.04 }
           - { name: macOS, runner: macos-15 }
-          - { name: Windows, runner: windows-2025 }
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
@@ -57,6 +99,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - run: pnpm install --frozen-lockfile
+      - run: pnpm check:versions
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm build
@@ -68,7 +111,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: dtolnay/rust-toolchain@master
+      - name: Setup macOS LLVM tools
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.97"
           components: llvm-tools-preview
