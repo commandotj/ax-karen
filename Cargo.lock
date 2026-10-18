@@ -303,7 +303,7 @@ dependencies = [
 
 [[package]]
 name = "karen-cli"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "anyhow",
  "monitor-core",
@@ -354,11 +354,11 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "monitor-battery"
-version = "0.11.0"
+version = "0.12.0"
 
 [[package]]
 name = "monitor-core"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "monitor-battery",
  "monitor-cpu",
@@ -372,14 +372,14 @@ dependencies = [
 
 [[package]]
 name = "monitor-cpu"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "sysinfo",
 ]
 
 [[package]]
 name = "monitor-disk"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "chrono",
  "rayon",
@@ -394,14 +394,14 @@ dependencies = [
 
 [[package]]
 name = "monitor-memory"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "sysinfo",
 ]
 
 [[package]]
 name = "monitor-network"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "netstat2",
  "sysinfo",
