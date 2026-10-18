@@ -541,7 +541,14 @@ impl WalkContext {
         // What the link leads to, so a file that is also reached directly is
         // charged once.
         facts.identity = identity_of(path, &meta);
-        self.leaf(name, kind_of(&meta, meta.file_type()), &facts)
+        // Followed metadata, and not a directory: a file, or a device,
+        // socket or pipe.
+        let kind = if meta.is_file() {
+            NodeKind::File
+        } else {
+            NodeKind::Other
+        };
+        self.leaf(name, kind, &facts)
     }
 
     fn leaf(
@@ -1397,18 +1404,6 @@ fn identity_of(path: &Path, _meta: &Metadata) -> Option<(u64, u64)> {
     crate::windows::identity(path)
 }
 
-fn kind_of(meta: &Metadata, file_type: fs::FileType) -> NodeKind {
-    if meta.is_dir() || file_type.is_dir() {
-        NodeKind::Directory
-    } else if meta.is_file() || file_type.is_file() {
-        NodeKind::File
-    } else if file_type.is_symlink() {
-        NodeKind::Symlink
-    } else {
-        NodeKind::Other
-    }
-}
-
 /// The display name of a scanned root: its final component, or the path itself
 /// for `/`.
 pub(crate) fn file_name(path: &Path) -> Box<str> {
@@ -1457,9 +1452,7 @@ mod tests {
         node.children
             .iter()
             .find(|child| &*child.name == name)
-            .unwrap_or_else(|| {
-                panic!("no child named {name} in {:?}", node.name)
-            })
+            .expect(name)
     }
 
     #[test]
@@ -1814,11 +1807,12 @@ mod tests {
 
         assert_eq!(tree.bytes, 11);
         let node = child(&tree, "locked");
-        if matches!(readable, Ok(false)) {
-            assert!(node.read_error);
-            assert!(progress.snapshot().errors >= 1);
-            assert_ne!(progress.snapshot().messages, Vec::<String>::new());
-        }
+        // Running as root, it was readable after all, and nothing is wrong.
+        let refused = readable.is_err();
+        let snapshot = progress.snapshot();
+        assert_eq!(node.read_error, refused);
+        assert_eq!(snapshot.errors >= 1, refused);
+        assert_eq!(snapshot.messages.is_empty(), !refused);
     }
 
     #[test]
@@ -1890,6 +1884,197 @@ mod tests {
             "the rest was walked"
         );
         assert_eq!(tree.files, known.files + 1);
+    }
+
+    fn context_with(options: ScanOptions) -> Arc<WalkContext> {
+        Arc::new(WalkContext {
+            known: None,
+            options,
+            progress: Arc::new(ScanProgress::default()),
+            root_device: Mutex::new(None),
+            foreign_mounts: OnceLock::new(),
+            never_scanned: OnceLock::new(),
+            visited_dirs: Mutex::new(FxHashSet::default()),
+            root: Mutex::new(None),
+            volume: OnceLock::new(),
+        })
+    }
+
+    #[test]
+    fn a_preview_entry_seen_again_replaces_the_first() {
+        let progress = ScanProgress::default();
+        let entry = |bytes| ScanPreviewEntry {
+            name: "a".into(),
+            kind: NodeKind::Directory,
+            category: Category::Other,
+            bytes,
+            files: 1,
+            dirs: 1,
+        };
+        progress.add_preview_entry(entry(1));
+        progress.add_preview_entry(entry(5));
+        let snapshot = progress.snapshot();
+        assert_eq!(snapshot.preview, vec![entry(5)]);
+        assert_eq!(snapshot.preview_revision, 2);
+    }
+
+    #[test]
+    fn a_worker_gone_without_a_result_is_reported_as_an_error() {
+        let (sender, result) = mpsc::channel();
+        drop(sender);
+        let handle = ScanHandle {
+            progress: Arc::default(),
+            result,
+        };
+        let error = handle.poll().expect("an outcome").expect_err("an error");
+        assert!(error.to_string().contains("without a result"), "{error}");
+    }
+
+    #[test]
+    fn a_spawned_scan_can_be_cancelled() {
+        let temp = TempDir::new().expect("tempdir");
+        write(temp.path(), "a/one.bin", 1);
+        let handle = ScanHandle::spawn(temp.path().to_path_buf(), options());
+        handle.cancel();
+        assert!(handle.progress.snapshot().cancelled);
+        let outcome = std::iter::repeat_with(|| {
+            thread::sleep(std::time::Duration::from_millis(1));
+            handle.poll()
+        })
+        .take(5000)
+        .flatten()
+        .next();
+        assert!(outcome.is_some(), "the worker still answers");
+    }
+
+    #[test]
+    fn excluded_and_foreign_directories_are_left_out_by_path() {
+        let temp = TempDir::new().expect("tempdir");
+        let root = temp.path();
+        write(root, "keep/a.bin", 3);
+        write(root, "never/b.bin", 50);
+        write(root, "foreign/c.bin", 70);
+        let context = context_with(options());
+        let never: FxHashSet<PathBuf> =
+            std::iter::once(root.join("never")).collect();
+        let foreign: FxHashSet<PathBuf> =
+            std::iter::once(root.join("foreign")).collect();
+        assert!(context.never_scanned.set(never).is_ok());
+        assert!(context.foreign_mounts.set(foreign).is_ok());
+        let tree = scan_blocking(root, &context).expect("scan");
+        let names: Vec<&str> =
+            tree.children.iter().map(|child| &*child.name).collect();
+        assert_eq!(names, ["keep"]);
+        assert_eq!(tree.bytes, 3);
+    }
+
+    /// One listing of `/`, not a walk: what lies on another volume, such
+    /// as `/dev`, is left out, and the root is named by its path.
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn a_shallow_scan_of_the_disk_root_stays_on_its_volume() {
+        let tree = scan(
+            Path::new("/"),
+            ScanOptions {
+                max_depth: Some(0),
+                ..options()
+            },
+        )
+        .expect("scan");
+        assert_eq!(&*tree.name, "/");
+        assert!(tree.children.iter().all(|child| &*child.name != "dev"));
+        assert!(tree.children.iter().all(|child| child.children.is_empty()));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn followed_links_reach_files_dirs_and_sockets_and_skip_dead_ends() {
+        use std::os::unix::fs::symlink;
+        let temp = TempDir::new().expect("tempdir");
+        let outside = TempDir::new().expect("tempdir");
+        let root = temp.path();
+        write(outside.path(), "far/file.bin", 40);
+        let far_file = write(outside.path(), "single.bin", 7);
+        let socket = root.join("sock");
+        let _listener =
+            std::os::unix::net::UnixListener::bind(&socket).expect("socket");
+        symlink(outside.path().join("far"), root.join("to-dir")).expect("link");
+        symlink(&far_file, root.join("to-file")).expect("link");
+        symlink(&socket, root.join("to-sock")).expect("link");
+        symlink(root.join("absent"), root.join("dangling")).expect("link");
+        symlink(root.join("loop-b"), root.join("loop-a")).expect("link");
+        symlink(root.join("loop-a"), root.join("loop-b")).expect("link");
+
+        let context = context_with(ScanOptions {
+            follow_links: true,
+            ..options()
+        });
+        let tree = scan_blocking(root, &context).expect("scan");
+        assert_eq!(child(&tree, "to-dir").bytes, 40);
+        assert_eq!(child(&tree, "to-file").kind, NodeKind::File);
+        assert_eq!(child(&tree, "to-file").bytes, 7);
+        assert_eq!(child(&tree, "to-sock").kind, NodeKind::Other);
+        assert_eq!(child(&tree, "sock").kind, NodeKind::Other);
+        for gone in ["dangling", "loop-a", "loop-b"] {
+            assert!(tree.child_named(gone).is_none(), "{gone}");
+        }
+        let errors = context.progress.snapshot();
+        assert_eq!(errors.errors, 2, "the loop, not the dangling link");
+    }
+
+    #[test]
+    fn a_wide_directory_moves_the_meter_before_it_is_done() {
+        let temp = TempDir::new().expect("tempdir");
+        for index in 0..1100 {
+            fs::write(temp.path().join(index.to_string()), b"").expect("write");
+        }
+        let context = context_with(options());
+        scan_blocking(temp.path(), &context).expect("scan");
+        assert_eq!(context.progress.snapshot().files, 1100);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn an_unfollowed_link_is_measured_in_allocated_blocks() {
+        let temp = TempDir::new().expect("tempdir");
+        std::os::unix::fs::symlink("somewhere", temp.path().join("link"))
+            .expect("link");
+        let tree = scan_dir(temp.path(), &ScanOptions::default());
+        assert_eq!(child(&tree, "link").bytes % 512, 0);
+    }
+
+    #[test]
+    fn an_adaptive_scan_measures_the_same_tree() {
+        let temp = TempDir::new().expect("tempdir");
+        for index in 0..16 {
+            write(temp.path(), &format!("d{index}/e/file"), 10);
+        }
+        let tree = scan_dir(
+            temp.path(),
+            &ScanOptions {
+                threads: ScanThreads {
+                    max_threads: 2,
+                    adaptive: true,
+                    ..ScanThreads::default()
+                },
+                ..options()
+            },
+        );
+        assert_eq!((tree.bytes, tree.files), (160, 16));
+    }
+
+    #[test]
+    fn a_scan_allowed_across_volumes_asks_no_device_questions() {
+        let temp = TempDir::new().expect("tempdir");
+        write(temp.path(), "sub/a.bin", 4);
+        let tree = scan_dir(
+            temp.path(),
+            &ScanOptions {
+                one_filesystem: false,
+                ..options()
+            },
+        );
+        assert_eq!(child(&tree, "sub").bytes, 4);
     }
 
     /// A real whole-disk scan, run by hand: `cargo test -p monitor-disk

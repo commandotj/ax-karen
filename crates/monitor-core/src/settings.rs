@@ -124,4 +124,19 @@ mod tests {
             Err(SettingsError::Parse(_))
         ));
     }
+
+    #[test]
+    fn non_finite_zoom_resets_and_io_failures_are_reported() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let path = dir.path().join("config.toml");
+        fs::write(&path, "ui_zoom = nan\n").expect("write");
+        assert_eq!(Settings::load(&path).expect("sanitized").ui_zoom, 1.0);
+
+        // A directory where the file should be cannot be read.
+        let error = Settings::load(dir.path()).expect_err("directory");
+        assert!(matches!(error, SettingsError::Io(_)));
+        assert_ne!(error.to_string(), "");
+        // A path with no parent and no file name cannot be written.
+        assert!(Settings::default().save(Path::new("")).is_err());
+    }
 }

@@ -1268,7 +1268,8 @@ map auto_home on /System/Volumes/Data/home (autofs, automounted, nobrowse)
             Path::new(MACOS_DATA_VOLUME),
             Path::new(MACOS_DATA_VOLUME),
         );
-        if cfg!(target_os = "macos") {
+        #[cfg(target_os = "macos")]
+        {
             assert_eq!(
                 skipped,
                 vec![PathBuf::from(MACOS_DATA_VOLUME), "/Network".into()]
@@ -1277,9 +1278,9 @@ map auto_home on /System/Volumes/Data/home (autofs, automounted, nobrowse)
                 below_system,
                 vec![PathBuf::from("/System/Volumes/Data")]
             );
-        } else {
-            assert!(skipped.is_empty() && below_system.is_empty());
         }
+        #[cfg(not(target_os = "macos"))]
+        assert!(skipped.is_empty() && below_system.is_empty());
         assert_eq!(inside, Vec::<PathBuf>::new());
         assert!(itself.is_empty(), "asking for it by name scans it");
     }
@@ -1333,5 +1334,42 @@ map auto_home on /System/Volumes/Data/home (autofs, automounted, nobrowse)
     fn used_fraction_handles_an_empty_volume_report() {
         let space = SpaceInfo::default();
         assert!((space.used_fraction() - 0.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn a_root_no_mount_covers_has_nothing_foreign() {
+        assert_eq!(foreign_mounts(&[], Path::new("/x")).len(), 0);
+    }
+
+    #[test]
+    fn one_disk_mounted_twice_is_listed_at_its_top_and_automounts_are_not() {
+        let mounts = parse_mounts(
+            "/dev/sda1 /home ext4 rw 0 0\n\
+             /dev/sda1 / ext4 rw 0 0\n\
+             /dev/sdb1 /mnt/auto ext4 rw,automounted 0 0\n",
+        );
+        let points: Vec<PathBuf> = volumes_in(&mounts)
+            .into_iter()
+            .map(|volume| volume.point)
+            .collect();
+        assert_eq!(points, [PathBuf::from("/")]);
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn another_mounted_filesystem_is_its_own_volume_on_macos() {
+        let dev = Path::new("/dev");
+        assert_eq!(volume_root_for(dev), Some(dev.to_path_buf()));
+        assert_eq!(attribution(None, Path::new("/"), dev), Attribution::Other);
+        assert!(device_for(dev).is_some_and(|device| !device.is_empty()));
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn this_macs_volumes_include_the_disk_root_but_not_the_data_volume() {
+        let points: Vec<PathBuf> =
+            volumes().into_iter().map(|volume| volume.point).collect();
+        assert!(points.contains(&PathBuf::from("/")), "{points:?}");
+        assert!(!points.contains(&PathBuf::from(MACOS_DATA_VOLUME)));
     }
 }

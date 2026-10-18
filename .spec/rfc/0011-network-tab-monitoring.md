@@ -1,6 +1,6 @@
 # RFC 0011: Add network telemetry and Network tab (child of 0001)
 
-**Status:** Draft
+**Status:** Approved
 
 **Parent:** [0001](completed/0001-karen-system-resource-app.md)
 
@@ -88,7 +88,7 @@ and serialize `network` inside the CLI `resources` event in
 
 ## Acceptance
 
-1. `cargo xtask lint` and `cargo xtask test` pass with unit tests in
+1. `pnpm lint` (`node scripts/cargo-check.mjs lint`) and `pnpm test` (`node scripts/cargo-check.mjs test`) pass with unit tests in
    `crates/monitor-network/` covering warm-up `None` rates, rate calculation
    over elapsed intervals, deterministic sorting and the 20-interface bound.
 2. `karen --stream-json` emits `network` data in `resources` events on macOS,

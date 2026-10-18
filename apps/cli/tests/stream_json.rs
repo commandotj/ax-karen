@@ -134,7 +134,16 @@ fn resources_keep_existing_fields_and_add_bounded_process_rows() {
             prior_bytes > next_bytes
                 || (prior_bytes == next_bytes && prior_pid <= next_pid)
         }));
+        assert!(event["battery"]["present"].is_boolean());
+        assert!(event["network"]["total_rx_bytes"].is_u64());
+        assert!(event["network"]["total_tx_bytes"].is_u64());
+        let interfaces = event["network"]["interfaces"]
+            .as_array()
+            .expect("network interfaces list");
+        assert!(interfaces.len() <= 20);
     }
+    assert!(resources[0]["network"]["rx_bytes_per_sec"].is_null());
+    assert!(resources[0]["network"]["tx_bytes_per_sec"].is_null());
 }
 
 #[test]
@@ -600,4 +609,599 @@ fn settings_persist_to_home_config_and_a_broken_file_is_never_overwritten() {
         fs::read_to_string(&config).expect("config kept"),
         "power = [broken"
     );
+}
+
+/// One CLI process with its own temporary `HOME`, so settings, exports and
+/// removal guards never see the real home directory.
+struct Session {
+    child: std::process::Child,
+    input: std::process::ChildStdin,
+    output: BufReader<std::process::ChildStdout>,
+    _home: tempfile::TempDir,
+}
+
+impl Session {
+    fn start() -> Self {
+        let home = tempfile::tempdir().expect("temp home");
+        let mut child = Command::new(env!("CARGO_BIN_EXE_karen"))
+            .arg("--stream-json")
+            .env("HOME", home.path())
+            .env_remove("USERPROFILE")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("start Karen CLI");
+        let input = child.stdin.take().expect("CLI stdin");
+        let output = BufReader::new(child.stdout.take().expect("CLI stdout"));
+        let mut session = Self {
+            child,
+            input,
+            output,
+            _home: home,
+        };
+        assert_eq!(session.event()["event"], "ready");
+        session
+    }
+
+    fn event(&mut self) -> Value {
+        let mut line = String::new();
+        self.output.read_line(&mut line).expect("read CLI event");
+        serde_json::from_str(&line).expect("parse CLI event")
+    }
+
+    /// Sends `request` and returns the next event carrying its id; events in
+    /// between are dropped.
+    fn reply(&mut self, request: Value) -> Value {
+        let id = request["id"].as_str().expect("request id").to_owned();
+        send_request(&mut self.input, request);
+        loop {
+            let event = self.event();
+            if event["id"] == id.as_str() {
+                return event;
+            }
+        }
+    }
+
+    /// Waits for the scan with `id` to finish and returns its last event.
+    fn scan_result(&mut self, id: &str) -> Value {
+        loop {
+            let event = self.event();
+            let done =
+                event["event"] == "scan_complete" || event["event"] == "error";
+            if event["id"] == id && done {
+                return event;
+            }
+        }
+    }
+
+    fn scan(&mut self, root: &str) -> Value {
+        let started = self.reply(
+            serde_json::json!({"id":"scan","command":"scan","root":root}),
+        );
+        assert_eq!(started["event"], "scan_started");
+        self.scan_result("scan")
+    }
+
+    fn until(&mut self, event_name: &str) -> Value {
+        loop {
+            let event = self.event();
+            if event["event"] == event_name {
+                return event;
+            }
+        }
+    }
+
+    fn finish(mut self) {
+        assert_eq!(
+            self.reply(serde_json::json!({"id":"exit","command":"shutdown"}))["event"],
+            "shutdown"
+        );
+        drop(self.input);
+        assert!(self.child.wait().expect("wait for Karen CLI").success());
+    }
+}
+
+/// Writes raw bytes to stdin, closes it without `shutdown` and collects
+/// every event until the CLI exits on its own.
+fn run_raw(input: &[u8]) -> Vec<Value> {
+    let home = tempfile::tempdir().expect("temp home");
+    let mut child = Command::new(env!("CARGO_BIN_EXE_karen"))
+        .arg("--stream-json")
+        .env("HOME", home.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("start Karen CLI");
+    let mut stdin = child.stdin.take().expect("CLI stdin");
+    stdin.write_all(input).expect("write input");
+    drop(stdin);
+    let output = child.wait_with_output().expect("wait for Karen CLI");
+    assert!(output.status.success());
+    String::from_utf8(output.stdout)
+        .expect("JSON stream is UTF-8")
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("each line is JSON"))
+        .collect()
+}
+
+#[test]
+fn malformed_requests_get_error_codes_and_closed_input_ends_the_stream() {
+    let mut input = Vec::new();
+    input.extend_from_slice(b"not json\n\n   \n");
+    input.extend_from_slice(
+        b"{\"version\":2,\"id\":\"old\",\"command\":\"shutdown\"}\n",
+    );
+    input.extend_from_slice(b"{\"version\":1,\"command\":\"shutdown\"}\n");
+    input.extend_from_slice(
+        b"{\"version\":1,\"id\":7,\"command\":\"shutdown\"}\n",
+    );
+    input.extend_from_slice(b"\xff\xfe\n");
+    input.extend_from_slice(
+        b"{\"version\":1,\"id\":\"what\",\"command\":\"fly\"}\n",
+    );
+    input.extend_from_slice(b"{\"version\":1,\"id\":\"none\"}\n");
+    let events = run_raw(&input);
+    let codes: Vec<_> = events
+        .iter()
+        .skip(1)
+        .map(|event| (event["id"].clone(), event["code"].clone()))
+        .collect();
+    let json = |id: Value, code: &str| (id, Value::from(code));
+    assert_eq!(
+        codes,
+        [
+            json(Value::Null, "invalid_json"),
+            json(Value::from("old"), "unsupported_version"),
+            json(Value::Null, "invalid_request"),
+            json(Value::Null, "invalid_request"),
+            json(Value::Null, "stdin_failed"),
+            json(Value::from("what"), "unknown_command"),
+            json(Value::from("none"), "unknown_command"),
+        ]
+    );
+    assert!(events[5]["message"].is_string());
+}
+
+#[test]
+fn requests_without_roots_paths_or_a_cached_scan_are_rejected() {
+    let mut session = Session::start();
+    let missing = "/karen-test/not-scanned";
+    for (request, code) in [
+        (serde_json::json!({"command":"scan"}), "invalid_root"),
+        (
+            serde_json::json!({"command":"tree_view","path":"/"}),
+            "invalid_root",
+        ),
+        (
+            serde_json::json!({"command":"tree_view","root":"/"}),
+            "invalid_path",
+        ),
+        (
+            serde_json::json!({"command":"toggle_mark","root":"/"}),
+            "invalid_path",
+        ),
+        (
+            serde_json::json!({"command":"toggle_mark","root":missing,"path":missing}),
+            "tree_cache_miss",
+        ),
+        (serde_json::json!({"command":"clear_marks"}), "invalid_root"),
+        (serde_json::json!({"command":"review"}), "invalid_root"),
+        (
+            serde_json::json!({"command":"export_marks"}),
+            "invalid_root",
+        ),
+        (serde_json::json!({"command":"reveal"}), "invalid_path"),
+        (
+            serde_json::json!({"command":"confirm_remove","mode":"permanent"}),
+            "review_required",
+        ),
+    ] {
+        let mut request = request;
+        request["id"] = Value::from(code);
+        let event = session.reply(request.clone());
+        assert_eq!(event["code"], code, "{request}");
+    }
+    let miss = session.reply(serde_json::json!({
+        "id":"miss","command":"tree_view","root":missing,"path":missing
+    }));
+    assert_eq!(miss["event"], "tree_cache_miss");
+    assert_eq!(miss["root"], missing);
+    let cancel = session
+        .reply(serde_json::json!({"id":"cancel","command":"cancel_scan"}));
+    assert_eq!(cancel["event"], "scan_cancel_requested");
+    assert_eq!(cancel["accepted"], false);
+    assert_eq!(
+        session
+            .reply(serde_json::json!({"id":"undo","command":"cancel_review"}))
+            ["event"],
+        "review_cancelled"
+    );
+    let failed = session.reply(serde_json::json!({
+        "id":"bad-scan","command":"scan","root":"/karen-test/does-not-exist"
+    }));
+    assert_eq!(failed["event"], "scan_started");
+    let failed = session.scan_result("bad-scan");
+    assert_eq!(failed["code"], "scan_failed");
+    assert!(failed["message"].is_string());
+    session.finish();
+}
+
+#[test]
+fn volumes_lists_the_boot_disk() {
+    let mut session = Session::start();
+    let volumes =
+        session.reply(serde_json::json!({"id":"vol","command":"volumes"}));
+    assert_eq!(volumes["event"], "volumes");
+    let list = volumes["volumes"].as_array().expect("volume list");
+    let boot = list
+        .iter()
+        .find(|volume| volume["mount_point"] == "/")
+        .expect("boot volume");
+    assert!(boot["total_bytes"].as_u64().unwrap_or(0) > 0);
+    assert!(boot.get("device").is_some());
+    assert!(boot["free_bytes"].is_u64() && boot["available_bytes"].is_u64());
+    session.finish();
+}
+
+#[test]
+fn settings_without_any_home_directory_report_settings_invalid() {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_karen"))
+        .arg("--stream-json")
+        .env_remove("HOME")
+        .env_remove("USERPROFILE")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("start Karen CLI");
+    let mut input = child.stdin.take().expect("CLI stdin");
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"get","command":"get_settings"}),
+    );
+    send_request(
+        &mut input,
+        serde_json::json!({"id":"set","command":"set_settings","power":"miser"}),
+    );
+    drop(input);
+    let output = child.wait_with_output().expect("wait for Karen CLI");
+    let events: Vec<Value> = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("JSON line"))
+        .collect();
+    for id in ["get", "set"] {
+        let event = events
+            .iter()
+            .find(|event| event["id"] == id)
+            .expect("settings reply");
+        assert_eq!(event["code"], "settings_invalid");
+        assert!(
+            event["message"]
+                .as_str()
+                .is_some_and(|message| message.contains("no home directory"))
+        );
+    }
+}
+
+#[test]
+fn tree_view_and_marks_reject_bad_paths_and_clear_marks_resets() {
+    let root = tempfile::tempdir().expect("create tree root");
+    let file = root.path().join("blob.bin");
+    fs::write(&file, vec![7_u8; 4096]).expect("write file");
+    let root_string = root.path().to_string_lossy().into_owned();
+    let file_string = file.to_string_lossy().into_owned();
+    let escape = root.path().join("..").to_string_lossy().into_owned();
+    let mut session = Session::start();
+    assert_eq!(session.scan(&root_string)["event"], "scan_complete");
+
+    for (id, path) in
+        [("outside", "/karen-test/elsewhere"), ("escape", &escape)]
+    {
+        let view = session.reply(serde_json::json!({
+            "id":id,"command":"tree_view","root":root_string,"path":path
+        }));
+        assert_eq!(view["code"], "tree_path_not_found", "{id}");
+    }
+    let missing = session.reply(serde_json::json!({
+        "id":"missing","command":"toggle_mark","root":root_string,
+        "path":root.path().join("nope").to_string_lossy()
+    }));
+    assert_eq!(missing["code"], "tree_path_not_found");
+    let root_mark = session.reply(serde_json::json!({
+        "id":"root","command":"toggle_mark","root":root_string,"path":root_string
+    }));
+    assert_eq!(root_mark["code"], "mark_rejected");
+    assert_eq!(root_mark["message"], "RootCannotBeMarked");
+
+    let mark = session.reply(serde_json::json!({
+        "id":"mark","command":"toggle_mark","root":root_string,"path":file_string
+    }));
+    assert_eq!(mark["marks"].as_array().map(Vec::len), Some(1));
+    let format = session.reply(serde_json::json!({
+        "id":"format","command":"export_marks","root":root_string,"format":"csv"
+    }));
+    assert_eq!(format["code"], "invalid_format");
+    // The temporary home has no Downloads folder to save into.
+    let unsaved = session.reply(serde_json::json!({
+        "id":"unsaved","command":"export_marks","root":root_string,
+        "format":"paths","save":true
+    }));
+    assert_eq!(unsaved["code"], "export_failed");
+    assert!(unsaved["message"].is_string());
+    let cleared = session.reply(serde_json::json!({
+        "id":"clear","command":"clear_marks","root":root_string
+    }));
+    assert_eq!(cleared["event"], "marks_changed");
+    assert_eq!(cleared["marks"], serde_json::json!([]));
+    let empty = session.reply(serde_json::json!({
+        "id":"empty","command":"export_marks","root":root_string,"format":"paths"
+    }));
+    assert_eq!(empty["code"], "no_marks");
+    assert!(file.exists());
+    session.finish();
+}
+
+#[test]
+fn an_empty_root_reports_zero_share() {
+    let root = tempfile::tempdir().expect("create tree root");
+    let root_string = root.path().to_string_lossy().into_owned();
+    let mut session = Session::start();
+    assert_eq!(session.scan(&root_string)["bytes"], 0);
+    let view = session.reply(serde_json::json!({
+        "id":"view","command":"tree_view","root":root_string,"path":root_string
+    }));
+    assert_eq!(view["selection"]["share"], 0.0);
+    assert_eq!(view["tiles"], serde_json::json!([]));
+    session.finish();
+}
+
+#[test]
+fn permanent_removal_inside_a_tempdir_streams_progress_items_and_completion() {
+    let root = tempfile::tempdir().expect("create tree root");
+    let doomed = root.path().join("doomed");
+    fs::create_dir(&doomed).expect("create doomed dir");
+    fs::write(doomed.join("a.bin"), vec![1_u8; 4096]).expect("write file");
+    let keep = root.path().join("keep.txt");
+    fs::write(&keep, "keep").expect("write keep file");
+    let root_string = root.path().to_string_lossy().into_owned();
+    let doomed_string = doomed.to_string_lossy().into_owned();
+    let mut session = Session::start();
+    session.scan(&root_string);
+    session.reply(serde_json::json!({
+        "id":"mark","command":"toggle_mark","root":root_string,"path":doomed_string
+    }));
+    assert_eq!(
+        session.reply(serde_json::json!({"id":"review","command":"review","root":root_string}))["targets"],
+        1
+    );
+    let mode = session.reply(serde_json::json!({
+        "id":"mode","command":"confirm_remove","mode":"shred"
+    }));
+    assert_eq!(mode["code"], "invalid_removal_mode");
+    // The rejected mode keeps the reviewed plan, so a valid one can follow.
+    let started = session.reply(serde_json::json!({
+        "id":"go","command":"confirm_remove","mode":"permanent"
+    }));
+    assert_eq!(started["event"], "removal_started");
+    assert_eq!(started["mode"], "Delete permanently");
+    let progress = session.until("removal_progress");
+    assert_eq!(
+        (progress["total"].as_u64(), progress["completed"].as_u64()),
+        (Some(1), Some(0))
+    );
+    let item = session.until("removal_item");
+    assert_eq!(item["path"], doomed_string);
+    assert_eq!(item["ok"], true);
+    assert!(item["error"].is_null());
+    let complete = session.until("removal_complete");
+    assert_eq!(complete["removed"], 1);
+    assert_eq!(complete["failed"], 0);
+    assert!(!doomed.exists());
+    assert!(keep.exists());
+    session.finish();
+}
+
+/// Enough files that scanning and removing take longer than the next
+/// request does to arrive.
+fn crowded_root() -> tempfile::TempDir {
+    let root = tempfile::tempdir().expect("create tree root");
+    for dir in 0..8 {
+        let nested = root.path().join(format!("dir-{dir}"));
+        fs::create_dir(&nested).expect("create nested directory");
+        for index in 0..600 {
+            fs::write(nested.join(format!("f{index}")), [1_u8; 8])
+                .expect("write file");
+        }
+    }
+    root
+}
+
+#[test]
+fn busy_scan_and_removal_are_refused_and_cancel_is_accepted() {
+    let root = crowded_root();
+    let root_string = root.path().to_string_lossy().into_owned();
+    let mut session = Session::start();
+    send_request(
+        &mut session.input,
+        serde_json::json!({"id":"scan","command":"scan","root":root_string}),
+    );
+    send_request(
+        &mut session.input,
+        serde_json::json!({"id":"again","command":"scan","root":root_string}),
+    );
+    send_request(
+        &mut session.input,
+        serde_json::json!({"id":"cancel","command":"cancel_scan"}),
+    );
+    let mut busy = None;
+    let mut cancel = None;
+    while busy.is_none() || cancel.is_none() {
+        let event = session.event();
+        if event["id"] == "again" {
+            busy = Some(event);
+        } else if event["id"] == "cancel" {
+            cancel = Some(event);
+        }
+    }
+    assert_eq!(busy.expect("busy reply")["code"], "scan_busy");
+    assert_eq!(cancel.expect("cancel reply")["accepted"], true);
+    session.scan_result("scan");
+
+    assert_eq!(session.scan(&root_string)["event"], "scan_complete");
+    for dir in 0..8 {
+        let path = root.path().join(format!("dir-{dir}"));
+        session.reply(serde_json::json!({
+            "id":"mark","command":"toggle_mark","root":root_string,
+            "path":path.to_string_lossy()
+        }));
+    }
+    for request in [
+        serde_json::json!({"id":"review","command":"review","root":root_string}),
+        serde_json::json!({"id":"go","command":"confirm_remove","mode":"permanent"}),
+        serde_json::json!({"id":"review-2","command":"review","root":root_string}),
+        serde_json::json!({"id":"busy","command":"confirm_remove","mode":"permanent"}),
+    ] {
+        send_request(&mut session.input, request);
+    }
+    let busy = loop {
+        let event = session.event();
+        if event["id"] == "busy" {
+            break event;
+        }
+    };
+    assert_eq!(busy["code"], "removal_busy");
+    session.until("removal_complete");
+    session.finish();
+}
+
+#[test]
+fn power_presets_map_to_worker_counts() {
+    let root = tempfile::tempdir().expect("create scan root");
+    let root_string = root.path().to_string_lossy().into_owned();
+    let cpus =
+        std::thread::available_parallelism().map_or(1, usize::from) as u64;
+    let mut session = Session::start();
+    for (power, workers) in [("aggressive", 8.min(cpus)), ("drain", cpus)] {
+        let started = session.reply(serde_json::json!({
+            "id":power,"command":"scan","root":root_string,"power":power
+        }));
+        assert_eq!(started["workers"], workers, "{power}");
+        session.scan_result(power);
+    }
+    session.finish();
+}
+
+/// Sparse files measured by apparent size reach the 64 MiB finding floor
+/// without writing to disk.
+fn sparse(path: &std::path::Path) {
+    fs::create_dir_all(path.parent().expect("parent")).expect("create parent");
+    fs::File::create(path)
+        .and_then(|file| file.set_len(100 * 1024 * 1024))
+        .expect("sparse file");
+}
+
+#[test]
+fn worth_a_look_names_reclaimable_worktree_and_stale_experiment_findings() {
+    let root = tempfile::tempdir().expect("create tree root");
+    sparse(&root.path().join("tmp").join("cache.bin"));
+    sparse(&root.path().join("worktrees").join("feature").join("blob"));
+    let old = root.path().join("tries").join("old-idea");
+    sparse(&old.join("blob"));
+    let long_ago =
+        std::time::SystemTime::now() - std::time::Duration::from_hours(90 * 24);
+    // A directory's age follows its newest entry, so age both.
+    for path in [old.join("blob"), old.clone()] {
+        fs::File::open(&path)
+            .and_then(|entry| entry.set_modified(long_ago))
+            .expect("age experiment");
+    }
+    let root_string = root.path().to_string_lossy().into_owned();
+    let tmp_string = root.path().join("tmp").to_string_lossy().into_owned();
+    let mut session = Session::start();
+    send_request(
+        &mut session.input,
+        serde_json::json!({"id":"scan","command":"scan","root":root_string,"apparent_size":true}),
+    );
+    assert_eq!(session.scan_result("scan")["event"], "scan_complete");
+    let view = session.reply(serde_json::json!({
+        "id":"view","command":"tree_view","root":root_string,"path":tmp_string
+    }));
+    let findings = view["worth_a_look"].as_array().expect("findings");
+    let reasons: Vec<_> = findings
+        .iter()
+        .filter_map(|item| item["reason"].as_str())
+        .collect();
+    assert_eq!(findings.len(), 3, "{reasons:?}");
+    assert!(
+        reasons
+            .iter()
+            .any(|reason| reason.starts_with("1 worktrees · oldest "))
+    );
+    assert!(reasons.contains(&"1 stale experiments"));
+    let tmp = findings
+        .iter()
+        .find(|item| item["path"] == tmp_string.as_str())
+        .expect("tmp finding");
+    assert_eq!(view["selection"]["reason"], tmp["reason"]);
+    session.finish();
+}
+
+#[test]
+fn a_large_scan_streams_provisional_previews_before_completion() {
+    let root = tempfile::tempdir().expect("create tree root");
+    for index in 0..4 {
+        fs::write(root.path().join(format!("top-{index}")), [1_u8; 8])
+            .expect("write file");
+    }
+    for dir in 0..30 {
+        let nested = root.path().join(format!("dir-{dir:02}"));
+        fs::create_dir(&nested).expect("create nested directory");
+        for index in 0..(if dir == 0 { 10_000 } else { 50 }) {
+            fs::write(nested.join(format!("f{index}")), [1_u8; 8])
+                .expect("write file");
+        }
+    }
+    let root_string = root.path().to_string_lossy().into_owned();
+    let mut session = Session::start();
+    send_request(
+        &mut session.input,
+        serde_json::json!({"id":"scan","command":"scan","root":root_string,"power":"miser"}),
+    );
+    // Every request is followed by a scan poll, so a stream of no-op
+    // requests samples the scan densely instead of every 25 ms.
+    let pings: usize = 3000;
+    let mut previews = Vec::new();
+    std::thread::scope(|scope| {
+        let input = &mut session.input;
+        scope.spawn(move || {
+            for _ in 0..pings {
+                send_request(
+                    input,
+                    serde_json::json!({"id":"ping","command":"cancel_review"}),
+                );
+            }
+        });
+        let (mut pongs, mut complete) = (0, false);
+        while pongs < pings || !complete {
+            let mut line = String::new();
+            session.output.read_line(&mut line).expect("read CLI event");
+            let event: Value = serde_json::from_str(&line).expect("event");
+            pongs += usize::from(event["id"] == "ping");
+            complete |= event["event"] == "scan_complete";
+            if event["event"] == "scan_preview" {
+                previews.push(event);
+            }
+        }
+    });
+    let preview = previews.last().expect("at least one preview");
+    assert_eq!(preview["provisional"], true);
+    assert_eq!(preview["root"], root_string);
+    assert!(previews.iter().any(|preview| {
+        preview["tiles"].as_array().is_some_and(|tiles| {
+            tiles.iter().any(|tile| tile["is_dir"] == true)
+        })
+    }));
+    session.finish();
 }

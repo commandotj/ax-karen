@@ -255,12 +255,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
+name = "monitor-battery"
+version = "0.11.0"
+
+[[package]]
 name = "monitor-core"
 version = "0.11.0"
 dependencies = [
+ "monitor-battery",
  "monitor-cpu",
  "monitor-disk",
  "monitor-memory",
+ "monitor-network",
  "serde",
  "tempfile",
  "toml",
@@ -290,6 +296,13 @@ dependencies = [
 
 [[package]]
 name = "monitor-memory"
+version = "0.11.0"
+dependencies = [
+ "sysinfo",
+]
+
+[[package]]
+name = "monitor-network"
 version = "0.11.0"
 dependencies = [
  "sysinfo",

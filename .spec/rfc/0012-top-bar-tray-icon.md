@@ -1,6 +1,6 @@
 # RFC 0012: Add top-bar system tray icon and menu (child of 0001)
 
-**Status:** Draft
+**Status:** Approved
 
 **Parent:** [0001](completed/0001-karen-system-resource-app.md)
 
@@ -90,4 +90,4 @@ arrives from `KarenCli`.
 3. Tray tooltip/status reflects live CLI telemetry pushed from Vue, and
    `apps/desktop/src-tauri/Cargo.toml` retains zero dependencies on any
    `monitor-*` crates.
-4. `cargo xtask lint`, `pnpm build` and desktop verification pass.
+4. `pnpm lint` (`node scripts/cargo-check.mjs lint`), `pnpm build` and desktop verification pass.

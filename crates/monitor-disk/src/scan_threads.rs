@@ -730,4 +730,127 @@ mod tests {
         assert_eq!(remaining, expected);
         assert_eq!(admission.sample().active, 0);
     }
+
+    #[test]
+    fn out_of_range_settings_fall_back_to_safe_ones() {
+        let threads = ScanThreads {
+            max_threads: 0,
+            retained_throughput: 1.5,
+            system_cpu_limit: Some(f64::NAN),
+            ..ScanThreads::default()
+        }
+        .normalized();
+        assert_eq!(threads.max_threads, 1);
+        assert!((threads.retained_throughput - 0.80).abs() < f64::EPSILON);
+        assert_eq!(threads.system_cpu_limit, None);
+    }
+
+    #[test]
+    fn a_governor_without_a_ceiling_admits_what_is_asked() {
+        let mut governor = Governor::new(2, None);
+        assert_eq!(governor.admitted(8), 8);
+        assert_eq!(governor.sample(Some(0.99), 8, 8, true), 8);
+    }
+
+    #[test]
+    fn usage_just_under_the_ceiling_neither_cuts_nor_restores() {
+        let mut governor = Governor::new(8, Some(0.8));
+        assert_eq!(governor.sample(Some(0.9), 8, 8, true), 8);
+        assert_eq!(governor.sample(Some(0.78), 8, 8, true), 8);
+        // The pressure count started over: one more high reading is not two.
+        assert_eq!(governor.sample(Some(0.9), 8, 8, true), 8);
+        assert!(governor.pressured);
+    }
+
+    #[test]
+    fn setting_the_same_limit_starts_no_new_epoch() {
+        let admission = Admission::new(0, 2);
+        admission.set_limit(2);
+        assert_eq!(admission.sample().epoch, 0);
+    }
+
+    #[test]
+    fn a_fixed_budget_runs_no_controller() {
+        let guard = ControllerGuard::spawn(
+            ScanThreads::default(),
+            Arc::new(Admission::new(0, 1)),
+            Arc::default(),
+        )
+        .expect("no thread to start");
+        assert!(guard.is_none());
+    }
+
+    #[test]
+    fn the_cpu_sampler_reports_a_fraction_or_nothing() {
+        let mut sampler = CpuSampler::new();
+        thread::sleep(Duration::from_millis(200));
+        let usage = sampler.sample();
+        assert!(usage.is_none_or(|usage| usage > 0.0 && usage <= 1.0));
+    }
+
+    #[test]
+    fn controller_measures_throughput_while_entries_arrive() {
+        let admission = Arc::new(Admission::new(0, 2));
+        assert_eq!(admission.start(), vec![0]);
+        assert_eq!(admission.complete(vec![1, 2]).len(), 2);
+        let progress = Arc::new(ScanProgress::default());
+        let feeding = Arc::clone(&progress);
+        let feeder = thread::spawn(move || {
+            while !feeding.is_cancelled() {
+                feeding.add(1, 0, 0);
+                thread::sleep(Duration::from_millis(1));
+            }
+        });
+        let controller_admission = Arc::clone(&admission);
+        let controller_progress = Arc::clone(&progress);
+        let controller = thread::spawn(move || {
+            control_with(
+                ScanThreads {
+                    max_threads: 2,
+                    adaptive: true,
+                    system_cpu_limit: None,
+                    ..ScanThreads::default()
+                },
+                &controller_admission,
+                &controller_progress,
+                &(Mutex::new(false), Condvar::new()),
+                Duration::from_millis(5),
+                || None,
+            );
+        });
+        // The first measured rate is the reference: half the workers are
+        // tried next, and one finishing job lets the trial begin.
+        wait_until(|| admission.sample().limit == 1);
+        assert_eq!(admission.complete(Vec::new()), Vec::<usize>::new());
+        wait_until(|| progress.snapshot().thread_tuning_complete);
+        // A finished search keeps the controller watching, not searching.
+        thread::sleep(Duration::from_millis(30));
+        progress.cancel();
+        controller.join().expect("controller");
+        feeder.join().expect("feeder");
+    }
+
+    #[test]
+    fn the_real_controller_samples_this_machines_cpu() {
+        let admission = Arc::new(Admission::new(0, 2));
+        assert_eq!(admission.start(), vec![0]);
+        let progress = Arc::new(ScanProgress::default());
+        let controller_progress = Arc::clone(&progress);
+        let controller = thread::spawn(move || {
+            control(
+                ScanThreads {
+                    max_threads: 2,
+                    adaptive: true,
+                    ..ScanThreads::default()
+                },
+                &admission,
+                &controller_progress,
+                &(Mutex::new(false), Condvar::new()),
+            );
+        });
+        // Two 250 ms intervals pass before the CPU is first asked.
+        thread::sleep(Duration::from_millis(700));
+        progress.cancel();
+        controller.join().expect("controller");
+    }
 }

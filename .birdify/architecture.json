@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "mapId": "karen-desktop",
-  "revision": 2,
+  "revision": 3,
   "project": {
     "id": "karen",
     "name": "Karen",
@@ -14,7 +14,7 @@
       "role": "frontend",
       "name": "Instrument Console UI",
       "kind": "local",
-      "responsibility": "Vue views for Runtime, CPU, Memory and Space (explore, Review, removal progress, help); holds view state, history, filter, zoom and keyboard/pointer handling; renders CLI events.",
+      "responsibility": "Vue views for Runtime, CPU, Memory, Battery, Network and Space (explore, Review, removal progress, help); holds view state, history, filter, zoom and keyboard/pointer handling; renders CLI events and forwards tray summary status.",
       "ownership": [
         {
           "kind": "file",
@@ -24,7 +24,7 @@
       "evidence": [
         {
           "path": "apps/desktop/src/App.vue",
-          "note": "Single-file template and script for all four tabs and custom masthead.",
+          "note": "Single-file template and script for all instrument tabs and custom masthead.",
           "symbol": "KarenCli"
         }
       ],
@@ -138,7 +138,7 @@
       "role": "backend",
       "name": "Tauri Shell",
       "kind": "local",
-      "responsibility": "Native window and scoped sidecar permission; no business logic.",
+      "responsibility": "Native window, top-bar system tray icon/menu, and scoped sidecar permission; no business logic.",
       "ownership": [
         {
           "kind": "directory",
@@ -152,7 +152,7 @@
         },
         {
           "path": "apps/desktop/src-tauri/src/main.rs",
-          "note": "Registers the shell plugin."
+          "note": "Registers the shell plugin and native tray menu."
         }
       ],
       "status": "supported",
@@ -222,9 +222,9 @@
     {
       "id": "samplers",
       "role": "backend",
-      "name": "CPU and Memory Samplers",
+      "name": "Resource Samplers (CPU, Memory, Battery, Network)",
       "kind": "local",
-      "responsibility": "Read-only CPU and physical memory sampling.",
+      "responsibility": "Read-only CPU, physical memory, battery/power-supply, and network interface sampling.",
       "ownership": [
         {
           "kind": "directory",
@@ -233,6 +233,14 @@
         {
           "kind": "directory",
           "path": "crates/monitor-memory"
+        },
+        {
+          "kind": "directory",
+          "path": "crates/monitor-battery"
+        },
+        {
+          "kind": "directory",
+          "path": "crates/monitor-network"
         }
       ],
       "evidence": [
@@ -399,11 +407,11 @@
       "id": "core-samplers",
       "from": "monitor-core",
       "to": "samplers",
-      "label": "reads CPU and memory",
+      "label": "reads CPU, memory, battery and network",
       "evidence": [
         {
           "path": "crates/monitor-core/src/lib.rs",
-          "note": "reads CPU and memory"
+          "note": "reads CPU, memory, battery and network"
         }
       ],
       "status": "supported",

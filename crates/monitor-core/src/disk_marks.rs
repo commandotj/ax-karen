@@ -198,4 +198,27 @@ mod tests {
         assert!(marks.contains(&first, path));
         assert_eq!(marks.items(&second), []);
     }
+
+    #[test]
+    fn unmark_and_clear_drop_marks_for_one_root_only() {
+        let root_path = Path::new("/home/user");
+        let tree = tree(10, true);
+        let note = Path::new("/home/user/note");
+        let mut marks = DiskMarks::default();
+        marks.unmark(root_path, note);
+        marks.toggle(root_path, &tree, note).unwrap();
+        marks
+            .toggle(root_path, &tree, Path::new("/home/user/extra"))
+            .unwrap();
+
+        marks.unmark(root_path, note);
+        assert!(!marks.contains(root_path, note));
+        assert_eq!(marks.items(root_path).len(), 1);
+        marks.clear(root_path);
+        assert_eq!(marks.items(root_path), []);
+        assert_eq!(
+            marks.toggle(root_path, &tree, Path::new("/home/user/gone")),
+            Err(MarkError::PathNotFound)
+        );
+    }
 }

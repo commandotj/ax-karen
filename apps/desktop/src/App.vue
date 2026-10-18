@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { KarenCli, type CliEvent } from "./cli";
 import { categoryColor, drawTreemap, tileAt, type TreeTile } from "./treemap";
@@ -19,6 +20,39 @@ type CpuProcess = {
   cpu_percent: number;
 };
 type MemoryProcess = { pid: number; name: string; memory_bytes: number };
+type BatteryInfo = {
+  present: boolean;
+  state?: string | null;
+  percent?: number | null;
+  power_watts?: number | null;
+  energy_wh?: number | null;
+  energy_full_wh?: number | null;
+  energy_design_wh?: number | null;
+  health_percent?: number | null;
+  voltage_volts?: number | null;
+  temperature_celsius?: number | null;
+  cycle_count?: number | null;
+  time_to_empty_secs?: number | null;
+  time_to_full_secs?: number | null;
+};
+type NetworkInterface = {
+  name: string;
+  rx_bytes_per_sec?: number | null;
+  tx_bytes_per_sec?: number | null;
+  total_rx_bytes: number;
+  total_tx_bytes: number;
+  packets_rx: number;
+  packets_tx: number;
+  errors_rx: number;
+  errors_tx: number;
+};
+type NetworkInfo = {
+  rx_bytes_per_sec?: number | null;
+  tx_bytes_per_sec?: number | null;
+  total_rx_bytes: number;
+  total_tx_bytes: number;
+  interfaces: NetworkInterface[];
+};
 type Sibling = { name: string; path: string; bytes: number; is_dir: boolean; category?: string };
 type Crumb = { path: string; label: string; siblings?: Sibling[] };
 type DiskMark = { path: string; bytes: number; is_dir: boolean; hidden: boolean };
@@ -27,7 +61,7 @@ type BlockedMark = { path: string; reason: string };
 
 const status = ref("Starting monitor");
 const isMacOS = navigator.userAgent.includes("Macintosh");
-const tab = ref<"runtime" | "cpu" | "memory" | "disk">("runtime");
+const tab = ref<"runtime" | "cpu" | "memory" | "battery" | "network" | "disk">("runtime");
 const treeMode = ref<"size" | "files" | "age">("size");
 const treeModes = ["size", "files", "age"] as const;
 const includeHidden = ref(true);
@@ -36,6 +70,13 @@ const treeDepth = ref(4);
 const cpu = ref<number | null>(null);
 const memoryUsed = ref<number | null>(null);
 const memoryTotal = ref<number | null>(null);
+const battery = ref<BatteryInfo>({ present: false });
+const batterySamples = ref<number[]>([]);
+const batteryPowerSamples = ref<number[]>([]);
+const network = ref<NetworkInfo>({ total_rx_bytes: 0, total_tx_bytes: 0, interfaces: [] });
+const networkRxSamples = ref<number[]>([]);
+const networkTxSamples = ref<number[]>([]);
+let unlistenTray: UnlistenFn | undefined;
 const volumes = ref<Volume[]>([]);
 const selectedVolume = ref("");
 const treeRoot = ref("");
@@ -197,6 +238,19 @@ function receive(event: CliEvent): void {
     memoryProcesses.value = readMemoryProcesses(event.memory_processes);
     if (cpu.value !== null) pushSample(cpuSamples.value, cpu.value);
     if (memoryTotal.value) pushSample(memorySamples.value, usedMemoryPercent.value);
+    if (typeof event.battery === "object" && event.battery !== null) {
+      battery.value = event.battery as BatteryInfo;
+      if (typeof battery.value.percent === "number") pushSample(batterySamples.value, battery.value.percent);
+      if (typeof battery.value.power_watts === "number") pushSample(batteryPowerSamples.value, battery.value.power_watts);
+    }
+    if (typeof event.network === "object" && event.network !== null) {
+      network.value = event.network as NetworkInfo;
+      if (typeof network.value.rx_bytes_per_sec === "number") pushSample(networkRxSamples.value, network.value.rx_bytes_per_sec);
+      if (typeof network.value.tx_bytes_per_sec === "number") pushSample(networkTxSamples.value, network.value.tx_bytes_per_sec);
+    }
+    void invoke("update_tray_status", {
+      summary: `Karen · CPU ${cpu.value ?? "—"}% · MEM ${usedMemoryPercent.value.toFixed(0)}%${battery.value.present && battery.value.percent != null ? ` · BAT ${battery.value.percent}%` : ""}`,
+    });
   }
   if (event.event === "volumes" && Array.isArray(event.volumes)) {
     volumes.value = event.volumes as Volume[];
@@ -711,9 +765,10 @@ function handleDiskKeyboard(event: KeyboardEvent): void {
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
   if (target instanceof Element && target.closest("button:not(.tree-tile)")) return;
 
-  pointerLast = false;
   if (helpOpen.value) return;
   const key = vimArrows[event.key] ?? event.key;
+  // Moving the selection by keyboard hands the action target back from the pointer; other keys act on the pointed tile.
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) pointerLast = false;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
     const current = tiles.value.find((tile) => tile.path === selection.value?.path);
     const candidates = tiles.value.filter((tile) => tile.path && tile.path !== current?.path);
@@ -733,6 +788,7 @@ function handleDiskKeyboard(event: KeyboardEvent): void {
         const offset = Math.abs(dx * direction[1] - dy * direction[0]);
         return { tile, score: primary > 0 ? primary * 2.5 + offset : Number.POSITIVE_INFINITY };
       })
+      .filter((item) => Number.isFinite(item.score))
       .sort((left, right) => left.score - right.score)[0]?.tile;
     if (next?.path) {
       event.preventDefault();
@@ -944,8 +1000,22 @@ function formatBytes(value: number): string {
   return `${amount.toFixed(1)} ${units[index]}`;
 }
 
-function formatCount(value: number | null | undefined): string {
-  return value == null ? "—" : `${value.toLocaleString()} files`;
+function formatRate(value: number | null | undefined): string {
+  return typeof value === "number" ? `${formatBytes(value)}/s` : "—";
+}
+
+function formatDuration(secs: number | null | undefined): string {
+  if (typeof secs !== "number" || secs <= 0) return "—";
+  return `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
+}
+
+const networkPeakRate = computed(() => Math.max(1024, ...networkRxSamples.value, ...networkTxSamples.value));
+
+function selectTrayTab(target: string): void {
+  if (target === "space") openDiskTree();
+  else if (["runtime", "cpu", "memory", "battery", "network"].includes(target)) {
+    tab.value = target as "runtime" | "cpu" | "memory" | "battery" | "network";
+  }
 }
 
 function volumePercent(volume: Volume): number {
@@ -967,6 +1037,7 @@ onMounted(async () => {
     status.value = "Open Karen.app to connect the CLI";
     return;
   }
+  unlistenTray = await listen<string>("tray-navigate", ({ payload }) => selectTrayTab(payload));
   cli = new KarenCli(receive);
   try {
     await cli.start();
@@ -979,6 +1050,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  unlistenTray?.();
   treemapResizeObserver?.disconnect();
   window.removeEventListener("pointerdown", closeVolumeMenu);
   window.removeEventListener("resize", positionVolumeMenu);
@@ -1032,7 +1104,9 @@ onBeforeUnmount(() => {
       <button :class="{ active: tab === 'runtime' }" @click="tab = 'runtime'"><span class="tab-index">01</span><span>Runtime</span><i>{{ cpu === null ? "WAIT" : "LIVE" }}</i></button>
       <button :class="{ active: tab === 'cpu' }" @click="tab = 'cpu'"><span class="tab-index">02</span><span>CPU</span><i>{{ cpuProcessesAvailable ? "LIVE" : "WAIT" }}</i></button>
       <button :class="{ active: tab === 'memory' }" @click="tab = 'memory'"><span class="tab-index">03</span><span>Memory</span><i>{{ memoryTotal === null ? "WAIT" : "LIVE" }}</i></button>
-      <button :class="{ active: tab === 'disk' }" @click="openDiskTree"><span class="tab-index">04</span><span>Space</span><i>{{ scanning ? "MAP" : treeRoot ? "READY" : "OPEN" }}</i></button>
+      <button :class="{ active: tab === 'battery' }" @click="tab = 'battery'"><span class="tab-index">04</span><span>Battery</span><i>{{ battery.present ? `${battery.percent ?? "—"}%` : "AC" }}</i></button>
+      <button :class="{ active: tab === 'network' }" @click="tab = 'network'"><span class="tab-index">05</span><span>Network</span><i>{{ network.rx_bytes_per_sec == null ? "WAIT" : "LIVE" }}</i></button>
+      <button :class="{ active: tab === 'disk' }" @click="openDiskTree"><span class="tab-index">06</span><span>Space</span><i>{{ scanning ? "MAP" : treeRoot ? "READY" : "OPEN" }}</i></button>
       <div class="tab-fill"></div>
     </nav>
 
@@ -1042,9 +1116,23 @@ onBeforeUnmount(() => {
         <div class="metric-main"><span class="metric-caption">TOTAL CPU LOAD</span><strong class="metric-value">{{ cpu ?? "—" }}<small>%</small></strong><div class="metric-ruler"><i :style="{ width: `${cpu ?? 0}%` }"></i></div><div class="metric-state"><span>LOAD CONDITION</span><b>{{ cpu === null ? "INITIALIZING" : cpu > 85 ? "HIGH LOAD" : cpu > 50 ? "ACTIVE" : "NOMINAL" }}</b></div></div>
         <div class="chart-console"><div class="chart-heading"><span>PROCESSOR LOAD</span><span>3 SECOND SAMPLE <i>/</i> 4.5 MIN WINDOW</span></div><svg class="history-chart" viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" aria-label="Recent processor load history"><path class="chart-grid" d="M0 1H1000 M0 50H1000 M0 99H1000"/><path v-if="cpuSamples.length > 1" class="chart-area" :d="`${chartPath(cpuSamples, 100)} L1000,100 L0,100 Z`"/><path class="chart-line cpu-line" :d="chartPath(cpuSamples, 100)"/></svg><div class="chart-axis"><span>−4.5 MIN</span><span>−2 MIN</span><span>NOW</span></div><div class="process-ledger"><div class="process-ledger-heading"><span>CPU BY PROCESS</span><span>100% = ONE CORE</span></div><p v-if="!cpuProcessesAvailable" class="process-empty">SAMPLING BASELINE — PROCESS LOAD WARMING UP</p><p v-else-if="!visibleCpuProcesses.length" class="process-empty">NO PROCESS CPU READINGS AVAILABLE</p><div v-else class="process-rows"><div v-for="process in visibleCpuProcesses" :key="process.pid" class="process-row"><span class="process-name" :title="process.name">{{ process.name }}</span><span class="process-pid">PID {{ process.pid }}</span><b>{{ process.cpu_percent.toFixed(1) }}%</b></div></div></div></div>
         <div class="runtime-memory"><span class="metric-caption">MEMORY IN USE</span><strong>{{ memoryUsed === null ? "—" : formatBytes(memoryUsed) }}</strong><div class="metric-ruler memory-ruler"><i :style="{ width: `${usedMemoryPercent}%` }"></i></div><div class="runtime-memory-stats"><span>USED <b>{{ usedMemoryPercent.toFixed(0) }}%</b></span><span>TOTAL <b>{{ memoryTotal === null ? "—" : formatBytes(memoryTotal) }}</b></span><span>AVAILABLE <b>{{ memoryTotal === null ? "—" : formatBytes(memoryTotal - (memoryUsed ?? 0)) }}</b></span></div><div class="runtime-process-mini"><span class="metric-caption">RESIDENT MEMORY LEADERS</span><div v-for="process in memoryProcesses.slice(0, 3)" :key="process.pid"><span>{{ process.name }}</span><b>{{ formatBytes(process.memory_bytes) }}</b></div><p v-if="!memoryProcessesAvailable">PROCESS SAMPLE UNAVAILABLE</p></div><button class="runtime-memory-link" @click="tab = 'memory'">MEMORY DETAIL <span>↗</span></button></div>
+        <div class="runtime-aux">
+          <button class="runtime-mini-instrument runtime-battery-card" @click="tab = 'battery'">
+            <span class="metric-caption">POWER &amp; BATTERY</span>
+            <strong>{{ battery.present ? `${battery.percent ?? "—"}%` : "AC POWER" }}</strong>
+            <small>{{ battery.present ? `${(battery.state ?? "unknown").toUpperCase()} · ${battery.power_watts != null ? `${battery.power_watts.toFixed(1)} W` : "— W"}` : "No battery detected (AC power)" }}</small>
+            <span class="runtime-mini-open">BATTERY DETAIL ↗</span>
+          </button>
+          <button class="runtime-mini-instrument runtime-network-card" @click="tab = 'network'">
+            <span class="metric-caption">NETWORK THROUGHPUT</span>
+            <strong>RX {{ formatRate(network.rx_bytes_per_sec) }}</strong>
+            <small>TX {{ formatRate(network.tx_bytes_per_sec) }} · {{ network.interfaces.length }} IFACES</small>
+            <span class="runtime-mini-open">NETWORK DETAIL ↗</span>
+          </button>
+        </div>
       </div>
       <section class="runtime-volumes"><div class="instrument-section-heading"><span>VOLUME CAPACITY INSTRUMENTS</span><span>{{ volumes.length.toString().padStart(2, "0") }} MOUNTED</span></div><div class="runtime-volume-grid"><button v-for="(volume, index) in volumes" :key="volume.mount_point" class="runtime-volume" @click="selectVolume(volume.mount_point)"><span class="runtime-volume-index">{{ String(index + 1).padStart(2, "0") }}</span><span class="runtime-volume-name">{{ volume.mount_point }}</span><span class="runtime-volume-device">{{ volume.device || "LOCAL STORAGE" }}</span><strong>{{ volumePercent(volume).toFixed(0) }}<small>% USED</small></strong><span class="runtime-volume-track" :style="meterStyle(volumePercent(volume))"><i></i></span><span class="runtime-volume-capacity">{{ formatBytes((volume.total_bytes ?? 0) - (volume.free_bytes ?? 0)) }} USED <b>{{ volume.available_bytes == null ? "—" : formatBytes(volume.available_bytes) }} FREE</b></span><span class="runtime-volume-open">OPEN SPACE ↗</span></button><p v-if="!volumes.length" class="process-empty">WAITING FOR MOUNTED VOLUME TELEMETRY</p></div></section>
-      <div class="panel-status"><span class="calibration">✥</span> LIVE SYSTEM TELEMETRY <i>·</i> CPU · PHYSICAL MEMORY · {{ volumes.length }} VOLUMES <i>·</i> UPDATED EVERY 3 SECONDS</div>
+      <div class="panel-status"><span class="calibration">✥</span> LIVE SYSTEM TELEMETRY <i>·</i> CPU · MEMORY · BATTERY · NETWORK · {{ volumes.length }} VOLUMES <i>·</i> UPDATED EVERY 3 SECONDS</div>
     </section>
 
     <section v-else-if="tab === 'cpu'" class="view metric-view detail-view">
@@ -1061,6 +1149,82 @@ onBeforeUnmount(() => {
       </div>
       <div class="detail-process-console memory-process-console"><div class="instrument-section-heading"><span>PROCESS RESIDENT MEMORY</span><span>RSS / WORKING SET · TOP 20</span></div><div class="detail-table-heading"><span>RANK / PROCESS</span><span>PID</span><span>RESIDENT</span></div><div class="detail-process-rows"><p v-if="!memoryProcessesAvailable" class="process-empty">PROCESS MEMORY SAMPLE UNAVAILABLE</p><p v-else-if="!memoryProcesses.length" class="process-empty">NO PROCESS MEMORY READINGS AVAILABLE</p><div v-for="(process, index) in memoryProcesses" :key="process.pid" class="detail-process-row"><span class="detail-process-identity"><i>{{ String(index + 1).padStart(2, "0") }}</i><b :title="process.name">{{ process.name }}</b></span><span class="process-pid">{{ process.pid }}</span><span class="detail-process-reading"><b>{{ formatBytes(process.memory_bytes) }}</b><i :style="{ width: processMemoryWidth(process.memory_bytes) }"></i></span></div></div></div>
       <div class="panel-status"><span class="calibration">✥</span> PHYSICAL MEMORY <i>·</i> {{ usedMemoryPercent.toFixed(0) }}% COMMITTED <i>·</i> LOCAL SAMPLING</div>
+    </section>
+
+    <section v-else-if="tab === 'battery'" class="view metric-view battery-view">
+      <div class="view-heading"><h1>Battery &amp; Power</h1><span class="volume-count">{{ battery.present ? `${(battery.state ?? "unknown").toUpperCase()} · ${battery.percent ?? "—"}%` : "NO BATTERY DETECTED (AC POWER)" }}</span></div>
+      <div class="metric-console memory-console battery-console">
+        <div class="metric-main">
+          <span class="metric-caption">CHARGE RESERVE</span>
+          <strong class="metric-value memory-value">{{ battery.present ? `${battery.percent ?? "—"}%` : "AC" }}</strong>
+          <div class="metric-ruler"><i :style="{ width: `${battery.present ? (battery.percent ?? 0) : 100}%` }"></i></div>
+          <div class="metric-state"><span>SUPPLY STATE</span><b>{{ battery.present ? (battery.state ?? "unknown").toUpperCase() : "NO BATTERY DETECTED (AC POWER)" }}</b></div>
+          <div class="metric-state"><span>POWER RATE</span><b>{{ battery.power_watts != null ? `${battery.power_watts.toFixed(1)} W` : "—" }}</b></div>
+          <div class="metric-state"><span>ESTIMATED RUNTIME</span><b>{{ formatDuration(battery.time_to_empty_secs ?? battery.time_to_full_secs) }}</b></div>
+        </div>
+        <div class="chart-console">
+          <div class="chart-heading"><span>CHARGE &amp; WATTAGE TRACE</span><span>3 SECOND SAMPLE <i>/</i> 4.5 MIN WINDOW</span></div>
+          <svg class="history-chart" viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" aria-label="Recent battery charge history">
+            <path class="chart-grid" d="M0 1H1000 M0 50H1000 M0 99H1000"/>
+            <path v-if="batterySamples.length > 1" class="chart-area" :d="`${chartPath(batterySamples, 100)} L1000,100 L0,100 Z`"/>
+            <path class="chart-line cpu-line" :d="chartPath(batterySamples, 100)"/>
+            <path class="chart-line memory-line" :d="chartPath(batteryPowerSamples, 100)"/>
+          </svg>
+          <div class="chart-axis"><span>−4.5 MIN</span><span>−2 MIN</span><span>NOW</span></div>
+        </div>
+      </div>
+      <div class="detail-process-console memory-process-console battery-ledger">
+        <div class="instrument-section-heading"><span>CELL CAPACITY &amp; ELECTRICAL TELEMETRY</span><span>{{ battery.present ? "SMART BATTERY" : "DESKTOP / AC LINE" }}</span></div>
+        <p v-if="!battery.present" class="process-empty">No battery detected (AC power) — running on external mains supply.</p>
+        <div v-else class="battery-fact-grid">
+          <div class="battery-fact"><span>CURRENT ENERGY</span><b>{{ battery.energy_wh != null ? `${battery.energy_wh.toFixed(1)} Wh` : "—" }}</b></div>
+          <div class="battery-fact"><span>FULL CHARGE CAPACITY</span><b>{{ battery.energy_full_wh != null ? `${battery.energy_full_wh.toFixed(1)} Wh` : "—" }}</b></div>
+          <div class="battery-fact"><span>FACTORY DESIGN CAPACITY</span><b>{{ battery.energy_design_wh != null ? `${battery.energy_design_wh.toFixed(1)} Wh` : "—" }}</b></div>
+          <div class="battery-fact"><span>CELL HEALTH</span><b>{{ battery.health_percent != null ? `${battery.health_percent}%` : "—" }}</b></div>
+          <div class="battery-fact"><span>CYCLE COUNT</span><b>{{ battery.cycle_count ?? "—" }}</b></div>
+          <div class="battery-fact"><span>PACK VOLTAGE</span><b>{{ battery.voltage_volts != null ? `${battery.voltage_volts.toFixed(2)} V` : "—" }}</b></div>
+          <div class="battery-fact"><span>PACK TEMPERATURE</span><b>{{ battery.temperature_celsius != null ? `${battery.temperature_celsius.toFixed(1)} °C` : "—" }}</b></div>
+        </div>
+      </div>
+      <div class="panel-status"><span class="calibration">✥</span> POWER TELEMETRY <i>·</i> {{ battery.present ? `HEALTH ${battery.health_percent ?? "—"}%` : "AC MAINS" }} <i>·</i> LOCAL SAMPLING</div>
+    </section>
+
+    <section v-else-if="tab === 'network'" class="view metric-view network-view">
+      <div class="view-heading"><h1>Network Throughput</h1><span class="volume-count">RX {{ formatRate(network.rx_bytes_per_sec) }} · TX {{ formatRate(network.tx_bytes_per_sec) }}</span></div>
+      <div class="metric-console memory-console network-console">
+        <div class="metric-main">
+          <span class="metric-caption">EXTERNAL THROUGHPUT</span>
+          <strong class="metric-value memory-value">{{ formatRate(network.rx_bytes_per_sec) }}</strong>
+          <div class="metric-state"><span>TRANSMIT RATE (TX)</span><b>{{ formatRate(network.tx_bytes_per_sec) }}</b></div>
+          <div class="metric-state"><span>CUMULATIVE RECEIVED</span><b>{{ formatBytes(network.total_rx_bytes) }}</b></div>
+          <div class="metric-state"><span>CUMULATIVE TRANSMITTED</span><b>{{ formatBytes(network.total_tx_bytes) }}</b></div>
+        </div>
+        <div class="chart-console">
+          <div class="chart-heading"><span>DUAL-CHANNEL RX / TX TRACE</span><span>PEAK SCALE {{ formatRate(networkPeakRate) }}</span></div>
+          <svg class="history-chart" viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" aria-label="Recent network receive and transmit history">
+            <path class="chart-grid" d="M0 1H1000 M0 50H1000 M0 99H1000"/>
+            <path v-if="networkRxSamples.length > 1" class="chart-area memory-area" :d="`${chartPath(networkRxSamples, networkPeakRate)} L1000,100 L0,100 Z`"/>
+            <path class="chart-line memory-line" :d="chartPath(networkRxSamples, networkPeakRate)"/>
+            <path class="chart-line cpu-line" :d="chartPath(networkTxSamples, networkPeakRate)"/>
+          </svg>
+          <div class="chart-axis"><span>−4.5 MIN</span><span>−2 MIN</span><span>NOW</span></div>
+        </div>
+      </div>
+      <div class="detail-process-console memory-process-console network-interface-console">
+        <div class="instrument-section-heading"><span>NETWORK INTERFACES</span><span>SORTED BY LIVE THROUGHPUT · TOP 20</span></div>
+        <div class="detail-table-heading network-table-heading"><span>RANK / INTERFACE</span><span>RX RATE</span><span>TX RATE</span><span>TOTAL RX / TX</span><span>PACKETS / ERR</span></div>
+        <div class="detail-process-rows">
+          <p v-if="!network.interfaces.length" class="process-empty">NO NETWORK INTERFACES DETECTED</p>
+          <div v-for="(iface, index) in network.interfaces" :key="iface.name" class="detail-process-row network-interface-row">
+            <span class="detail-process-identity"><i>{{ String(index + 1).padStart(2, "0") }}</i><b :title="iface.name">{{ iface.name }}</b></span>
+            <span class="process-pid">{{ formatRate(iface.rx_bytes_per_sec) }}</span>
+            <span class="process-pid">{{ formatRate(iface.tx_bytes_per_sec) }}</span>
+            <span class="process-pid">{{ formatBytes(iface.total_rx_bytes) }} / {{ formatBytes(iface.total_tx_bytes) }}</span>
+            <span class="process-pid">{{ iface.packets_rx + iface.packets_tx }} pkts · {{ iface.errors_rx + iface.errors_tx }} err</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-status"><span class="calibration">✥</span> NETWORK TELEMETRY <i>·</i> {{ network.interfaces.length }} INTERFACES <i>·</i> 3 SECOND SAMPLE</div>
     </section>
 
     <section v-else class="view disk-view" :class="{ 'no-inspector': !showInspector }" :style="{ '--inspector-w': `${inspectorWidth}px` }">

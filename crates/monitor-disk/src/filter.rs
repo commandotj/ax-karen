@@ -246,4 +246,15 @@ mod tests {
         assert!(!contains_ignoring_case("ab", "abc"));
         assert!(contains_ignoring_case("x", ""));
     }
+
+    #[test]
+    fn a_partial_node_is_laid_out_by_what_matched() {
+        let partial = Keep::Partial {
+            bytes: 10,
+            files: 3,
+        };
+        let node = tree();
+        assert_eq!(Matches::value(partial, &node, Metric::Files), 3);
+        assert_eq!(Matches::value(partial, &node, Metric::Bytes), 10);
+    }
 }

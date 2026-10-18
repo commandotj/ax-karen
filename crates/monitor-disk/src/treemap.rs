@@ -445,10 +445,10 @@ mod tests {
         let values = [40.0, 30.0, 20.0, 5.0, 3.0, 2.0];
         let rects = squarify(&values, area());
         let covered: f32 = rects.iter().map(Rect::area).sum();
+        let whole = area().area();
         assert!(
-            (covered - area().area()).abs() < 1.0,
-            "covered {covered} of {}",
-            area().area()
+            (covered - whole).abs() < 1.0,
+            "covered {covered} of {whole}"
         );
         for rect in &rects {
             assert!(rect.x >= -0.01 && rect.y >= -0.01);
@@ -560,10 +560,10 @@ mod tests {
         // Every descendant starts below the band, so no child is drawn under
         // the parent's name.
         for tile in tiles.iter().filter(|tile| tile.crumbs().len() > 1) {
+            let crumbs = tile.crumbs();
             assert!(
                 tile.rect.y >= header.bottom() - f32::EPSILON,
-                "{:?} overlaps the header",
-                tile.crumbs()
+                "{crumbs:?} overlaps the header"
             );
         }
 
@@ -721,5 +721,59 @@ mod tests {
         };
         let ratio = area_of("src") / area_of("unit_test.txt");
         assert!((ratio - 3.0).abs() < 0.05, "ratio {ratio}");
+    }
+
+    #[test]
+    fn a_rect_scales_and_moves_without_changing_shape() {
+        let rect = Rect::new(1.0, 2.0, 3.0, 4.0);
+        assert_eq!(rect.scaled(2.0), Rect::new(2.0, 4.0, 6.0, 8.0));
+        assert_eq!(
+            rect.translated(10.0, 20.0),
+            Rect::new(11.0, 22.0, 3.0, 4.0)
+        );
+    }
+
+    #[test]
+    fn nothing_to_show_lays_out_no_tiles() {
+        let options = LayoutOptions::default();
+        let empty = Node::directory("empty");
+        assert!(
+            layout(&empty, &[], area(), Metric::Bytes, &options).is_empty()
+        );
+        let zeros = dir("zeros", vec![file("a", 0), file("b", 0)]);
+        assert!(
+            layout(&zeros, &[], area(), Metric::Bytes, &options).is_empty()
+        );
+        let full = dir("full", vec![file("a", 1)]);
+        let none = Rect::new(0.0, 0.0, 0.0, 10.0);
+        assert!(layout(&full, &[], none, Metric::Bytes, &options).is_empty());
+    }
+
+    #[test]
+    fn an_open_directory_below_the_top_keeps_the_slimmer_band() {
+        let root = dir(
+            "root",
+            vec![dir("a", vec![dir("b", vec![file("x", 10), file("y", 5)])])],
+        );
+        let options = LayoutOptions::default();
+        let tiles = layout(&root, &[], area(), Metric::Bytes, &options);
+        let inner = tiles
+            .iter()
+            .find(|tile| tile.crumbs() == [0, 0])
+            .expect("the inner directory");
+        let band = inner.header.expect("drawn open");
+        assert!((band.h - options.header_inner).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn a_value_too_small_to_see_gets_a_rect_of_nothing() {
+        let rects = squarify(&[1.0, 1e-50], area());
+        assert!((rects[0].area() - area().area()).abs() < 1.0);
+        assert!(rects[1].area() < f32::EPSILON);
+        assert!(
+            rects
+                .iter()
+                .all(|rect| rect.w.is_finite() && rect.h.is_finite())
+        );
     }
 }

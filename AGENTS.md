@@ -15,6 +15,8 @@ Vue or Tauri.
 | `crates/monitor-core/` | CLI-owned application state and orchestration |
 | `crates/monitor-cpu/` | read-only CPU sampling |
 | `crates/monitor-memory/` | read-only memory sampling |
+| `crates/monitor-battery/` | read-only battery and power-supply sampling |
+| `crates/monitor-network/` | read-only network interface sampling |
 | `crates/monitor-disk/` | scan, tree, layout, space and guarded removal |
 | `.agents/skills/karen-design/` | product design constraints and visual review |
 | `.impeccable/` | project design reference; keep at repository root |
@@ -80,7 +82,7 @@ status or archive changes. Approved RFCs gate implementation; do not hand-edit
 | removal safety | `crates/monitor-disk/src/removal.rs` |
 | free-space measurements | `crates/monitor-disk/src/space.rs` |
 | application state and CLI protocol | `crates/monitor-core/`, `apps/cli/` |
-| CPU and memory sampling | `crates/monitor-cpu/`, `crates/monitor-memory/` |
+| CPU, memory, battery and network sampling | `crates/monitor-cpu/`, `crates/monitor-memory/`, `crates/monitor-battery/`, `crates/monitor-network/` |
 | screen layout and controls | `apps/desktop/src/App.vue` |
 | treemap paint and hit testing | `apps/desktop/src/treemap.ts` |
 | visual tokens and window chrome | `apps/desktop/src/style.css` |

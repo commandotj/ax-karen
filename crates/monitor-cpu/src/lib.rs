@@ -67,11 +67,7 @@ fn process_rows(system: &System) -> Vec<ProcessUsage> {
         .processes()
         .iter()
         .filter_map(|(pid, process)| {
-            let cpu_percent = process.cpu_usage();
-            if !cpu_percent.is_finite() || cpu_percent < 0.0 {
-                return None;
-            }
-
+            let cpu_percent = valid_process_percent(process.cpu_usage())?;
             Some(ProcessUsage {
                 pid: pid.as_u32(),
                 name: display_name(process.name()),
@@ -81,6 +77,11 @@ fn process_rows(system: &System) -> Vec<ProcessUsage> {
         .collect();
 
     rank_and_bound(rows)
+}
+
+/// A process reading that is a measurement: finite and not negative.
+fn valid_process_percent(value: f32) -> Option<f32> {
+    (value.is_finite() && value >= 0.0).then_some(value)
 }
 
 fn display_name(name: &OsStr) -> String {
@@ -109,6 +110,7 @@ mod tests {
 
     use super::{
         MAX_PROCESS_ROWS, ProcessUsage, Sampler, display_name, rank_and_bound,
+        valid_process_percent, valid_total_percent,
     };
 
     #[test]
@@ -157,5 +159,20 @@ mod tests {
                 .as_ref()
                 .is_some_and(|rows| rows.len() <= MAX_PROCESS_ROWS)
         );
+    }
+
+    #[test]
+    fn unmeasurable_readings_are_dropped_and_totals_clamped() {
+        assert_eq!(valid_process_percent(f32::NAN), None);
+        assert_eq!(valid_process_percent(-1.0), None);
+        assert_eq!(valid_process_percent(0.0), Some(0.0));
+        assert_eq!(valid_total_percent(f32::INFINITY), None);
+        assert_eq!(valid_total_percent(140.0), Some(100.0));
+        assert_eq!(display_name(OsStr::new("karen")), "karen");
+    }
+
+    #[test]
+    fn the_default_sampler_starts_cold() {
+        assert_eq!(Sampler::default().sample().processes, None);
     }
 }

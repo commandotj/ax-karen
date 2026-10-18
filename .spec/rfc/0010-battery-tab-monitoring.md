@@ -1,6 +1,6 @@
 # RFC 0010: Add battery telemetry and Battery tab (child of 0001)
 
-**Status:** Draft
+**Status:** Approved
 
 **Parent:** [0001](completed/0001-karen-system-resource-app.md)
 
@@ -97,7 +97,7 @@ no monitor crate dependencies.
 
 ## Acceptance
 
-1. `cargo xtask lint` and `cargo xtask test` pass with unit tests in
+1. `pnpm lint` (`node scripts/cargo-check.mjs lint`) and `pnpm test` (`node scripts/cargo-check.mjs test`) pass with unit tests in
    `crates/monitor-battery/` covering normal readings, non-finite sanitization,
    derived health percentage and no-battery fallback.
 2. `karen --stream-json` includes the `battery` payload in `resources` events

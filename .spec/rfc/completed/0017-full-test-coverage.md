@@ -1,6 +1,6 @@
 # RFC 0017: Reach full test coverage with a CI gate
 
-**Status:** Approved
+**Status:** Implemented
 
 ## Summary
 
@@ -68,3 +68,35 @@ each time the threshold is raised.
 Both coverage commands run from the documented root commands; coverage is 100%
 of lines except the listed exclusions; CI fails on a deliberate drop; every
 exclusion has a reason; `specify validate` and `sync-check` pass.
+
+## Results and exclusions
+
+Measured on macOS, 2026-10-17, after the work: Vue 100% of lines (79 tests),
+Rust 96.91% of lines (267 tests, 0 failures). Commands: `pnpm coverage:rust`
+(`cargo llvm-cov`, gate `--fail-under-lines 96`) and `pnpm coverage:web`
+(vitest, gate `lines: 100`); `pnpm coverage` runs both and a macOS CI job runs
+it. The gate was shown to fail locally (`--fail-under-lines 99` exits 1). The
+CI job itself has not run on GitHub. Homebrew Rust needs `LLVM_COV` and
+`LLVM_PROFDATA` set to Homebrew LLVM; CI uses `llvm-tools-preview`.
+
+Rust lines still uncovered, with reasons. Raise the threshold when any entry is
+removed; RFC 0018 covers the OS-dependent entries.
+
+| Where | Reason |
+| --- | --- |
+| `monitor-disk/removal.rs` 1444-1454, 1418-1420, 1503-1508, 2597-2612 | Real NSFileManager Trash, `trash-put`, `gio`, real home trash; RFC 0018 |
+| `removal.rs` 254, 430-440, 462, 608-612, 730-735, 750 | Windows, Linux `/proc` and other-OS branches, not compiled or run on macOS; RFCs 0015, 0016 |
+| `removal.rs` 713, 1036-1042; `scan.rs` 307-308, 1029 | Thread spawn failure cannot be triggered |
+| `removal.rs` 1383-1384, 1391-1395 | Race or filesystem that does not report types; needs a real second mount (Linux ignored fixture) |
+| `scan.rs` 397-399, 422-424, 478-480, 946, 1054 | Linux-only or Windows-only paths |
+| `scan.rs` 451, 527, 505-507, 1154, 1217, 1178-1180, 1039-1040 | Cloud-evicted dirs, deletion races, cancel timing, kernel entry errors, impossible empty root |
+| `scan.rs` 2085-2117 | `#[ignore]` whole-disk smoke test |
+| `space.rs` 65, 388, 573-582, 621, 641, 818 | Filesystem-dependent, Linux `/proc`, other-OS, failed `mount` |
+| `treemap.rs` 366, 383, 405; `macos.rs` 330 | Float degeneracy guards; EINTR retry |
+| `apps/cli/stream_json.rs` 378, 393, 1100-1102 | Non-macOS `choose_directory`, Full Disk Access and Linux `xdg-open` branches |
+| `stream_json.rs` 40, 204, 228, 603, 901-913, 1000, 1018 | Shutdown race and defensive branches unreachable through the protocol; candidates for deletion |
+| `monitor-core/disk_marks.rs` 42, 87 | Unreachable through the public API |
+| `monitor-battery` (84.6%) | New crate owned by RFC 0010, still in progress |
+
+Vue: `treemap.ts`, `cli.ts` and `main.ts` are at 100% lines. Branch coverage
+is about 95.6% and is not gated.

@@ -14,6 +14,8 @@ pub struct ResourceSnapshot {
     pub memory_used_bytes: Option<u64>,
     pub memory_total_bytes: Option<u64>,
     pub memory_processes: Option<Vec<monitor_memory::ProcessUsage>>,
+    pub battery: monitor_battery::Snapshot,
+    pub network: monitor_network::Snapshot,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -30,6 +32,8 @@ pub struct MonitorCore {
     active_scan: Option<ScanHandle>,
     cpu: monitor_cpu::Sampler,
     memory: monitor_memory::Sampler,
+    battery: monitor_battery::Sampler,
+    network: monitor_network::Sampler,
     disk_marks: disk_marks::DiskMarks,
 }
 
@@ -39,6 +43,8 @@ impl MonitorCore {
             active_scan: None,
             cpu: monitor_cpu::Sampler::new(),
             memory: monitor_memory::Sampler::default(),
+            battery: monitor_battery::Sampler::new(),
+            network: monitor_network::Sampler::new(),
             disk_marks: disk_marks::DiskMarks::default(),
         }
     }
@@ -83,12 +89,16 @@ impl MonitorCore {
     pub fn sample_resources(&mut self) -> ResourceSnapshot {
         let cpu = self.cpu.sample();
         let memory = self.memory.sample();
+        let battery = self.battery.sample();
+        let network = self.network.sample();
         ResourceSnapshot {
             cpu_percent: cpu.total_percent.map(|value| value.round() as u32),
             cpu_processes: cpu.processes,
             memory_used_bytes: memory.used_bytes,
             memory_total_bytes: memory.total_bytes,
             memory_processes: memory.processes,
+            battery,
+            network,
         }
     }
 
@@ -122,5 +132,40 @@ fn is_dashboard_volume(_point: &Path) -> bool {
 impl Default for MonitorCore {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MonitorCore;
+    use monitor_disk::scan::ScanOptions;
+
+    #[test]
+    fn idle_core_has_nothing_to_cancel_or_poll() {
+        let mut core = MonitorCore::default();
+        assert!(!core.cancel_scan());
+        assert!(core.scan_progress().is_none());
+        assert!(core.poll_scan().is_none());
+        assert_eq!(core.disk_marks().items(std::path::Path::new("/")), []);
+    }
+
+    #[test]
+    fn a_second_scan_is_refused_until_the_first_is_polled() {
+        let root = tempfile::tempdir().expect("temp root");
+        std::fs::write(root.path().join("a"), "a").expect("write");
+        let mut core = MonitorCore::new();
+        assert!(core.start_scan(root.path().into(), ScanOptions::default()));
+        assert!(!core.start_scan(root.path().into(), ScanOptions::default()));
+        assert!(core.cancel_scan());
+        while core.poll_scan().is_none() {
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        assert!(core.start_scan(root.path().into(), ScanOptions::default()));
+    }
+
+    #[test]
+    fn volumes_include_the_root_volume() {
+        let volumes = MonitorCore::new().sample_volumes();
+        assert!(volumes.iter().any(|volume| volume.mount_point == "/"));
     }
 }

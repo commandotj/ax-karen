@@ -25,10 +25,8 @@ pub const FULL_DISK_ACCESS_SETTINGS: &str =
 /// The privacy database itself is protected by Full Disk Access, so opening
 /// it for reading is the test. It never shows a prompt, unlike touching
 /// Desktop or Documents would.
+#[cfg(target_os = "macos")]
 pub fn full_disk_access(home: &Path) -> Option<bool> {
-    if !cfg!(target_os = "macos") {
-        return None;
-    }
     let database =
         home.join("Library/Application Support/com.apple.TCC/TCC.db");
     match std::fs::File::open(database) {
@@ -38,6 +36,14 @@ pub fn full_disk_access(home: &Path) -> Option<bool> {
         }
         Err(_) => None,
     }
+}
+
+/// Whether this process has Full Disk Access: `None` off macOS, where the
+/// question does not apply.
+#[cfg(not(target_os = "macos"))]
+pub const fn full_disk_access(home: &Path) -> Option<bool> {
+    let _ = home;
+    None
 }
 
 /// Whether this process runs as an administrator: `None` off Windows,
@@ -86,12 +92,39 @@ mod tests {
     use super::*;
 
     #[test]
-    fn only_macos_has_an_answer_and_a_missing_database_is_not_a_refusal() {
+    fn a_missing_database_is_not_a_refusal() {
         let temp = tempfile::TempDir::new().expect("tempdir");
         assert_eq!(full_disk_access(temp.path()), None);
-        if !cfg!(target_os = "macos") {
-            let home = std::env::home_dir().expect("a home directory");
-            assert_eq!(full_disk_access(&home), None);
-        }
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn a_readable_database_is_access_and_an_unreadable_one_a_refusal() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let temp = tempfile::TempDir::new().expect("tempdir");
+        let folder = temp
+            .path()
+            .join("Library/Application Support/com.apple.TCC");
+        std::fs::create_dir_all(&folder).expect("folder");
+        let database = folder.join("TCC.db");
+        std::fs::write(&database, b"").expect("database");
+        assert_eq!(full_disk_access(temp.path()), Some(true));
+        std::fs::set_permissions(
+            &database,
+            std::fs::Permissions::from_mode(0o000),
+        )
+        .expect("chmod");
+        assert_eq!(full_disk_access(temp.path()), Some(false));
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn administrator_questions_have_no_answer_off_windows() {
+        assert_eq!(administrator(), None);
+        assert!(!file_table_readable(Path::new("/")));
+        let error = restart_as_administrator(&[OsString::from("--x")])
+            .expect_err("unsupported");
+        assert_eq!(error.kind(), io::ErrorKind::Unsupported);
     }
 }

@@ -88,8 +88,8 @@ fn snapshot(total_bytes: u64, used_bytes: u64) -> Snapshot {
 #[cfg(test)]
 mod tests {
     use super::{
-        MAX_PROCESS_ROWS, ProcessUsage, Snapshot, display_name, rank_and_bound,
-        snapshot,
+        MAX_PROCESS_ROWS, ProcessUsage, Sampler, Snapshot, display_name,
+        rank_and_bound, snapshot,
     };
     use std::ffi::OsStr;
 
@@ -141,5 +141,16 @@ mod tests {
         }]);
 
         assert_eq!(rows.len(), 0);
+    }
+
+    #[test]
+    fn a_live_sample_reads_this_machine_and_names_processes() {
+        let snapshot = Sampler::default().sample();
+        let total = snapshot.total_bytes.expect("total memory");
+        assert!(snapshot.used_bytes.expect("used memory") <= total);
+        let rows = snapshot.processes.expect("process rows");
+        assert!(rows.len() <= MAX_PROCESS_ROWS);
+        assert!(rows.iter().all(|row| row.memory_bytes > 0));
+        assert_eq!(display_name(OsStr::new("karen")), "karen");
     }
 }

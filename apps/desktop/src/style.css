@@ -636,3 +636,36 @@ body {
   .runtime-view .chart-console, .runtime-view .metric-main, .runtime-view .runtime-memory { padding: 10px 14px; }
 }
 @container (max-height: 43px) { .runtime-process-mini > .metric-caption { display: none; } }
+
+/* Battery & Network instruments and Runtime auxiliary column */
+.runtime-view .runtime-console { grid-template-columns: minmax(145px, .75fr) minmax(230px, 1.35fr) minmax(160px, .85fr) minmax(160px, .8fr); }
+.runtime-aux { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.runtime-mini-instrument {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid #7b5f2b;
+  border-radius: 4px;
+  background:
+    var(--rivet) 7px 7px / 10px 10px no-repeat,
+    var(--rivet) calc(100% - 7px) 7px / 10px 10px no-repeat,
+    var(--rivet) 7px calc(100% - 7px) / 10px 10px no-repeat,
+    var(--rivet) calc(100% - 7px) calc(100% - 7px) / 10px 10px no-repeat,
+    var(--enamel);
+  box-shadow: inset 0 0 0 3px #0a0d0e, inset 0 0 0 4px #4d3a1c, 0 8px 18px #000a;
+  color: #e9dcc0;
+  text-align: left;
+  cursor: pointer;
+}
+.runtime-mini-instrument:hover { border-color: #c9a24d; box-shadow: inset 0 0 0 1px #c9a24d, 0 8px 18px #000a; }
+.runtime-mini-instrument > strong { color: #f6e8c4; font: 600 clamp(18px, 3vh, 26px) 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; }
+.runtime-mini-instrument > small { color: #b7a479; font: 11px 'Spline Sans Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.runtime-mini-open { color: #dec483; font: 10px 'Spline Sans Mono', monospace; letter-spacing: .12em; }
+.battery-fact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 12px; padding: 18px 22px; overflow-y: auto; }
+.battery-fact { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid #594728; background: #141614; }
+.battery-fact span { color: #9c8a62; font: 10px 'Spline Sans Mono', monospace; letter-spacing: .12em; }
+.battery-fact b { color: #f2dfb1; font: 600 18px 'Spline Sans Mono', monospace; font-variant-numeric: tabular-nums; }
+.network-table-heading, .network-interface-row { grid-template-columns: minmax(140px, 1.4fr) minmax(90px, .8fr) minmax(90px, .8fr) minmax(130px, 1.1fr) minmax(130px, 1fr); }

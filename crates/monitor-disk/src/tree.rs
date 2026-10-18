@@ -503,7 +503,7 @@ mod tests {
         node.children
             .iter()
             .find(|child| &*child.name == name)
-            .unwrap_or_else(|| panic!("no child named {name}"))
+            .expect(name)
     }
 
     #[test]
@@ -578,5 +578,25 @@ mod tests {
         root.children.push(nested);
         assert_eq!(root.depth(), 2);
         assert_eq!(leaf("x", 0).depth(), 0);
+    }
+
+    #[test]
+    fn navigation_helpers_stop_at_what_is_not_there() {
+        assert_eq!(Metric::Bytes.label(), "size");
+        assert_eq!(Metric::Files.label(), "files");
+        assert_eq!(Metric::Bytes.toggled(), Metric::Files);
+        assert_eq!(Metric::Files.toggled(), Metric::Bytes);
+        let mut file = Node::entry("f", NodeKind::File, 3);
+        file.files = 1;
+        assert_eq!(file.own_files(), 1);
+        let mut root = Node::directory("root");
+        root.children.push(Node::directory("a"));
+        assert_eq!(root.child(0).map(|child| &*child.name), Some("a"));
+        assert!(root.child(1).is_none());
+        assert_eq!(root.resolve_chain(&[0, 5]).len(), 2);
+        assert_eq!(
+            path_of(Path::new("/r"), &root, &[0, 5]),
+            PathBuf::from("/r/a")
+        );
     }
 }

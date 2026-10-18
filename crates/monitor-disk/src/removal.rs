@@ -960,10 +960,17 @@ fn which(program: &str) -> bool {
 }
 
 fn home_trash_dir() -> Option<PathBuf> {
-    let data = std::env::var_os("XDG_DATA_HOME").map_or_else(
+    trash_dir_from(std::env::var_os("XDG_DATA_HOME"), std::env::var_os("HOME"))
+}
+
+/// The XDG trash for these values of `XDG_DATA_HOME` and `HOME`.
+fn trash_dir_from(
+    data_home: Option<std::ffi::OsString>,
+    home: Option<std::ffi::OsString>,
+) -> Option<PathBuf> {
+    let data = data_home.map_or_else(
         || {
-            std::env::var_os("HOME")
-                .map(PathBuf::from)
+            home.map(PathBuf::from)
                 .map(|home| home.join(".local/share"))
         },
         |value| Some(PathBuf::from(value)),
@@ -1620,7 +1627,7 @@ mod tests {
         temp
     }
 
-    #[cfg(target_os = "linux")]
+    #[cfg(not(windows))]
     #[test]
     fn desktop_media_exception_requires_an_independent_disk() {
         let views = crate::space::parse_mountinfo(
@@ -1657,7 +1664,7 @@ mod tests {
         covering.point = PathBuf::from("/run/media/user/Games");
         stacked.push(covering);
         assert!(media_roots(&stacked).is_empty(), "overmounted disk");
-        assert!(media_roots(&[]).is_empty());
+        assert_eq!(media_roots(&[]).len(), 0);
     }
 
     /// Run in a private mount namespace with the fixture described in
@@ -1839,10 +1846,11 @@ mod tests {
         assert!(plan.is_empty());
         assert_eq!(plan.blocked.len(), targets.len());
         assert!(
-            plan.blocked
-                .iter()
-                .any(|blocked| blocked.reason.contains("home directory"))
-                || home.is_none()
+            home.is_none()
+                || plan
+                    .blocked
+                    .iter()
+                    .any(|blocked| blocked.reason.contains("home directory"))
         );
     }
 
@@ -1907,10 +1915,14 @@ mod tests {
     fn mount_points_are_recognized() {
         let temp = tree();
         assert!(!is_mount_point(temp.path()));
-        // /proc is a mount point everywhere Linux runs this test.
-        if Path::new("/proc/self").exists() {
-            assert!(is_mount_point(Path::new("/proc")));
-        }
+        assert!(!is_mount_point(&temp.path().join("a/one.bin")), "a file");
+        assert!(!is_mount_point(&temp.path().join("absent")));
+        assert!(is_mount_point(Path::new("/")), "nothing above it");
+        // `src` is relative to the crate: its parent, "", cannot be stat'ed,
+        // and a directory whose parent cannot be is not worth the risk.
+        assert!(is_mount_point(Path::new("src")));
+        #[cfg(target_os = "linux")]
+        assert!(is_mount_point(Path::new("/proc")));
     }
 
     #[test]
@@ -2020,14 +2032,13 @@ mod tests {
     fn the_mount_table_is_read_off_the_calling_thread_and_then_kept() {
         prime_mount_points();
         // The first read lands on its own thread; wait for it, briefly.
-        let mut mounts = mount_points();
-        for _ in 0..500 {
-            if !mounts.points.is_empty() {
-                break;
-            }
+        let mounts = std::iter::repeat_with(|| {
             thread::sleep(std::time::Duration::from_millis(10));
-            mounts = mount_points();
-        }
+            mount_points()
+        })
+        .take(500)
+        .find(|mounts| !mounts.points.is_empty())
+        .unwrap_or_else(mount_points);
         assert_eq!(
             mounts.points,
             read_mount_table().points,
@@ -2200,11 +2211,8 @@ mod tests {
             temp.path(),
         );
         assert!(plan.is_empty());
-        assert!(
-            plan.blocked[0].reason.contains("through a link"),
-            "{}",
-            plan.blocked[0].reason
-        );
+        let reason = &plan.blocked[0].reason;
+        assert!(reason.contains("through a link"), "{reason}");
     }
 
     /// The trash follows links on the way down, so the worker asks again,
@@ -2437,18 +2445,10 @@ mod tests {
             .filter(|event| matches!(event, RemovalEvent::Item { .. }))
             .count();
         assert_eq!(items, 3);
-        match events.last() {
-            Some(RemovalEvent::Done {
-                removed,
-                bytes,
-                failed,
-            }) => {
-                assert_eq!(*removed, 2);
-                assert_eq!(*failed, 1);
-                assert_eq!(*bytes, 20);
-            }
-            other => panic!("expected Done, got {other:?}"),
-        }
+        assert_eq!(
+            format!("{:?}", events.last()),
+            "Some(Done { removed: 2, bytes: 20, failed: 1 })"
+        );
         assert!(!root.join("a/b").exists());
         assert!(root.join("a/one.bin").exists());
     }
@@ -2679,6 +2679,362 @@ mod tests {
         // Library is theirs.
         for path in ["/Applications/Xcode.app", "/Users/tobi/Library/Caches"] {
             assert_eq!(tree_of(Path::new(path), home), None, "{path}");
+        }
+    }
+
+    /// Every event `run` sends for `plan`, run on this thread.
+    fn run_here(
+        plan: &Plan,
+        mode: RemovalMode,
+        backend: TrashBackend,
+        cancelled: bool,
+    ) -> Vec<RemovalEvent> {
+        let (sender, events) = mpsc::channel();
+        run(plan, mode, backend, &AtomicBool::new(cancelled), &sender);
+        drop(sender);
+        events.into_iter().collect()
+    }
+
+    #[test]
+    fn every_mode_and_backend_is_named_for_the_review_screen() {
+        assert_eq!(RemovalMode::Permanent.label(), "Delete permanently");
+        assert_eq!(RemovalMode::Trash.label(), "Move to trash");
+        assert!(RemovalMode::Permanent.detail().contains("unrecoverable"));
+        assert!(RemovalMode::Trash.detail().contains("recoverable"));
+        let backends = [
+            TrashBackend::MacOs,
+            TrashBackend::TrashPut,
+            TrashBackend::Gio,
+            TrashBackend::XdgHome,
+            TrashBackend::RecycleBin,
+            TrashBackend::Unavailable,
+        ];
+        let labels: std::collections::HashSet<_> =
+            backends.iter().map(|backend| backend.label()).collect();
+        assert_eq!(labels.len(), backends.len());
+        for backend in backends {
+            assert_ne!(backend.detail(), "");
+            assert_eq!(
+                backend.is_available(),
+                backend != TrashBackend::Unavailable
+            );
+        }
+    }
+
+    #[test]
+    fn an_empty_selection_plans_nothing_against_the_normalized_root() {
+        let plan = plan(&[], Path::new("/tmp/./a/../b"));
+        assert!(plan.is_empty());
+        assert_eq!(plan.blocked.len(), 0);
+        assert_eq!(plan.root, PathBuf::from("/tmp/b"));
+        assert_eq!(
+            (plan.bytes(), plan.reclaim(), plan.unattributed()),
+            (0, 0, 0)
+        );
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn windows_only_lookups_are_inert_elsewhere() {
+        assert_eq!(windows_key(Path::new("/a/B")), PathBuf::from("/a/B"));
+        assert_eq!(windows_mount_points().len(), 0);
+        assert_eq!(profiles_key(), None);
+    }
+
+    #[test]
+    fn a_profile_is_a_directory_directly_in_the_profiles_folder() {
+        let temp = tree();
+        let profiles = guard_key(temp.path());
+        let is = |relative: &str| {
+            let path = temp.path().join(relative);
+            is_profile(&path, &guard_key(&path), &profiles)
+        };
+        assert!(is("a"));
+        assert!(!is("a/b"), "inside a profile");
+        assert!(!is("absent"));
+        fs::write(temp.path().join("file"), b"x").expect("write");
+        assert!(!is("file"), "a file there is no profile");
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn a_media_path_that_is_not_its_own_real_path_keeps_the_run_guard() {
+        // Classified as media, but nothing is there to resolve: the
+        // exception needs the real path to be the marked one.
+        let media = [PathBuf::from("/run/media/user/games")];
+        let path = Path::new("/run/media/user/games/karen-absent");
+        let reason =
+            refuse(path, &media[0], None, &media, &media).expect("refused");
+        assert!(reason.contains("part of the system under /run"), "{reason}");
+    }
+
+    #[test]
+    fn a_target_the_table_lists_as_a_mount_point_is_refused() {
+        let temp = tree();
+        let root = temp.path();
+        let mounts = MountTable {
+            points: vec![guard_key(&root.join("a"))],
+            ..MountTable::default()
+        };
+        let plan = plan_against(&[target(&root.join("a"), 30)], root, &mounts);
+        assert!(plan.is_empty());
+        let reason = &plan.blocked[0].reason;
+        assert!(reason.contains("a mount point"), "{reason}");
+    }
+
+    #[test]
+    fn a_leading_current_directory_is_dropped() {
+        assert_eq!(normalize(Path::new("./a/b")), PathBuf::from("a/b"));
+    }
+
+    #[test]
+    fn the_home_trash_follows_xdg_data_home_then_home() {
+        let data = Some("/data".into());
+        let home = Some("/home/tobi".into());
+        assert_eq!(
+            trash_dir_from(data, home.clone()),
+            Some(PathBuf::from("/data/Trash"))
+        );
+        assert_eq!(
+            trash_dir_from(None, home),
+            Some(PathBuf::from("/home/tobi/.local/share/Trash"))
+        );
+        assert_eq!(trash_dir_from(None, None), None);
+        assert_eq!(
+            home_trash_dir(),
+            trash_dir_from(
+                std::env::var_os("XDG_DATA_HOME"),
+                std::env::var_os("HOME")
+            )
+        );
+    }
+
+    #[test]
+    fn a_cancelled_run_touches_nothing_and_still_reports_done() {
+        let temp = tree();
+        let root = temp.path();
+        let plan = plan(&[target(&root.join("a"), 30)], root);
+        let events =
+            run_here(&plan, RemovalMode::Permanent, TrashBackend::MacOs, true);
+        assert_eq!(
+            format!("{events:?}"),
+            "[Start { total: 1 }, Done { removed: 0, bytes: 0, failed: 0 }]"
+        );
+        assert!(root.join("a/one.bin").exists());
+    }
+
+    #[test]
+    fn a_handle_can_be_cancelled_and_a_trash_run_of_nothing_finishes() {
+        let handle = spawn(Plan::default(), RemovalMode::Trash);
+        handle.cancel();
+        let done = std::iter::repeat_with(|| {
+            thread::sleep(std::time::Duration::from_millis(1));
+            handle.poll()
+        })
+        .take(5000)
+        .flatten()
+        .find(|event| matches!(event, RemovalEvent::Done { .. }));
+        assert_eq!(
+            format!("{done:?}"),
+            "Some(Done { removed: 0, bytes: 0, failed: 0 })"
+        );
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn a_trash_run_without_a_usable_trash_fails_each_item_and_keeps_it() {
+        let temp = tree();
+        let root = temp.path();
+        let plan = plan(&[target(&root.join("a/c.bin"), 20)], root);
+        for backend in [TrashBackend::Unavailable, TrashBackend::RecycleBin] {
+            let events = run_here(&plan, RemovalMode::Trash, backend, false);
+            let item = format!("{:?}", events[1]);
+            assert!(item.contains("outcome: Err("), "{item}");
+            assert!(root.join("a/c.bin").exists(), "{backend:?}");
+        }
+        assert!(
+            move_to_trash(&root.join("a/c.bin"), TrashBackend::Unavailable)
+                .is_err()
+        );
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn the_macos_backend_refuses_a_name_the_trash_would_misread() {
+        use std::os::unix::ffi::OsStrExt as _;
+        let temp = TempDir::new().expect("tempdir");
+        let odd = temp.path().join(std::ffi::OsStr::from_bytes(b"x-\xff"));
+        let error =
+            move_to_trash(&odd, TrashBackend::MacOs).expect_err("refused");
+        assert!(error.to_string().contains("UTF-8"), "{error}");
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn a_run_asks_the_run_media_guard_again_before_removing() {
+        let plan = Plan {
+            targets: vec![target(Path::new("/run/media/user/Games/game"), 4)],
+            root: PathBuf::from("/run/media/user/Games"),
+            ..Plan::default()
+        };
+        let events =
+            run_here(&plan, RemovalMode::Permanent, TrashBackend::MacOs, false);
+        let item = format!("{:?}", events[1]);
+        assert!(item.contains("outcome: Err(\"part of the system"), "{item}");
+    }
+
+    #[test]
+    fn a_target_that_became_a_mount_point_is_caught_at_removal_time() {
+        let reason = mounted(Path::new("/"), &[]).expect("caught");
+        assert!(reason.contains("became a mount point"), "{reason}");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn permanent_removal_refuses_paths_it_cannot_walk_down_from_the_root() {
+        let temp = tree();
+        let root = temp.path();
+        let other = TempDir::new().expect("tempdir");
+        let message = |path: &Path, root: &Path| {
+            remove_permanently(path, root)
+                .expect_err("refused")
+                .to_string()
+        };
+        assert!(message(&root.join("a/.."), root).contains("normalized"));
+        assert!(
+            message(&root.join("a/../other"), root).contains("normalized"),
+            "a `..` on the way down"
+        );
+        assert!(
+            message(&root.join("a/one.bin"), other.path())
+                .contains("not inside the scanned root")
+        );
+        let missing = remove_permanently(&root.join("gone/x"), root)
+            .expect_err("missing");
+        assert_eq!(missing.kind(), io::ErrorKind::NotFound);
+        assert!(root.join("other").exists());
+        assert!(root.join("a/one.bin").exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn permanent_removal_stops_at_a_directory_it_cannot_open() {
+        use std::os::unix::fs::PermissionsExt as _;
+        let temp = tree();
+        let locked = temp.path().join("a/b/locked");
+        fs::create_dir(&locked).expect("mkdir");
+        fs::set_permissions(&locked, fs::Permissions::from_mode(0o000))
+            .expect("chmod");
+        let outcome = remove_permanently(&temp.path().join("a"), temp.path());
+        fs::set_permissions(&locked, fs::Permissions::from_mode(0o755))
+            .expect("chmod back");
+        assert_eq!(
+            outcome.expect_err("refused").kind(),
+            io::ErrorKind::PermissionDenied
+        );
+        assert!(locked.exists(), "nothing past it was touched");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_xdg_trash_refuses_a_path_without_a_name() {
+        let trash = TempDir::new().expect("tempdir");
+        let work = tree();
+        let error = trash_into(&work.path().join("a/.."), trash.path())
+            .expect_err("refused");
+        assert!(error.to_string().contains("without a name"), "{error}");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_xdg_trash_puts_a_file_back_when_its_record_cannot_be_written() {
+        use std::os::unix::fs::PermissionsExt as _;
+        let trash = TempDir::new().expect("tempdir");
+        let info = trash.path().join("info");
+        fs::create_dir(&info).expect("mkdir");
+        fs::set_permissions(&info, fs::Permissions::from_mode(0o555))
+            .expect("chmod");
+        let work = tree();
+        let file = work.path().join("a/c.bin");
+        let outcome = trash_into(&file, trash.path());
+        fs::set_permissions(&info, fs::Permissions::from_mode(0o755))
+            .expect("chmod back");
+        assert!(outcome.is_err());
+        assert_eq!(fs::read(&file).expect("put back").len(), 20);
+        assert!(!trash.path().join("files/c.bin").exists());
+    }
+
+    /// The trash may only take what is on its own filesystem. Shown where
+    /// the workspace and the temporary directory are on different volumes,
+    /// as on an external disk; on one volume the move goes through.
+    #[cfg(unix)]
+    #[test]
+    fn the_xdg_trash_refuses_a_file_on_another_filesystem() {
+        use std::os::unix::fs::MetadataExt as _;
+        let trash = TempDir::new().expect("tempdir");
+        let work = TempDir::new_in(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../target"
+        ))
+        .expect("tempdir in the workspace");
+        let file = work.path().join("far.bin");
+        fs::write(&file, b"x").expect("write");
+        let outcome = trash_into(&file, trash.path());
+        let device = |path: &Path| fs::metadata(path).expect("stat").dev();
+        let same = device(work.path()) == device(trash.path());
+        let message = format!("{outcome:?}");
+        assert_eq!(outcome.is_ok(), same, "{message}");
+        assert!(
+            same || message.contains("different filesystem"),
+            "{message}"
+        );
+        assert_eq!(file.exists(), !same, "a refused file stays");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn trash_names_count_up_and_give_up_after_ten_thousand() {
+        let temp = TempDir::new().expect("tempdir");
+        fs::write(temp.path().join("notes"), b"").expect("write");
+        fs::write(temp.path().join("notes.1"), b"").expect("write");
+        assert_eq!(unique_name(temp.path(), "notes").1, "notes.2");
+        for index in 2..10_000 {
+            fs::write(temp.path().join(format!("notes.{index}")), b"")
+                .expect("write");
+        }
+        let (path, name) = unique_name(temp.path(), "notes");
+        assert_eq!((path, name.as_str()), (temp.path().join("notes"), "notes"));
+    }
+
+    #[cfg(not(windows))]
+    #[test]
+    fn every_real_disk_filesystem_can_hold_desktop_media() {
+        for fstype in [
+            "ext2",
+            "ext3",
+            "ext4",
+            "btrfs",
+            "xfs",
+            "f2fs",
+            "vfat",
+            "exfat",
+            "ntfs",
+            "ntfs3",
+            "fuseblk",
+            "fuse.ntfs-3g",
+        ] {
+            let disk = crate::space::MountView {
+                device: "8:2".into(),
+                source: "/dev/sdb".into(),
+                fstype: fstype.into(),
+                point: PathBuf::from("/run/media/user/Disk"),
+                fs_root: PathBuf::from("/"),
+            };
+            assert_eq!(
+                media_roots(std::slice::from_ref(&disk)),
+                [disk.point],
+                "{fstype}"
+            );
         }
     }
 }

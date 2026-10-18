@@ -10,9 +10,11 @@ description = "Karen application state and resource orchestration"
 workspace = true
 
 [dependencies]
+monitor-battery = { workspace = true }
 monitor-cpu = { workspace = true }
 monitor-disk = { workspace = true }
 monitor-memory = { workspace = true }
+monitor-network = { workspace = true }
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 

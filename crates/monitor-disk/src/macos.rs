@@ -620,4 +620,129 @@ mod tests {
         let error = read_dir(&temp.path().join("gone")).expect_err("missing");
         assert_eq!(error.kind(), io::ErrorKind::NotFound);
     }
+
+    /// A listing of `dir` whose buffer already holds `records`, as if the
+    /// kernel had just written them.
+    fn primed(dir: &Path, records: &[Vec<u8>]) -> ReadDir {
+        let mut bytes: Vec<u8> = records.concat();
+        bytes.resize(BUFFER_BYTES, 0);
+        let buffer: Box<[u64]> = bytes
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .copied()
+            .map(u64::from_ne_bytes)
+            .collect();
+        let mut listing = read_dir(dir).expect("list");
+        listing.buffer = Some(buffer);
+        listing.remaining = u32::try_from(records.len()).expect("few");
+        listing
+    }
+
+    /// One record laid out per getattrlist(2): length, returned attributes,
+    /// the error when flagged, the name reference, `tail`, then the name.
+    fn record(
+        common: u32,
+        file: u32,
+        error: Option<u32>,
+        name: &[u8],
+    ) -> Vec<u8> {
+        record_with(common, file, error, name, &[])
+    }
+
+    fn record_with(
+        common: u32,
+        file: u32,
+        error: Option<u32>,
+        name: &[u8],
+        tail: &[u8],
+    ) -> Vec<u8> {
+        let mut out = vec![0; 4];
+        out.extend(common.to_ne_bytes());
+        out.extend([0; 8]);
+        out.extend(file.to_ne_bytes());
+        out.extend([0; 4]);
+        if let Some(error) = error {
+            out.extend(error.to_ne_bytes());
+        }
+        let reference = out.len();
+        let start = reference + 8 + tail.len();
+        let offset = u32::try_from(start - reference).expect("small");
+        let length = u32::try_from(name.len() + 1).expect("small");
+        out.extend(offset.to_ne_bytes());
+        out.extend(length.to_ne_bytes());
+        out.extend(tail);
+        out.extend(name);
+        out.push(0);
+        out.resize(out.len().next_multiple_of(4), 0);
+        let total = u32::try_from(out.len()).expect("small");
+        out[..4].copy_from_slice(&total.to_ne_bytes());
+        out
+    }
+
+    #[test]
+    fn records_the_kernel_flags_or_leaves_short_are_reported_or_stated() {
+        let temp = TempDir::new().expect("tempdir");
+        fs::write(temp.path().join("plain"), b"abc").expect("write");
+        let returned = ATTR_CMN_RETURNED_ATTRS | ATTR_CMN_NAME;
+        // Every common attribute, a regular file, but no file attributes.
+        let mut tail = Vec::new();
+        tail.extend(7_u32.to_ne_bytes());
+        tail.extend(VREG.to_ne_bytes());
+        tail.extend([0; 16]);
+        tail.extend(0_u32.to_ne_bytes());
+        tail.extend(9_u64.to_ne_bytes());
+        let records = [
+            record(returned | ATTR_CMN_ERROR, 0, Some(13), b"refused"),
+            record(returned, 0, None, b"plain"),
+            record_with(returned | MEASURED, 0, None, b"plain", &tail),
+        ];
+        let mut listing = primed(temp.path(), &records);
+
+        let refused = listing.next().expect("a record").expect_err("error");
+        assert_eq!(refused.kind(), io::ErrorKind::PermissionDenied);
+        for _ in 0..2 {
+            let stated = listing.next().expect("a record").expect("stated");
+            assert_eq!((stated.name(), stated.kind()), ("plain", Kind::File));
+            assert_eq!(stated.apparent(), 3);
+        }
+    }
+
+    #[test]
+    fn a_malformed_record_ends_the_listing_with_an_error() {
+        let temp = TempDir::new().expect("tempdir");
+        let mut listing = primed(temp.path(), &[vec![0; 4]]);
+        let error = listing.next().expect("an outcome").expect_err("error");
+        assert!(error.to_string().contains("malformed"), "{error}");
+        assert!(listing.next().is_none());
+        assert!(listing.next().is_none(), "and stays ended");
+    }
+
+    #[test]
+    fn a_listing_the_kernel_refuses_reports_why_once() {
+        let temp = TempDir::new().expect("tempdir");
+        let file = temp.path().join("file");
+        fs::write(&file, b"x").expect("write");
+        let mut listing = read_dir(temp.path()).expect("list");
+        listing.fd =
+            rustix::fs::open(&file, OFlags::RDONLY, Mode::empty()).expect("fd");
+        assert!(listing.next().expect("an outcome").is_err());
+        assert!(listing.next().is_none());
+        // A listing that gave its buffer up has nothing to return.
+        listing.buffer = None;
+        drop(listing);
+    }
+
+    #[test]
+    fn names_that_are_not_utf8_keep_their_bytes_and_odd_kinds_are_other() {
+        let (name, exact) = Entry::named(b"a\xffb");
+        assert_eq!(&*name, "a\u{fffd}b");
+        assert_eq!(exact.as_deref().map(OsStr::as_bytes), Some(&b"a\xffb"[..]));
+        let temp = TempDir::new().expect("tempdir");
+        let socket = temp.path().join("sock");
+        let _listener =
+            std::os::unix::net::UnixListener::bind(&socket).expect("socket");
+        let stat = rustix::fs::lstat(&socket).expect("lstat");
+        assert_eq!(Entry::from_stat(b"sock", &stat).kind(), Kind::Other);
+    }
 }

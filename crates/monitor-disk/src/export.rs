@@ -145,13 +145,12 @@ fn line(path: &Path) -> Line {
 }
 
 const fn platform() -> &'static str {
-    if cfg!(target_os = "macos") {
-        "macOS"
-    } else if cfg!(windows) {
-        "Windows"
-    } else {
-        "Linux"
-    }
+    #[cfg(target_os = "macos")]
+    return "macOS";
+    #[cfg(windows)]
+    return "Windows";
+    #[cfg(not(any(target_os = "macos", windows)))]
+    "Linux"
 }
 
 #[cfg(test)]

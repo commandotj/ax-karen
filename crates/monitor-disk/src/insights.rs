@@ -242,4 +242,16 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn worktrees_holding_only_files_are_looked_into_not_counted() {
+        let root = scan(dir(
+            "tobi",
+            vec![dir(
+                ".codex",
+                vec![dir("worktrees", vec![file("log", GIB, 1)])],
+            )],
+        ));
+        assert_eq!(worth_a_look(&root, NOW, 10), Vec::new());
+    }
 }

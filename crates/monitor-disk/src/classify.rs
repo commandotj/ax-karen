@@ -421,7 +421,7 @@ mod tests {
                 .children
                 .iter()
                 .find(|child| &*child.name == *part)
-                .unwrap_or_else(|| panic!("no {part}"));
+                .expect(part);
         }
         node
     }
@@ -615,5 +615,73 @@ mod tests {
             assert_ne!(category, Category::Other);
             assert_ne!(category.label(), "");
         }
+    }
+
+    #[test]
+    fn every_category_and_reclaim_reason_has_a_label() {
+        assert_eq!(Category::Other.label(), "Other");
+        let reasons = [
+            (Reclaim::Regenerable, "regenerable"),
+            (Reclaim::SyncHistory, "sync history"),
+            (Reclaim::PackageStore, "package store"),
+            (Reclaim::BuildOutput, "build output"),
+            (Reclaim::Reinstallable, "reinstallable"),
+            (Reclaim::SandboxLayers, "sandbox layers"),
+            (Reclaim::Snapshots, "snapshots"),
+            (Reclaim::Trash, "trash"),
+            (Reclaim::Temporary, "temporary"),
+        ];
+        for (reason, label) in reasons {
+            assert_eq!(reason.label(), label);
+        }
+    }
+
+    #[test]
+    fn a_top_level_build_directory_needs_its_manifest_beside_it() {
+        let mut root = dir(
+            "repo",
+            vec![file("Cargo.toml", 1), dir("target", vec![file("o", 1)])],
+        );
+        aggregate(&mut root, Metric::Bytes);
+        classify(&mut root);
+        assert_eq!(
+            named(&root, &["target"]).reclaim,
+            Some(Reclaim::BuildOutput)
+        );
+    }
+
+    #[test]
+    fn deep_directories_are_classified_past_the_parallel_levels() {
+        // Six nested unknown directories: past `PARALLEL_LEVELS` the
+        // children are decided one at a time, and still inherit.
+        let mut deep = dir("cache", vec![file("blob", 1)]);
+        for name in ["e", "d", "c", "b", "a"] {
+            deep = dir(name, vec![deep, file("x", 1)]);
+        }
+        let mut root = dir("root", vec![dir("src", vec![deep])]);
+        aggregate(&mut root, Metric::Bytes);
+        classify(&mut root);
+        let path = ["src", "a", "b", "c", "d", "e", "cache"];
+        let cache = named(&root, &path);
+        assert_eq!(cache.category, Category::Cache);
+        assert_eq!(cache.reclaim, Some(Reclaim::Regenerable));
+        assert_eq!(named(&root, &path[..6]).category, Category::Code);
+    }
+
+    #[test]
+    fn an_unknown_directory_looks_only_three_levels_down() {
+        let mut root = dir(
+            "root",
+            vec![dir(
+                "mystery",
+                vec![dir(
+                    "a",
+                    vec![dir("b", vec![dir("c", vec![dir("src", vec![])])])],
+                )],
+            )],
+        );
+        aggregate(&mut root, Metric::Bytes);
+        classify(&mut root);
+        assert_eq!(named(&root, &["mystery"]).category, Category::Other);
     }
 }

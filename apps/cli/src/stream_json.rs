@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::{self, BufRead, Write};
 use std::path::{Component, Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Output};
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -21,6 +21,11 @@ struct Viewport {
     width: f32,
     height: f32,
 }
+
+/// Runs an OS command to completion. Injected so tests can assert the command
+/// line of `reveal`, `choose_directory` and `open_full_disk_access` without
+/// opening a file manager, dialog or System Settings.
+type Runner = fn(&mut Command) -> io::Result<Output>;
 
 pub fn run() -> Result<()> {
     run_stream(io::stdout().lock())
@@ -53,12 +58,13 @@ fn run_stream(mut output: impl Write) -> Result<()> {
     let mut shutdown_requested = false;
 
     loop {
+        // Events are written in one place so a closed stdout surfaces once.
+        let mut events = Vec::new();
         if !shutdown_requested {
             match requests.recv_timeout(Duration::from_millis(25)) {
                 Ok(Ok(line)) if !line.trim().is_empty() => {
-                    shutdown_requested = handle_request(
+                    let event = handle_request(
                         &line,
-                        &mut output,
                         &mut monitor,
                         &tree_cache,
                         &finding_cache,
@@ -70,19 +76,21 @@ fn run_stream(mut output: impl Write) -> Result<()> {
                         &mut scan_started_at,
                         &mut last_progress,
                         &mut last_preview_revision,
-                    )?;
+                        Command::output,
+                    );
+                    shutdown_requested = event["event"] == "shutdown";
+                    events.push(event);
                 }
                 Ok(Ok(_)) | Err(RecvTimeoutError::Timeout) => {}
-                Ok(Err(message)) => write_event(
-                    &mut output,
-                    &json!({"version": 1, "event": "error", "code": "stdin_failed", "message": message}),
-                )?,
+                Ok(Err(message)) => events.push(
+                    json!({"version": 1, "event": "error", "code": "stdin_failed", "message": message}),
+                ),
                 Err(RecvTimeoutError::Disconnected) => input_closed = true,
             }
         }
 
         report_scan(
-            &mut output,
+            &mut events,
             &mut monitor,
             &mut tree_cache,
             &mut finding_cache,
@@ -92,8 +100,11 @@ fn run_stream(mut output: impl Write) -> Result<()> {
             &mut scan_started_at,
             &mut last_progress,
             &mut last_preview_revision,
-        )?;
-        report_removal(&mut output, &mut removal)?;
+        );
+        report_removal(&mut events, &mut removal);
+        for event in &events {
+            write_event(&mut output, event)?;
+        }
         if (shutdown_requested || input_closed) && active_scan_id.is_none() {
             break;
         }
@@ -107,7 +118,6 @@ fn run_stream(mut output: impl Write) -> Result<()> {
 )]
 fn handle_request(
     line: &str,
-    output: &mut impl Write,
     monitor: &mut MonitorCore,
     tree_cache: &HashMap<PathBuf, Node>,
     finding_cache: &HashMap<PathBuf, Vec<Value>>,
@@ -119,35 +129,28 @@ fn handle_request(
     scan_started_at: &mut Option<Instant>,
     last_progress: &mut Option<(u64, u64, u64, u64)>,
     last_preview_revision: &mut u64,
-) -> Result<bool> {
+    runner: Runner,
+) -> Value {
     let request: Value = if let Ok(request) = serde_json::from_str(line) {
         request
     } else {
-        write_event(output, &error_event(None, "invalid_json"))?;
-        return Ok(false);
+        return error_event(None, "invalid_json");
     };
     let id = request.get("id");
     if request["version"] != 1 {
-        write_event(output, &error_event(id, "unsupported_version"))?;
-        return Ok(false);
+        return error_event(id, "unsupported_version");
     }
     let Some(id) = id.filter(|value| value.is_string()) else {
-        write_event(output, &error_event(None, "invalid_request"))?;
-        return Ok(false);
+        return error_event(None, "invalid_request");
     };
     match request["command"].as_str() {
         Some("shutdown") => {
-            write_event(
-                output,
-                &json!({"version": 1, "id": id, "event": "shutdown"}),
-            )?;
-            Ok(true)
+            json!({"version": 1, "id": id, "event": "shutdown"})
         }
         Some("scan") => {
             *pending_removal = None;
             let Some(root) = request.get("root").and_then(Value::as_str) else {
-                write_event(output, &error_event(Some(id), "invalid_root"))?;
-                return Ok(false);
+                return error_event(Some(id), "invalid_root");
             };
             let mut options = ScanOptions::default();
             if let Some(include_hidden) = request["include_hidden"].as_bool() {
@@ -164,64 +167,41 @@ fn handle_request(
                 ..ScanThreads::default()
             };
             if !monitor.start_scan(PathBuf::from(root), options) {
-                write_event(output, &error_event(Some(id), "scan_busy"))?;
-                return Ok(false);
+                return error_event(Some(id), "scan_busy");
             }
             *active_scan_id = Some(id.clone());
             *active_scan_root = Some(PathBuf::from(root));
             *scan_started_at = Some(Instant::now());
             *last_progress = None;
             *last_preview_revision = 0;
-            write_event(
-                output,
-                &json!({"version": 1, "id": id, "event": "scan_started", "workers": workers}),
-            )?;
-            Ok(false)
+            json!({"version": 1, "id": id, "event": "scan_started", "workers": workers})
         }
         Some("cancel_scan") => {
             let cancelled = monitor.cancel_scan();
-            write_event(
-                output,
-                &json!({
-                    "version": 1,
-                    "id": id,
-                    "event": "scan_cancel_requested",
-                    "accepted": cancelled
-                }),
-            )?;
-            Ok(false)
+            json!({
+                "version": 1,
+                "id": id,
+                "event": "scan_cancel_requested",
+                "accepted": cancelled
+            })
         }
         Some("tree_view") => {
             let Some(root) = request.get("root").and_then(Value::as_str) else {
-                write_event(output, &error_event(Some(id), "invalid_root"))?;
-                return Ok(false);
+                return error_event(Some(id), "invalid_root");
             };
             let Some(path) = request.get("path").and_then(Value::as_str) else {
-                write_event(output, &error_event(Some(id), "invalid_path"))?;
-                return Ok(false);
+                return error_event(Some(id), "invalid_path");
             };
             let root = PathBuf::from(root);
             let path = PathBuf::from(path);
             let Some(tree) = tree_cache.get(&root) else {
-                write_event(
-                    output,
-                    &json!({"version": 1, "id": id, "event": "tree_cache_miss", "root": root, "path": path}),
-                )?;
-                return Ok(false);
+                return json!({"version": 1, "id": id, "event": "tree_cache_miss", "root": root, "path": path});
             };
             let Some(crumbs) = crumbs_for_any_path(&root, tree, &path) else {
-                write_event(
-                    output,
-                    &error_event(Some(id), "tree_path_not_found"),
-                )?;
-                return Ok(false);
+                return error_event(Some(id), "tree_path_not_found");
             };
             let Some(node) = node_at(tree, &crumbs) else {
-                write_event(
-                    output,
-                    &error_event(Some(id), "tree_path_not_found"),
-                )?;
-                return Ok(false);
+                return error_event(Some(id), "tree_path_not_found");
             };
             let open = request["open"].as_bool().unwrap_or(true);
             let metric = if request["metric"] == "files" {
@@ -245,138 +225,96 @@ fn handle_request(
                 let parent_crumbs =
                     crumbs.get(..crumbs.len().saturating_sub(1)).unwrap_or(&[]);
                 let Some(parent) = node_at(tree, parent_crumbs) else {
-                    write_event(
-                        output,
-                        &error_event(Some(id), "tree_path_not_found"),
-                    )?;
-                    return Ok(false);
+                    return error_event(Some(id), "tree_path_not_found");
                 };
                 (parent_crumbs, parent)
             };
-            write_event(
-                output,
-                &tree_view_event(
-                    id,
-                    &root,
-                    &path,
-                    tree,
-                    view_crumbs,
-                    view_node,
-                    node,
-                    monitor.disk_marks().items(&root),
-                    finding_cache.get(&root).map_or(&[], Vec::as_slice),
-                    unreadable_cache.get(&root).copied().unwrap_or(0),
-                    metric,
-                    depth,
-                    width,
-                    height,
-                ),
-            )?;
-            Ok(false)
+            tree_view_event(
+                id,
+                &root,
+                &path,
+                tree,
+                view_crumbs,
+                view_node,
+                node,
+                monitor.disk_marks().items(&root),
+                finding_cache.get(&root).map_or(&[], Vec::as_slice),
+                unreadable_cache.get(&root).copied().unwrap_or(0),
+                metric,
+                depth,
+                width,
+                height,
+            )
         }
         Some("toggle_mark") => {
             *pending_removal = None;
             let (Some(root), Some(path)) =
                 (request["root"].as_str(), request["path"].as_str())
             else {
-                write_event(output, &error_event(Some(id), "invalid_path"))?;
-                return Ok(false);
+                return error_event(Some(id), "invalid_path");
             };
             let root = PathBuf::from(root);
             let path = PathBuf::from(path);
             let Some(tree) = tree_cache.get(&root) else {
-                write_event(output, &error_event(Some(id), "tree_cache_miss"))?;
-                return Ok(false);
+                return error_event(Some(id), "tree_cache_miss");
             };
             if crumbs_for_any_path(&root, tree, &path).is_none() {
-                write_event(
-                    output,
-                    &error_event(Some(id), "tree_path_not_found"),
-                )?;
-                return Ok(false);
+                return error_event(Some(id), "tree_path_not_found");
             }
             let result = monitor.disk_marks_mut().toggle(&root, tree, &path);
             match result {
-                Ok(marked) => write_event(
-                    output,
-                    &json!({"version":1,"id":id,"event":"mark_changed","root":root,"path":path,"marked":marked,"marks":mark_summaries(monitor.disk_marks().items(&root))}),
-                )?,
-                Err(error) => write_event(
-                    output,
-                    &json!({"version":1,"id":id,"event":"error","code":"mark_rejected","message":format!("{error:?}")}),
-                )?,
+                Ok(marked) => {
+                    json!({"version":1,"id":id,"event":"mark_changed","root":root,"path":path,"marked":marked,"marks":mark_summaries(monitor.disk_marks().items(&root))})
+                }
+                Err(error) => {
+                    json!({"version":1,"id":id,"event":"error","code":"mark_rejected","message":format!("{error:?}")})
+                }
             }
-            Ok(false)
         }
         Some("clear_marks") => {
             *pending_removal = None;
             let Some(root) = request["root"].as_str() else {
-                write_event(output, &error_event(Some(id), "invalid_root"))?;
-                return Ok(false);
+                return error_event(Some(id), "invalid_root");
             };
             let root = PathBuf::from(root);
             monitor.disk_marks_mut().clear(&root);
-            write_event(
-                output,
-                &json!({"version":1,"id":id,"event":"marks_changed","root":root,"marks":[]}),
-            )?;
-            Ok(false)
+            json!({"version":1,"id":id,"event":"marks_changed","root":root,"marks":[]})
         }
         Some("review") => {
             let Some(root) = request["root"].as_str() else {
-                write_event(output, &error_event(Some(id), "invalid_root"))?;
-                return Ok(false);
+                return error_event(Some(id), "invalid_root");
             };
             let root = PathBuf::from(root);
             let plan = monitor.disk_marks().plan(&root);
             *pending_removal = Some(plan.clone());
-            write_event(
-                output,
-                &json!({"version":1,"id":id,"event":"review","root":root,"marks":mark_summaries(monitor.disk_marks().items(&root)),"targets":plan.targets.len(),"bytes":plan.bytes(),"reclaim_bytes":plan.reclaim(),"foreign_bytes":plan.foreign(),"blocked":plan.blocked.iter().map(|item| json!({"path":item.path,"reason":item.reason})).collect::<Vec<_>>()}),
-            )?;
-            Ok(false)
+            json!({"version":1,"id":id,"event":"review","root":root,"marks":mark_summaries(monitor.disk_marks().items(&root)),"targets":plan.targets.len(),"bytes":plan.bytes(),"reclaim_bytes":plan.reclaim(),"foreign_bytes":plan.foreign(),"blocked":plan.blocked.iter().map(|item| json!({"path":item.path,"reason":item.reason})).collect::<Vec<_>>()})
         }
         Some("cancel_review") => {
             *pending_removal = None;
-            write_event(
-                output,
-                &json!({"version":1,"id":id,"event":"review_cancelled"}),
-            )?;
-            Ok(false)
+            json!({"version":1,"id":id,"event":"review_cancelled"})
         }
         Some("confirm_remove") => {
             let Some(plan) = pending_removal.take() else {
-                write_event(output, &error_event(Some(id), "review_required"))?;
-                return Ok(false);
+                return error_event(Some(id), "review_required");
             };
             if removal.is_some() {
                 *pending_removal = Some(plan);
-                write_event(output, &error_event(Some(id), "removal_busy"))?;
-                return Ok(false);
+                return error_event(Some(id), "removal_busy");
             }
             let mode = match request["mode"].as_str() {
                 Some("trash") => RemovalMode::Trash,
                 Some("permanent") => RemovalMode::Permanent,
                 _ => {
                     *pending_removal = Some(plan);
-                    write_event(
-                        output,
-                        &error_event(Some(id), "invalid_removal_mode"),
-                    )?;
-                    return Ok(false);
+                    return error_event(Some(id), "invalid_removal_mode");
                 }
             };
             *removal = Some(monitor_disk::removal::spawn(plan, mode));
-            write_event(
-                output,
-                &json!({"version":1,"id":id,"event":"removal_started","mode":mode.label()}),
-            )?;
-            Ok(false)
+            json!({"version":1,"id":id,"event":"removal_started","mode":mode.label()})
         }
         Some("reveal") => {
             let Some(path) = request["path"].as_str().map(PathBuf::from) else {
-                write_event(output, &error_event(Some(id), "invalid_path"))?;
-                return Ok(false);
+                return error_event(Some(id), "invalid_path");
             };
             // Lexical check only: `..` could climb out of a root that the
             // prefix test would otherwise accept.
@@ -389,30 +327,24 @@ fn handle_request(
                     .chain(active_scan_root.iter())
                     .any(|root| path.starts_with(root));
             if !allowed {
-                write_event(output, &error_event(Some(id), "reveal_rejected"))?;
-                return Ok(false);
+                return error_event(Some(id), "reveal_rejected");
             }
-            match reveal(&path) {
-                Ok(()) => write_event(
-                    output,
-                    &json!({"version":1,"id":id,"event":"reveal_done","path":path}),
-                )?,
-                Err(error) => write_event(
-                    output,
-                    &json!({"version":1,"id":id,"event":"error","code":"reveal_failed","message":error.to_string()}),
-                )?,
+            match reveal(&path, runner) {
+                Ok(()) => {
+                    json!({"version":1,"id":id,"event":"reveal_done","path":path})
+                }
+                Err(error) => {
+                    json!({"version":1,"id":id,"event":"error","code":"reveal_failed","message":error.to_string()})
+                }
             }
-            Ok(false)
         }
         Some("export_marks") => {
             let Some(root) = request["root"].as_str().map(PathBuf::from) else {
-                write_event(output, &error_event(Some(id), "invalid_root"))?;
-                return Ok(false);
+                return error_event(Some(id), "invalid_root");
             };
             let marks = monitor.disk_marks().items(&root);
             if marks.is_empty() {
-                write_event(output, &error_event(Some(id), "no_marks"))?;
-                return Ok(false);
+                return error_event(Some(id), "no_marks");
             }
             let (format, text, extension) = match request["format"].as_str() {
                 Some("paths") => {
@@ -427,79 +359,50 @@ fn handle_request(
                     ),
                     "md",
                 ),
-                _ => {
-                    write_event(
-                        output,
-                        &error_event(Some(id), "invalid_format"),
-                    )?;
-                    return Ok(false);
-                }
+                _ => return error_event(Some(id), "invalid_format"),
             };
             let saved_path = if request["save"].as_bool().unwrap_or(false) {
                 match save_export(&text, extension) {
                     Ok(path) => Some(path),
                     Err(error) => {
-                        write_event(
-                            output,
-                            &json!({"version":1,"id":id,"event":"error","code":"export_failed","message":error.to_string()}),
-                        )?;
-                        return Ok(false);
+                        return json!({"version":1,"id":id,"event":"error","code":"export_failed","message":error.to_string()});
                     }
                 }
             } else {
                 None
             };
-            write_event(
-                output,
-                &json!({"version":1,"id":id,"event":"marks_export","format":format,"text":text,"saved_path":saved_path}),
-            )?;
-            Ok(false)
+            json!({"version":1,"id":id,"event":"marks_export","format":format,"text":text,"saved_path":saved_path})
         }
         Some("choose_directory") => {
             if !cfg!(target_os = "macos") {
-                write_event(output, &error_event(Some(id), "unsupported"))?;
-                return Ok(false);
+                return error_event(Some(id), "unsupported");
             }
             // ponytail: blocks the stream loop while the dialog is open;
             // move to a thread if scan progress must keep flowing meanwhile.
-            match choose_directory() {
-                Ok(path) => write_event(
-                    output,
-                    &json!({"version":1,"id":id,"event":"directory_chosen","path":path}),
-                )?,
-                Err(error) => write_event(
-                    output,
-                    &json!({"version":1,"id":id,"event":"error","code":"choose_failed","message":error.to_string()}),
-                )?,
+            match choose_directory(runner) {
+                Ok(path) => {
+                    json!({"version":1,"id":id,"event":"directory_chosen","path":path})
+                }
+                Err(error) => {
+                    json!({"version":1,"id":id,"event":"error","code":"choose_failed","message":error.to_string()})
+                }
             }
-            Ok(false)
         }
         Some("open_full_disk_access") => {
             if !cfg!(target_os = "macos") {
-                write_event(output, &error_event(Some(id), "unsupported"))?;
-                return Ok(false);
+                return error_event(Some(id), "unsupported");
             }
-            match run_status(Command::new("open").arg(
+            match run_status(runner, Command::new("open").arg(
                 "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
             )) {
-                Ok(()) => write_event(
-                    output,
-                    &json!({"version":1,"id":id,"event":"settings_opened"}),
-                )?,
-                Err(error) => write_event(
-                    output,
-                    &json!({"version":1,"id":id,"event":"error","code":"settings_failed","message":error.to_string()}),
-                )?,
+                Ok(()) => json!({"version":1,"id":id,"event":"settings_opened"}),
+                Err(error) => {
+                    json!({"version":1,"id":id,"event":"error","code":"settings_failed","message":error.to_string()})
+                }
             }
-            Ok(false)
         }
         Some("get_settings") => {
-            write_settings_event(
-                output,
-                id,
-                load_settings().map(|(settings, _)| settings),
-            )?;
-            Ok(false)
+            settings_event(id, load_settings().map(|(settings, _)| settings))
         }
         Some("set_settings") => {
             let result = load_settings().and_then(|(mut settings, path)| {
@@ -513,49 +416,74 @@ fn handle_request(
                 // Re-read so the event reports what was actually stored after validation.
                 Settings::load(&path).map(|stored| (stored, path))
             });
-            write_settings_event(
-                output,
-                id,
-                result.map(|(settings, _)| settings),
-            )?;
-            Ok(false)
+            settings_event(id, result.map(|(settings, _)| settings))
         }
         Some("resources") => {
             let sample = monitor.sample_resources();
-            write_event(
-                output,
-                &json!({
-                    "version": 1,
-                    "id": id,
-                    "event": "resources",
-                    "cpu_percent": sample.cpu_percent,
-                    "cpu_processes_available": sample.cpu_processes.is_some(),
-                    "cpu_processes": sample.cpu_processes.map(|processes| {
-                        processes
-                            .into_iter()
-                            .map(|process| json!({
-                                "pid": process.pid,
-                                "name": process.name,
-                                "cpu_percent": process.cpu_percent
-                            }))
-                            .collect::<Vec<_>>()
-                    }),
-                    "memory_used_bytes": sample.memory_used_bytes,
-                    "memory_total_bytes": sample.memory_total_bytes,
-                    "memory_processes_available": sample.memory_processes.is_some(),
-                    "memory_processes": sample.memory_processes.map(|processes| {
-                        processes
-                            .into_iter()
-                            .map(|process| json!({
-                                "pid": process.pid,
-                                "name": process.name,
-                                "memory_bytes": process.memory_bytes
-                            }))
-                            .collect::<Vec<_>>()
-                    })
+            let battery = sample.battery;
+            let network = sample.network;
+            json!({
+                "version": 1,
+                "id": id,
+                "event": "resources",
+                "cpu_percent": sample.cpu_percent,
+                "cpu_processes_available": sample.cpu_processes.is_some(),
+                "cpu_processes": sample.cpu_processes.map(|processes| {
+                    processes
+                        .into_iter()
+                        .map(|process| json!({
+                            "pid": process.pid,
+                            "name": process.name,
+                            "cpu_percent": process.cpu_percent
+                        }))
+                        .collect::<Vec<_>>()
                 }),
-            )?;
-            Ok(false)
+                "memory_used_bytes": sample.memory_used_bytes,
+                "memory_total_bytes": sample.memory_total_bytes,
+                "memory_processes_available": sample.memory_processes.is_some(),
+                "memory_processes": sample.memory_processes.map(|processes| {
+                    processes
+                        .into_iter()
+                        .map(|process| json!({
+                            "pid": process.pid,
+                            "name": process.name,
+                            "memory_bytes": process.memory_bytes
+                        }))
+                        .collect::<Vec<_>>()
+                }),
+                "battery": {
+                    "present": battery.present,
+                    "state": battery.state_str(),
+                    "percent": battery.percent,
+                    "power_watts": battery.power_watts,
+                    "energy_wh": battery.energy_wh,
+                    "energy_full_wh": battery.energy_full_wh,
+                    "energy_design_wh": battery.energy_design_wh,
+                    "health_percent": battery.health_percent,
+                    "voltage_volts": battery.voltage_volts,
+                    "temperature_celsius": battery.temperature_celsius,
+                    "cycle_count": battery.cycle_count,
+                    "time_to_empty_secs": battery.time_to_empty_secs,
+                    "time_to_full_secs": battery.time_to_full_secs
+                },
+                "network": {
+                    "rx_bytes_per_sec": network.rx_bytes_per_sec,
+                    "tx_bytes_per_sec": network.tx_bytes_per_sec,
+                    "total_rx_bytes": network.total_rx_bytes,
+                    "total_tx_bytes": network.total_tx_bytes,
+                    "interfaces": network.interfaces.into_iter().map(|iface| json!({
+                        "name": iface.name,
+                        "rx_bytes_per_sec": iface.rx_bytes_per_sec,
+                        "tx_bytes_per_sec": iface.tx_bytes_per_sec,
+                        "total_rx_bytes": iface.total_rx_bytes,
+                        "total_tx_bytes": iface.total_tx_bytes,
+                        "packets_rx": iface.packets_rx,
+                        "packets_tx": iface.packets_tx,
+                        "errors_rx": iface.errors_rx,
+                        "errors_tx": iface.errors_tx
+                    })).collect::<Vec<_>>()
+                }
+            })
         }
         Some("volumes") => {
             let volumes: Vec<Value> = monitor
@@ -571,25 +499,18 @@ fn handle_request(
                     })
                 })
                 .collect();
-            write_event(
-                output,
-                &json!({"version": 1, "id": id, "event": "volumes", "volumes": volumes}),
-            )?;
-            Ok(false)
+            json!({"version": 1, "id": id, "event": "volumes", "volumes": volumes})
         }
-        _ => {
-            write_event(output, &error_event(Some(id), "unknown_command"))?;
-            Ok(false)
-        }
+        _ => error_event(Some(id), "unknown_command"),
     }
 }
 
 fn report_removal(
-    output: &mut impl Write,
+    events: &mut Vec<Value>,
     removal: &mut Option<RemovalHandle>,
-) -> Result<()> {
+) {
     let Some(handle) = removal.as_ref() else {
-        return Ok(());
+        return;
     };
     let mut finished = false;
     while let Some(event) = handle.poll() {
@@ -613,7 +534,7 @@ fn report_removal(
             }
         };
         let done = value["event"] == "removal_complete";
-        write_event(output, &value)?;
+        events.push(value);
         if done {
             finished = true;
             break;
@@ -622,7 +543,6 @@ fn report_removal(
     if finished {
         *removal = None;
     }
-    Ok(())
 }
 
 #[allow(
@@ -630,7 +550,7 @@ fn report_removal(
     reason = "scan event state is owned by the stream loop"
 )]
 fn report_scan(
-    output: &mut impl Write,
+    events: &mut Vec<Value>,
     monitor: &mut MonitorCore,
     tree_cache: &mut HashMap<PathBuf, Node>,
     finding_cache: &mut HashMap<PathBuf, Vec<Value>>,
@@ -640,9 +560,9 @@ fn report_scan(
     scan_started_at: &mut Option<Instant>,
     last_progress: &mut Option<(u64, u64, u64, u64)>,
     last_preview_revision: &mut u64,
-) -> Result<()> {
+) {
     let Some(id) = active_scan_id.as_ref() else {
-        return Ok(());
+        return;
     };
     if let Some(result) = monitor.poll_scan() {
         let event = match result {
@@ -671,16 +591,16 @@ fn report_scan(
                 "message": error.to_string()
             }),
         };
-        write_event(output, &event)?;
+        events.push(event);
         *active_scan_id = None;
         *active_scan_root = None;
         *scan_started_at = None;
         *last_progress = None;
         *last_preview_revision = 0;
-        return Ok(());
+        return;
     }
     let Some(snapshot) = monitor.scan_progress() else {
-        return Ok(());
+        return;
     };
     let progress = (
         snapshot.files,
@@ -690,30 +610,26 @@ fn report_scan(
     );
     if *last_progress == Some(progress) {
         if snapshot.preview_revision == *last_preview_revision {
-            return Ok(());
+            return;
         }
     } else {
-        write_event(
-            output,
-            &json!({
-                "version": 1,
-                "id": id,
-                "event": "scan_progress",
-                "files": snapshot.files,
-                "dirs": snapshot.dirs,
-                "bytes": snapshot.bytes,
-                "errors": snapshot.errors
-            }),
-        )?;
+        events.push(json!({
+            "version": 1,
+            "id": id,
+            "event": "scan_progress",
+            "files": snapshot.files,
+            "dirs": snapshot.dirs,
+            "bytes": snapshot.bytes,
+            "errors": snapshot.errors
+        }));
         *last_progress = Some(progress);
     }
     if snapshot.preview_revision != *last_preview_revision
         && let Some(root) = active_scan_root.as_ref()
     {
-        write_event(output, &scan_preview_event(id, root, &snapshot))?;
+        events.push(scan_preview_event(id, root, &snapshot));
         *last_preview_revision = snapshot.preview_revision;
     }
-    Ok(())
 }
 
 fn scan_complete_event(
@@ -1156,8 +1072,8 @@ fn power_workers(power: Option<&str>) -> usize {
     workers.min(cpus)
 }
 
-fn run_status(command: &mut Command) -> io::Result<()> {
-    let status = command.status()?;
+fn run_status(runner: Runner, command: &mut Command) -> io::Result<()> {
+    let status = runner(command)?.status;
     if status.success() {
         Ok(())
     } else {
@@ -1166,7 +1082,7 @@ fn run_status(command: &mut Command) -> io::Result<()> {
 }
 
 #[cfg(windows)]
-fn reveal(path: &Path) -> io::Result<()> {
+fn reveal(path: &Path, _runner: Runner) -> io::Result<()> {
     use std::os::windows::process::CommandExt as _;
     // Explorer parses `/select,` itself and exits non-zero even when the
     // window opens, so pass the argument raw and only check that it started.
@@ -1177,11 +1093,14 @@ fn reveal(path: &Path) -> io::Result<()> {
 }
 
 #[cfg(not(windows))]
-fn reveal(path: &Path) -> io::Result<()> {
+fn reveal(path: &Path, runner: Runner) -> io::Result<()> {
     if cfg!(target_os = "macos") {
-        run_status(Command::new("open").arg("-R").arg(path))
+        run_status(runner, Command::new("open").arg("-R").arg(path))
     } else {
-        run_status(Command::new("xdg-open").arg(path.parent().unwrap_or(path)))
+        run_status(
+            runner,
+            Command::new("xdg-open").arg(path.parent().unwrap_or(path)),
+        )
     }
 }
 
@@ -1199,10 +1118,10 @@ fn save_export(text: &str, extension: &str) -> io::Result<PathBuf> {
 }
 
 /// `None` when the user cancels the dialog (error -128).
-fn choose_directory() -> io::Result<Option<String>> {
-    let output = Command::new("osascript")
-        .args(["-e", "POSIX path of (choose folder)"])
-        .output()?;
+fn choose_directory(runner: Runner) -> io::Result<Option<String>> {
+    let output = runner(
+        Command::new("osascript").args(["-e", "POSIX path of (choose folder)"]),
+    )?;
     if output.status.success() {
         let path = String::from_utf8_lossy(&output.stdout);
         let path = path.trim_end_matches('\n');
@@ -1232,12 +1151,11 @@ fn load_settings() -> Result<(Settings, PathBuf), SettingsError> {
     Settings::load(&path).map(|settings| (settings, path))
 }
 
-fn write_settings_event(
-    output: &mut impl Write,
+fn settings_event(
     id: &Value,
     result: Result<Settings, SettingsError>,
-) -> Result<()> {
-    let event = match result {
+) -> Value {
+    match result {
         Ok(settings) => json!({
             "version": 1, "id": id, "event": "settings",
             "power": settings.power, "ui_zoom": settings.ui_zoom,
@@ -1246,8 +1164,7 @@ fn write_settings_event(
             "version": 1, "id": id, "event": "error",
             "code": "settings_invalid", "message": error.to_string(),
         }),
-    };
-    write_event(output, &event)
+    }
 }
 
 fn error_event(id: Option<&Value>, code: &str) -> Value {
@@ -1259,4 +1176,125 @@ fn write_event(output: &mut impl Write, event: &Value) -> Result<()> {
     output.write_all(b"\n")?;
     output.flush()?;
     Ok(())
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod tests {
+    use std::collections::HashMap;
+    use std::io;
+    use std::os::unix::process::ExitStatusExt as _;
+    use std::path::PathBuf;
+    use std::process::{Command, ExitStatus, Output};
+
+    use monitor_core::MonitorCore;
+    use monitor_disk::tree::Node;
+    use serde_json::{Value, json};
+
+    use super::{Runner, handle_request};
+
+    fn output(code: i32, stdout: &str, stderr: &str) -> Output {
+        Output {
+            status: ExitStatus::from_raw(code << 8),
+            stdout: stdout.as_bytes().to_vec(),
+            stderr: stderr.as_bytes().to_vec(),
+        }
+    }
+
+    fn command_line(command: &Command) -> Vec<String> {
+        std::iter::once(command.get_program())
+            .chain(command.get_args())
+            .map(|part| part.to_string_lossy().into_owned())
+            .collect()
+    }
+
+    /// Sends one request with `/scan/root` cached, so `reveal` accepts paths
+    /// beneath it; the runner stands in for every OS command.
+    fn request(command: &str, path: &str, runner: Runner) -> Value {
+        let tree_cache = HashMap::from([(
+            PathBuf::from("/scan/root"),
+            Node::directory("root"),
+        )]);
+        let line = json!({"version":1,"id":"r","command":command,"path":path})
+            .to_string();
+        handle_request(
+            &line,
+            &mut MonitorCore::new(),
+            &tree_cache,
+            &HashMap::new(),
+            &HashMap::new(),
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut None,
+            &mut 0,
+            runner,
+        )
+    }
+
+    #[test]
+    fn reveal_runs_open_dash_r_and_reports_failure_status() {
+        let done = request("reveal", "/scan/root/a b", |command| {
+            assert_eq!(command_line(command), ["open", "-R", "/scan/root/a b"]);
+            Ok(output(0, "", ""))
+        });
+        assert_eq!(done["event"], "reveal_done");
+        assert_eq!(done["path"], "/scan/root/a b");
+
+        let failed =
+            request("reveal", "/scan/root/a", |_| Ok(output(1, "", "")));
+        assert_eq!(failed["code"], "reveal_failed");
+        let spawn_failed = request("reveal", "/scan/root/a", |_| {
+            Err(io::Error::other("no open"))
+        });
+        assert_eq!(spawn_failed["message"], "no open");
+    }
+
+    #[test]
+    fn open_full_disk_access_opens_the_privacy_pane() {
+        let opened = request("open_full_disk_access", "", |command| {
+            assert_eq!(
+                command_line(command),
+                [
+                    "open",
+                    "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles"
+                ]
+            );
+            Ok(output(0, "", ""))
+        });
+        assert_eq!(opened["event"], "settings_opened");
+        let failed =
+            request("open_full_disk_access", "", |_| Ok(output(1, "", "")));
+        assert_eq!(failed["code"], "settings_failed");
+    }
+
+    #[test]
+    fn choose_directory_trims_the_slash_and_treats_cancel_as_none() {
+        let chosen = request("choose_directory", "", |command| {
+            assert_eq!(
+                command_line(command),
+                ["osascript", "-e", "POSIX path of (choose folder)"]
+            );
+            Ok(output(0, "/Users/me/Projects/\n", ""))
+        });
+        assert_eq!(chosen["event"], "directory_chosen");
+        assert_eq!(chosen["path"], "/Users/me/Projects");
+
+        let root =
+            request("choose_directory", "", |_| Ok(output(0, "/\n", "")));
+        assert_eq!(root["path"], "/");
+
+        let cancelled = request("choose_directory", "", |_| {
+            Ok(output(1, "", "execution error: User canceled. (-128)\n"))
+        });
+        assert_eq!(cancelled["event"], "directory_chosen");
+        assert!(cancelled["path"].is_null());
+
+        let failed = request("choose_directory", "", |_| {
+            Ok(output(1, "", " no window server \n"))
+        });
+        assert_eq!(failed["code"], "choose_failed");
+        assert_eq!(failed["message"], "no window server");
+    }
 }

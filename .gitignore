@@ -11,3 +11,10 @@
 /apps/desktop/src-tauri/gen/schemas/
 
 .playwright-mcp/
+
+# Coverage reports and raw profiles.
+**/coverage/
+*.profraw
+
+# Generated design-hook cache.
+**/.impeccable/hook.cache.json
