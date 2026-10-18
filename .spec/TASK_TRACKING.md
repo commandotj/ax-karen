@@ -17,6 +17,8 @@
   - [x] Implement RFC 0013: Redesign application icon with Logo Designer skill (child of 0001) (RFC 0013)
   - [x] Implement RFC 0014: Replace Rust xtask runner with root mjs script (child of 0001) (RFC 0014)
   - [x] Implement RFC 0015: Linux and Windows desktop support (child of 0001 (child of 0001) (RFC 0015)
+- [ ] Implement RFC 0019: Modularize desktop views to reduce App.vue size (RFC 0019)
+
 
 ## Done
 - [x] Implement RFC 0016: Windows desktop support (RFC 0016)
