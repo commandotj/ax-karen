@@ -1129,7 +1129,9 @@ fn worth_a_look_names_reclaimable_worktree_and_stale_experiment_findings() {
     }
     #[cfg(not(unix))]
     {
-        fs::File::open(old.join("blob"))
+        fs::OpenOptions::new()
+            .write(true)
+            .open(old.join("blob"))
             .and_then(|entry| entry.set_modified(long_ago))
             .expect("age experiment");
     }
