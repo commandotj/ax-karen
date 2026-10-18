@@ -125,7 +125,7 @@ fn is_dashboard_volume(point: &Path) -> bool {
 }
 
 #[cfg(not(target_os = "macos"))]
-fn is_dashboard_volume(_point: &Path) -> bool {
+const fn is_dashboard_volume(_point: &Path) -> bool {
     true
 }
 
