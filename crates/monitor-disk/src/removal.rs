@@ -1917,9 +1917,13 @@ mod tests {
         assert!(!is_mount_point(temp.path()));
         assert!(!is_mount_point(&temp.path().join("a/one.bin")), "a file");
         assert!(!is_mount_point(&temp.path().join("absent")));
+        // Unix only: a Windows drive root has no parent and is guarded as a
+        // root rather than as a mount point.
+        #[cfg(unix)]
         assert!(is_mount_point(Path::new("/")), "nothing above it");
         // `src` is relative to the crate: its parent, "", cannot be stat'ed,
         // and a directory whose parent cannot be is not worth the risk.
+        #[cfg(unix)]
         assert!(is_mount_point(Path::new("src")));
         #[cfg(target_os = "linux")]
         assert!(is_mount_point(Path::new("/proc")));
@@ -2883,6 +2887,7 @@ mod tests {
         assert!(item.contains("outcome: Err(\"part of the system"), "{item}");
     }
 
+    #[cfg(unix)]
     #[test]
     fn a_target_that_became_a_mount_point_is_caught_at_removal_time() {
         let reason = mounted(Path::new("/"), &[]).expect("caught");
