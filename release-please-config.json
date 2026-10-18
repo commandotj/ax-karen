@@ -31,37 +31,37 @@
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='karen-cli')].version"
+          "jsonpath": "$.package[?(@.name.value=='karen-cli')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='monitor-battery')].version"
+          "jsonpath": "$.package[?(@.name.value=='monitor-battery')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='monitor-core')].version"
+          "jsonpath": "$.package[?(@.name.value=='monitor-core')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='monitor-cpu')].version"
+          "jsonpath": "$.package[?(@.name.value=='monitor-cpu')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='monitor-disk')].version"
+          "jsonpath": "$.package[?(@.name.value=='monitor-disk')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='monitor-memory')].version"
+          "jsonpath": "$.package[?(@.name.value=='monitor-memory')].version"
         },
         {
           "type": "toml",
           "path": "Cargo.lock",
-          "jsonpath": "$.package[?(@.name=='monitor-network')].version"
+          "jsonpath": "$.package[?(@.name.value=='monitor-network')].version"
         }
       ]
     }
