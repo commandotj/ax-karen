@@ -30,5 +30,6 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           target-branch: develop
+          skip-github-release: true
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

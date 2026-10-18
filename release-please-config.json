@@ -3,7 +3,6 @@
   "separate-pull-requests": false,
   "bump-minor-pre-major": true,
   "skip-github-release": true,
-  "plugins": ["cargo-workspace"],
   "packages": {
     ".": {
       "release-type": "rust",
