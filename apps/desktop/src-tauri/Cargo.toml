@@ -1,0 +1,16 @@
+[package]
+name = "karen-desktop"
+version = "0.11.0"
+description = "Karen desktop shell"
+authors = ["Karen contributors"]
+edition = "2021"
+
+[workspace]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+

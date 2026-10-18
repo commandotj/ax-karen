@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Karen",
+  "version": "0.11.0",
+  "identifier": "me.systembug.karen",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://127.0.0.1:1425",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Karen",
+        "width": 1180,
+        "height": 820,
+        "minWidth": 760,
+        "minHeight": 600,
+        "decorations": true
+      }
+    ],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Utility",
+    "icon": ["icons/icon.png"],
+    "externalBin": ["binaries/karen"]
+  }
+}

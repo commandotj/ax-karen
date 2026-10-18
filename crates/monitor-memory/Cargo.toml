@@ -1,0 +1,13 @@
+[package]
+name = "monitor-memory"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Read-only memory usage sampling"
+
+[lints]
+workspace = true
+
+[dependencies]
+sysinfo = { workspace = true }

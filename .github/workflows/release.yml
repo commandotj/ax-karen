@@ -1,14 +1,12 @@
 name: Release
 
-# Push a tag like v0.9.0 to build and publish a release. The tag must match
-# the workspace version in Cargo.toml.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to (re)build, e.g. v0.9.0"
+        description: "Existing tag to rebuild, such as v0.11.0"
         required: true
 
 permissions:
@@ -18,8 +16,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  release:
-    name: Check the tag and draft the release
+  prepare:
+    name: Validate version and draft release
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ steps.version.outputs.tag }}
@@ -29,242 +27,149 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - name: Version
+      - name: Validate tag
         id: version
-        # Through the environment, not spliced into the script: a tag typed
-        # into the dispatch form is text, never shell.
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          tag="$TAG"
           version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
-          if [ "$tag" != "v$version" ]; then
-            echo "tag $tag does not match Cargo.toml version $version" >&2
+          if [ "$TAG" != "v$version" ]; then
+            echo "tag $TAG does not match workspace version $version" >&2
             exit 1
           fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      # A draft, so nobody downloads from a release still missing half its
-      # builds; `publish` below makes it public once every build is in.
-      - name: Draft
+      - name: Create draft
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --draft --verify-tag \
-              --title "disktree ${TAG#v}" --generate-notes
+              --title "Karen ${TAG#v}" --generate-notes
           fi
 
-  linux:
-    name: Build (Linux ${{ matrix.arch }})
-    needs: release
+  build:
+    name: Build (${{ matrix.name }})
+    needs: prepare
     strategy:
+      fail-fast: false
       matrix:
         include:
-          # The oldest supported runners: their glibc is what the binary
-          # needs at least, so building there runs on the most systems.
-          - { runner: ubuntu-22.04, arch: x86_64 }
-          - { runner: ubuntu-22.04-arm, arch: aarch64 }
+          - { name: Linux x86_64, runner: ubuntu-24.04, arch: x86_64, os: linux }
+          - { name: Linux aarch64, runner: ubuntu-24.04-arm, arch: aarch64, os: linux }
+          - { name: macOS arm64, runner: macos-15, arch: aarch64, os: macos }
+          - { name: macOS Intel, runner: macos-15-intel, arch: x86_64, os: macos }
+          - { name: Windows x86_64, runner: windows-2025, arch: x86_64, os: windows }
+          - { name: Windows arm64, runner: windows-11-arm, arch: aarch64, os: windows }
     runs-on: ${{ matrix.runner }}
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+      APPLE_API_KEY: ${{ secrets.NOTARY_KEY_ID }}
+      APPLE_API_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+      NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
     steps:
       - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - name: System libraries
+      - name: Linux desktop dependencies
+        if: matrix.os == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            pkg-config libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev \
-            libx11-xcb-dev libxcb1-dev libfontconfig-dev libfreetype-dev \
-            libvulkan-dev libasound2-dev libssl-dev libzstd-dev
+            build-essential curl file libayatana-appindicator3-dev \
+            libgtk-3-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev \
+            librsvg2-dev patchelf wget
 
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.97"
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
       - uses: Swatinem/rust-cache@v2
 
-      - name: Test
-        run: cargo xtask test
+      - name: Prepare notarization key
+        if: matrix.os == 'macos' && env.NOTARY_KEY_P8 != ''
+        run: |
+          key="$RUNNER_TEMP/AuthKey.p8"
+          echo "$NOTARY_KEY_P8" | base64 --decode > "$key"
+          echo "APPLE_API_KEY_PATH=$key" >> "$GITHUB_ENV"
 
-      - name: Build
-        run: cargo build --release --locked -p disktree-app
+      - run: pnpm install --frozen-lockfile
+      - run: cargo xtask test
+      - run: pnpm tauri
 
-      - name: Package
-        id: package
+      - name: Package standalone CLI and desktop bundle
+        if: runner.os != 'Windows'
         env:
-          VERSION: ${{ needs.release.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
           ARCH: ${{ matrix.arch }}
+          OS_NAME: ${{ matrix.os }}
         run: |
-          name="disktree-$VERSION-$ARCH-linux"
-          mkdir -p "dist/$name"
-          cp target/release/disktree "dist/$name/"
-          strip "dist/$name/disktree"
-          cp packaging/install.sh packaging/disktree.desktop.in \
-             assets/disktree.svg README.md LICENSE "dist/$name/"
-          echo "$VERSION" > "dist/$name/VERSION"
-          tar -C dist -czf "dist/$name.tar.gz" "$name"
-          (cd dist && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256")
-          echo "archive=dist/$name.tar.gz" >> "$GITHUB_OUTPUT"
+          mkdir -p dist
+          cli="karen-$VERSION-$ARCH-$OS_NAME.tar.gz"
+          tar -C target/release -czf "dist/$cli" karen
+          bundle="karen-app-$VERSION-$ARCH-$OS_NAME.tar.gz"
+          tar -C apps/desktop/src-tauri/target/release/bundle \
+            -czf "dist/$bundle" .
+          (cd dist && shasum -a 256 "$cli" "$bundle" > "SHA256SUMS-$OS_NAME-$ARCH")
 
-      - name: Upload
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.release.outputs.tag }}
-          ARCHIVE: ${{ steps.package.outputs.archive }}
-        run: gh release upload "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" --clobber
-
-  macos:
-    name: Build (macOS ${{ matrix.arch }})
-    needs: release
-    strategy:
-      matrix:
-        include:
-          # `xtask bundle` names the zip after the machine it runs on, so
-          # each architecture builds on its own.
-          - { runner: macos-15, arch: aarch64 }
-          - { runner: macos-15-intel, arch: x86_64 }
-    runs-on: ${{ matrix.runner }}
-    env:
-      # Signing and notarizing happen only when the repository has these
-      # secrets; without them the app is signed ad hoc, and a downloaded
-      # copy needs "Open Anyway" in System Settings once.
-      #   MACOS_CERTIFICATE           base64 of the Developer ID .p12
-      #   MACOS_CERTIFICATE_PASSWORD  its password
-      #   MACOS_SIGN_IDENTITY         "Developer ID Application: Name (TEAMID)"
-      #   NOTARY_KEY_P8               base64 of an App Store Connect API key
-      #   NOTARY_KEY_ID, NOTARY_ISSUER  that key's ID and issuer
-      MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-      MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-      MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
-      NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
-      NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
-      NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.97"
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Test
-        run: cargo xtask test
-
-      # A keychain of its own for the certificate, deleted with the runner.
-      - name: Signing certificate
-        if: env.MACOS_CERTIFICATE != ''
-        run: |
-          keychain="$RUNNER_TEMP/signing.keychain-db"
-          password=$(uuidgen)
-          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security create-keychain -p "$password" "$keychain"
-          security set-keychain-settings -lut 3600 "$keychain"
-          security unlock-keychain -p "$password" "$keychain"
-          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" \
-            -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: \
-            -s -k "$password" "$keychain"
-          security list-keychains -d user -s "$keychain" \
-            $(security list-keychains -d user | tr -d '"')
-          rm "$RUNNER_TEMP/cert.p12"
-
-      - name: Bundle
-        run: |
-          args=()
-          if [ -n "$MACOS_CERTIFICATE" ]; then
-            args+=(--sign "$MACOS_SIGN_IDENTITY")
-            if [ -n "$NOTARY_KEY_P8" ]; then
-              echo "$NOTARY_KEY_P8" | base64 --decode \
-                > "$RUNNER_TEMP/AuthKey.p8"
-              export NOTARY_KEY="$RUNNER_TEMP/AuthKey.p8"
-              args+=(--notarize)
-            fi
-          fi
-          cargo xtask bundle "${args[@]}"
-
-      - name: Upload
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.release.outputs.tag }}
-          VERSION: ${{ needs.release.outputs.version }}
-          ARCH: ${{ matrix.arch }}
-        run: |
-          zip="target/bundle/disktree-$VERSION-$ARCH-macos.zip"
-          (cd "$(dirname "$zip")" && shasum -a 256 "$(basename "$zip")" \
-            > "$(basename "$zip").sha256")
-          gh release upload "$TAG" "$zip" "$zip.sha256" --clobber
-
-  windows:
-    name: Build (Windows ${{ matrix.arch }})
-    needs: release
-    strategy:
-      matrix:
-        include:
-          - { runner: windows-2025, arch: x86_64 }
-          - { runner: windows-11-arm, arch: aarch64 }
-    runs-on: ${{ matrix.runner }}
-    env:
-      # The C runtime linked in, so disktree.exe also runs where the Visual
-      # C++ runtime was never installed. For the tests too, so both steps
-      # share one build.
-      RUSTFLAGS: -C target-feature=+crt-static
-    steps:
-      - run: git config --global core.autocrlf false
-
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.97"
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Test
-        run: cargo xtask test
-
-      - name: Build
-        run: cargo build --release --locked -p disktree-app
-
-      - name: Package
-        id: package
+      - name: Package standalone CLI and desktop bundle
+        if: runner.os == 'Windows'
         shell: pwsh
         env:
-          VERSION: ${{ needs.release.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
           ARCH: ${{ matrix.arch }}
         run: |
-          $name = "disktree-$env:VERSION-$env:ARCH-windows"
-          New-Item -ItemType Directory -Force "dist/$name" | Out-Null
-          Copy-Item target/release/disktree.exe, README.md, LICENSE "dist/$name/"
-          Compress-Archive -Path "dist/$name" -DestinationPath "dist/$name.zip"
-          $hash = (Get-FileHash "dist/$name.zip" -Algorithm SHA256).Hash.ToLower()
-          # The format `sha256sum -c` reads, with a Unix line ending.
-          [IO.File]::WriteAllText("dist/$name.zip.sha256", "$hash  $name.zip`n")
-          "archive=dist/$name.zip" >> $env:GITHUB_OUTPUT
+          New-Item -ItemType Directory -Force dist | Out-Null
+          $cli = "karen-$env:VERSION-$env:ARCH-windows.zip"
+          Compress-Archive -Path target/release/karen.exe -DestinationPath "dist/$cli"
+          $bundle = "karen-app-$env:VERSION-$env:ARCH-windows.zip"
+          Compress-Archive -Path apps/desktop/src-tauri/target/release/bundle/* -DestinationPath "dist/$bundle"
+          $hashes = Get-ChildItem dist/*.zip | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
+          }
+          [IO.File]::WriteAllLines("dist/SHA256SUMS-windows-$env:ARCH", $hashes)
 
-      - name: Upload
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.release.outputs.tag }}
-          ARCHIVE: ${{ steps.package.outputs.archive }}
-        run: gh release upload "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" --clobber
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
 
   publish:
-    name: Publish
-    needs: [release, linux, macos, windows]
+    name: Attach artifacts and publish
+    needs: [prepare, build]
     runs-on: ubuntu-24.04
     steps:
-      - name: Publish
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+
+      - name: Upload artifacts
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.release.outputs.tag }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: gh release upload "$TAG" dist/* --clobber
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
         run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest

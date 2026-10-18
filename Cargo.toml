@@ -1,19 +1,30 @@
 [workspace]
 resolver = "3"
-members = ["crates/disktree-app", "crates/disktree-core", "xtask"]
+members = [
+    "apps/cli",
+    "crates/monitor-core",
+    "crates/monitor-cpu",
+    "crates/monitor-disk",
+    "crates/monitor-memory",
+    "xtask",
+]
 
 [workspace.package]
 version = "0.11.0"
 edition = "2024"
 rust-version = "1.97"
 license = "MIT"
-repository = "https://github.com/tobi/disktree"
+repository = "https://github.com/commandotj/ax-karen"
 
 [workspace.dependencies]
-disktree-core = { path = "crates/disktree-core" }
+monitor-disk = { path = "crates/monitor-disk" }
+monitor-core = { path = "crates/monitor-core" }
+monitor-cpu = { path = "crates/monitor-cpu" }
+monitor-memory = { path = "crates/monitor-memory" }
 anyhow = "1"
 rayon = "1"
 rustc-hash = "2"
+sysinfo = { version = "0.31.4", default-features = false, features = ["system"] }
 
 # Lint gates follow omatrack's policy: the checks that catch real defects are
 # errors, and every deliberate omission is written down instead of silently
@@ -82,5 +93,3 @@ overflow-checks = true
 
 # gpui-pre-macros leaves a helper ungated in release builds while its module is
 # gated on debug_assertions; enable it for the host proc-macro only.
-[profile.release.package.gpui-pre-macros]
-debug-assertions = true

@@ -1,0 +1,15 @@
+[package]
+name = "monitor-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Karen application state and resource orchestration"
+
+[lints]
+workspace = true
+
+[dependencies]
+monitor-cpu = { workspace = true }
+monitor-disk = { workspace = true }
+monitor-memory = { workspace = true }
