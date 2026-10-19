@@ -125,6 +125,10 @@ export const de: LocaleMessageSchema = {
     installing: "Wird installiert…",
     later: "Später",
     failed: "Update fehlgeschlagen. Versuchen Sie es später erneut.",
+    checkMenu: "Nach Updates suchen…",
+    upToDate: "Karen {version} ist auf dem neuesten Stand.",
+    checkFailed: "Die Suche nach Updates ist fehlgeschlagen.",
+    dismiss: "OK",
   },
   review: {
     title: "ÜBERPRÜFUNG & BEREINIGUNG",

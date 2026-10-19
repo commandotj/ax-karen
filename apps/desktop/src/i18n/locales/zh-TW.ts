@@ -125,6 +125,10 @@ export const zhTW: LocaleMessageSchema = {
     installing: "正在安裝…",
     later: "稍後",
     failed: "更新失敗，請稍後再試。",
+    checkMenu: "檢查更新…",
+    upToDate: "Karen {version} 已是最新版本。",
+    checkFailed: "無法檢查更新。",
+    dismiss: "確定",
   },
   review: {
     title: "清理審查與空間回收",

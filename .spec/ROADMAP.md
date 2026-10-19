@@ -35,3 +35,4 @@
 | 0031 | [In-app auto-update (Umbrella)](rfc/completed/0031-in-app-auto-update.md) | Implemented |
 | 0032 | [Check for updates and prompt to install (child of 0031)](rfc/completed/0032-updater-check-and-prompt.md) | Implemented |
 | 0033 | [Publish signed updater artifacts and latest.json (child of 0031)](rfc/completed/0033-signed-updater-artifacts.md) | Implemented |
+| 0034 | [Add a Check for Updates menu item (child of 0001)](rfc/0034-check-for-updates-menu.md) | Approved |

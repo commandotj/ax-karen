@@ -125,6 +125,10 @@ export const ru: LocaleMessageSchema = {
     installing: "Установка…",
     later: "Позже",
     failed: "Не удалось обновить. Повторите попытку позже.",
+    checkMenu: "Проверить обновления…",
+    upToDate: "Karen {version} — последняя версия.",
+    checkFailed: "Не удалось проверить обновления.",
+    dismiss: "ОК",
   },
   review: {
     title: "ОЧИСТКА И ОСВОБОЖДЕНИЕ ДИСКА",

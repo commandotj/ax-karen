@@ -125,6 +125,10 @@ export const ja: LocaleMessageSchema = {
     installing: "インストール中…",
     later: "後で",
     failed: "更新に失敗しました。後でもう一度お試しください。",
+    checkMenu: "アップデートを確認…",
+    upToDate: "Karen {version} は最新です。",
+    checkFailed: "アップデートを確認できませんでした。",
+    dismiss: "OK",
   },
   review: {
     title: "整理とディスク解放",

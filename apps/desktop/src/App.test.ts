@@ -11,20 +11,25 @@ const host = vi.hoisted(() => ({
   update: null as { version: string; downloadAndInstall: () => Promise<void> } | null,
   windowCalls: [] as string[],
   trayStatus: [] as string[],
+  trayArgs: [] as Record<string, unknown>[],
+  version: "1.2.3",
+  versionFails: false,
   emitTray: (_tab: string) => {},
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
   isTauri: () => host.tauri,
-  invoke: async (cmd: string, args?: { title?: string; summary?: string }) => {
-    if (cmd === "update_tray_status" && args?.summary) {
-      host.trayStatus.push(`${args.title ?? ""} | ${args.summary}`);
+  invoke: async (cmd: string, args?: { labels?: Record<string, string> }) => {
+    const labels = args?.labels;
+    if (cmd === "update_tray_status" && labels) host.trayArgs.push(labels);
+    if (cmd === "update_tray_status" && labels?.summary) {
+      host.trayStatus.push(`${labels.title ?? ""} | ${labels.summary}`);
     }
   },
 }));
 vi.mock("@tauri-apps/api/event", () => ({
-  listen: async (_event: string, handler: (event: { payload: string }) => void) => {
-    host.emitTray = (payload: string) => handler({ payload });
+  listen: async (event: string, handler: (event: { payload: string }) => void) => {
+    if (event === "tray-navigate") host.emitTray = (payload: string) => handler({ payload });
     return () => {};
   },
 }));
@@ -35,6 +40,12 @@ vi.mock("@tauri-apps/api/window", () => ({
     toggleMaximize: async () => { host.windowCalls.push("maximize"); },
     close: async () => { host.windowCalls.push("close"); },
   }),
+}));
+vi.mock("@tauri-apps/api/app", () => ({
+  getVersion: async () => {
+    if (host.versionFails) throw new Error("version unavailable");
+    return host.version;
+  },
 }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: async () => host.update }));
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: async () => undefined }));
@@ -105,6 +116,7 @@ describe("Karen desktop interface", () => {
     host.failCommand = "";
     host.windowCalls.length = 0;
     host.update = null;
+    host.versionFails = false;
     HTMLCanvasElement.prototype.getContext = (() => null) as unknown as HTMLCanvasElement["getContext"];
     HTMLCanvasElement.prototype.getBoundingClientRect = () => ({ left: 0, top: 0, right: 1200, bottom: 680, width: 1200, height: 680, x: 0, y: 0, toJSON() {} });
     globalThis.ResizeObserver = class {
@@ -306,6 +318,30 @@ describe("Karen desktop interface", () => {
       wrapper = mount((await import("./App.vue")).default, { attachTo: document.body });
       await flushPromises();
       expect(wrapper.text()).toContain("Open Karen.app to connect the CLI");
+    });
+
+    it("shows the running version beside the brand and sends the update label to the tray", async () => {
+      await flushPromises();
+      expect(wrapper.find(".brand-version").text()).toBe("v1.2.3");
+      expect(host.trayArgs.at(-1)).toMatchObject({ checkUpdateLabel: "Check for Updates…" });
+    });
+
+    it("still starts when the version cannot be read", async () => {
+      wrapper.unmount();
+      host.versionFails = true;
+      sent.length = 0;
+      wrapper = mount((await import("./App.vue")).default, { attachTo: document.body });
+      await flushPromises();
+      expect(wrapper.find(".brand-version").exists()).toBe(false);
+      expect(countRequests("resources")).toBe(1);
+    });
+
+    it("shows no version outside Tauri", async () => {
+      wrapper.unmount();
+      host.tauri = false;
+      wrapper = mount((await import("./App.vue")).default, { attachTo: document.body });
+      await flushPromises();
+      expect(wrapper.find(".brand-version").exists()).toBe(false);
     });
 
     it("offers an available update from the app shell", async () => {

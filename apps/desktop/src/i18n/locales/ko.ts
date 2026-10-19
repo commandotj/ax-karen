@@ -125,6 +125,10 @@ export const ko: LocaleMessageSchema = {
     installing: "설치 중…",
     later: "나중에",
     failed: "업데이트에 실패했습니다. 나중에 다시 시도하세요.",
+    checkMenu: "업데이트 확인…",
+    upToDate: "Karen {version}은(는) 최신 버전입니다.",
+    checkFailed: "업데이트를 확인하지 못했습니다.",
+    dismiss: "확인",
   },
   review: {
     title: "정리 및 공간 확보",

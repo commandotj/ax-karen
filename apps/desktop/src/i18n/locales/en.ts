@@ -126,6 +126,10 @@ export const en: LocaleMessageSchema = {
     installing: "Installing…",
     later: "Later",
     failed: "Update failed. Try again later.",
+    checkMenu: "Check for Updates…",
+    upToDate: "Karen {version} is up to date.",
+    checkFailed: "Could not check for updates.",
+    dismiss: "OK",
   },
   review: {
     title: "REVIEW & RECLAIM",
