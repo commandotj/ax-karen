@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { getVersion } from "@tauri-apps/api/app";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -59,6 +60,7 @@ const dirs = ref(0);
 const bytes = ref(0);
 const scanProgress = ref({ files: 0, dirs: 0, bytes: 0 });
 const error = ref("");
+const appVersion = ref("");
 const scanning = ref(false);
 const previewing = ref(false);
 const cpuSamples = ref<number[]>([]);
@@ -96,16 +98,19 @@ function syncTrayStatus(): void {
   if (!isTauri()) return;
   const tabLabel = (tabId: string) => t(`nav.${tabId}`);
   void invoke("update_tray_status", {
-    title: formatTrayTitle(cpu.value, usedMemoryPercent.value),
-    summary: formatTraySummary(cpu.value, usedMemoryPercent.value, battery.value.present, battery.value.percent),
-    toggleWindow: text("Show / Hide Karen"),
-    runtimeLabel: tabLabel("runtime"),
-    cpuLabel: tabLabel("cpu"),
-    memoryLabel: tabLabel("memory"),
-    batteryLabel: tabLabel("battery"),
-    networkLabel: tabLabel("network"),
-    spaceLabel: tabLabel("space"),
-    quitLabel: text("Quit Karen"),
+    labels: {
+      title: formatTrayTitle(cpu.value, usedMemoryPercent.value),
+      summary: formatTraySummary(cpu.value, usedMemoryPercent.value, battery.value.present, battery.value.percent),
+      toggleWindow: text("Show / Hide Karen"),
+      runtimeLabel: tabLabel("runtime"),
+      cpuLabel: tabLabel("cpu"),
+      memoryLabel: tabLabel("memory"),
+      batteryLabel: tabLabel("battery"),
+      networkLabel: tabLabel("network"),
+      spaceLabel: tabLabel("space"),
+      checkUpdateLabel: t("update.checkMenu"),
+      quitLabel: text("Quit Karen"),
+    },
   });
 }
 
@@ -522,6 +527,8 @@ onMounted(async () => {
     return;
   }
   syncTrayStatus();
+  // Display only: a failure must not hold up the CLI start below.
+  void getVersion().then((version) => { appVersion.value = version; }, () => undefined);
   unlistenTray = await listen<string>("tray-navigate", ({ payload }) => selectTrayTab(payload));
   cli = new KarenCli(receive);
   try {
@@ -564,6 +571,7 @@ onBeforeUnmount(() => {
         </svg>
         <span class="brand-name">KAREN<span v-if="locale === 'zh-CN'"> · 凯衡</span><span v-else-if="locale === 'zh-TW'"> · 凱衡</span></span>
         <span class="brand-edition">{{ t("masthead.edition") }} · {{ text("SYSTEM MONITOR") }}</span>
+        <span v-if="appVersion" class="brand-version">v{{ appVersion }}</span>
       </div>
       <div class="masthead-right">
         <label class="lang-picker">

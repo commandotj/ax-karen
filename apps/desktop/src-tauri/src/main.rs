@@ -15,13 +15,15 @@ struct TrayState {
     battery_item: MenuItem<tauri::Wry>,
     network_item: MenuItem<tauri::Wry>,
     space_item: MenuItem<tauri::Wry>,
+    check_update_item: MenuItem<tauri::Wry>,
     quit_item: MenuItem<tauri::Wry>,
 }
 
-#[tauri::command]
-fn update_tray_status(
-    app: tauri::AppHandle,
-    state: tauri::State<'_, TrayState>,
+/// Menu text from the frontend, which owns localization. Field names are the
+/// camelCase keys it sends.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TrayLabels {
     title: Option<String>,
     summary: String,
     toggle_window: Option<String>,
@@ -31,41 +33,45 @@ fn update_tray_status(
     battery_label: Option<String>,
     network_label: Option<String>,
     space_label: Option<String>,
+    check_update_label: Option<String>,
     quit_label: Option<String>,
-) {
-    let label = if summary.trim().is_empty() {
+}
+
+fn tray_tooltip(summary: String) -> String {
+    if summary.trim().is_empty() {
         "Karen — System Monitor".to_owned()
     } else {
         summary
-    };
-    let _ = state.status_item.set_text(&label);
-    if let Some(label) = toggle_window {
-        let _ = state.toggle_item.set_text(&label);
     }
-    if let Some(label) = runtime_label {
-        let _ = state.runtime_item.set_text(&label);
-    }
-    if let Some(label) = cpu_label {
-        let _ = state.cpu_item.set_text(&label);
-    }
-    if let Some(label) = memory_label {
-        let _ = state.memory_item.set_text(&label);
-    }
-    if let Some(label) = battery_label {
-        let _ = state.battery_item.set_text(&label);
-    }
-    if let Some(label) = network_label {
-        let _ = state.network_item.set_text(&label);
-    }
-    if let Some(label) = space_label {
-        let _ = state.space_item.set_text(&label);
-    }
-    if let Some(label) = quit_label {
-        let _ = state.quit_item.set_text(&label);
+}
+
+#[tauri::command]
+fn update_tray_status(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, TrayState>,
+    labels: TrayLabels,
+) {
+    let tooltip = tray_tooltip(labels.summary);
+    let _ = state.status_item.set_text(&tooltip);
+    let items = [
+        (&state.toggle_item, labels.toggle_window),
+        (&state.runtime_item, labels.runtime_label),
+        (&state.cpu_item, labels.cpu_label),
+        (&state.memory_item, labels.memory_label),
+        (&state.battery_item, labels.battery_label),
+        (&state.network_item, labels.network_label),
+        (&state.space_item, labels.space_label),
+        (&state.check_update_item, labels.check_update_label),
+        (&state.quit_item, labels.quit_label),
+    ];
+    for (item, label) in items {
+        if let Some(label) = label {
+            let _ = item.set_text(&label);
+        }
     }
     if let Some(tray) = app.tray_by_id("karen-tray") {
-        let _ = tray.set_tooltip(Some(&label));
-        if let Some(ref t) = title {
+        let _ = tray.set_tooltip(Some(&tooltip));
+        if let Some(ref t) = labels.title {
             let _ = tray.set_title(Some(t));
         }
     }
@@ -141,6 +147,13 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let tab_space =
         MenuItem::with_id(app, "tab-space", "Open Space", true, None::<&str>)?;
     let sep3 = PredefinedMenuItem::separator(app)?;
+    let check_update_item = MenuItem::with_id(
+        app,
+        "check-update",
+        "Check for Updates…",
+        true,
+        None::<&str>,
+    )?;
     let quit_item =
         MenuItem::with_id(app, "quit", "Quit Karen", true, None::<&str>)?;
 
@@ -158,6 +171,7 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
             &tab_network,
             &tab_space,
             &sep3,
+            &check_update_item,
             &quit_item,
         ],
     )?;
@@ -171,6 +185,7 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         battery_item: tab_battery,
         network_item: tab_network,
         space_item: tab_space,
+        check_update_item,
         quit_item,
     });
 
@@ -209,6 +224,10 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
             "tab-space" => {
                 show_and_focus_main(app);
                 let _ = app.emit("tray-navigate", "space");
+            }
+            "check-update" => {
+                show_and_focus_main(app);
+                let _ = app.emit("tray-check-update", ());
             }
             "quit" => app.exit(0),
             _ => {}
@@ -295,7 +314,49 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{centered, three_quarters};
+    use super::{centered, three_quarters, tray_tooltip, TrayLabels};
+    use serde_json::json;
+
+    #[test]
+    fn tray_labels_use_the_camel_case_names_the_frontend_sends() {
+        let labels: TrayLabels = serde_json::from_value(json!({
+            "title": "CPU 1%",
+            "summary": "CPU 1%  MEM 2%",
+            "toggleWindow": "Show",
+            "runtimeLabel": "Runtime",
+            "cpuLabel": "CPU",
+            "memoryLabel": "Memory",
+            "batteryLabel": "Battery",
+            "networkLabel": "Network",
+            "spaceLabel": "Space",
+            "checkUpdateLabel": "Check for Updates…",
+            "quitLabel": "Quit"
+        }))
+        .expect("labels");
+        assert_eq!(labels.summary, "CPU 1%  MEM 2%");
+        assert_eq!(labels.title.as_deref(), Some("CPU 1%"));
+        assert_eq!(
+            labels.check_update_label.as_deref(),
+            Some("Check for Updates…")
+        );
+        assert_eq!(labels.quit_label.as_deref(), Some("Quit"));
+    }
+
+    #[test]
+    fn missing_tray_labels_stay_unset() {
+        let labels: TrayLabels =
+            serde_json::from_value(json!({ "summary": "" })).expect("labels");
+        assert!(labels.title.is_none());
+        assert!(labels.check_update_label.is_none());
+        assert!(labels.toggle_window.is_none());
+    }
+
+    #[test]
+    fn blank_summary_falls_back_to_the_app_name() {
+        assert_eq!(tray_tooltip(String::new()), "Karen — System Monitor");
+        assert_eq!(tray_tooltip("  ".to_owned()), "Karen — System Monitor");
+        assert_eq!(tray_tooltip("CPU 5%".to_owned()), "CPU 5%");
+    }
 
     #[test]
     fn window_is_three_quarters_of_the_monitor() {

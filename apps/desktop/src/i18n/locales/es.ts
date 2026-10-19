@@ -125,6 +125,10 @@ export const es: LocaleMessageSchema = {
     installing: "Instalando…",
     later: "Más tarde",
     failed: "La actualización falló. Inténtalo más tarde.",
+    checkMenu: "Buscar actualizaciones…",
+    upToDate: "Karen {version} está actualizado.",
+    checkFailed: "No se pudo buscar actualizaciones.",
+    dismiss: "Aceptar",
   },
   review: {
     title: "REVISIÓN Y RECUPERACIÓN",
