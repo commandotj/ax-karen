@@ -26,6 +26,8 @@
 - [x] Implement RFC 0023: Publishify CI/CD Pipeline and Distribution Setup (RFC 0023)
 - [x] Implement RFC 0024: Cask-only Homebrew distribution (RFC 0024)
 - [x] Implement RFC 0025: Drop Windows release targets (RFC 0025)
+- [x] Implement RFC 0026: Publish only installable Karen desktop app artifacts (RFC 0026)
+
 
 
 
