@@ -125,6 +125,29 @@ export function t(path: string, params?: Record<string, string | number>): strin
   return translate(currentLocale.value, path, params);
 }
 
+export function translateInterfaceText(
+  locale: SupportedLocale,
+  source: string,
+  params?: Record<string, string | number>,
+): string {
+  const message = DICTIONARIES[locale]?.interfaceText?.[source]
+    ?? DICTIONARIES.en.interfaceText[source]
+    ?? source;
+  if (!params) return message;
+  return message.replace(/\{(\w+)\}/g, (_, key) =>
+    key in params ? String(params[key]) : `{${key}}`,
+  );
+}
+
+export function translateBatteryState(locale: SupportedLocale, state?: string | null): string {
+  const normalized = state?.toLowerCase();
+  const knownStates = ["charging", "discharging", "full", "empty", "unknown"] as const;
+  if (!normalized || !knownStates.includes(normalized as typeof knownStates[number])) {
+    return translate(locale, "battery.unknown");
+  }
+  return translate(locale, `battery.${normalized}`);
+}
+
 export function useI18n() {
   return {
     locale: currentLocale,
@@ -132,6 +155,15 @@ export function useI18n() {
     setLocale,
     t: (path: string, params?: Record<string, string | number>) =>
       translate(currentLocale.value, path, params),
+    text: (source: string, params?: Record<string, string | number>) =>
+      translateInterfaceText(currentLocale.value, source, params),
+    batteryState: (state?: string | null) => translateBatteryState(currentLocale.value, state),
+    number: (value: number) => new Intl.NumberFormat(currentLocale.value).format(value),
+    decimal: (value: number, fractionDigits = 1) => new Intl.NumberFormat(currentLocale.value, {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value),
+    date: (value: number | Date) => new Intl.DateTimeFormat(currentLocale.value).format(value),
     currentDictionary: computed(() => DICTIONARIES[currentLocale.value]),
   };
 }

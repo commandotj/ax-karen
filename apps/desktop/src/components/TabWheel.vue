@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "../i18n";
 import { stepTab, wheelDeltaStep, wheelOffset, wheelStyle, type TabId, type TabItem } from "./tabWheel";
+
+const { text } = useI18n();
 
 const props = defineProps<{
   tabs: readonly TabItem[];
@@ -21,11 +24,11 @@ function onWheel(event: WheelEvent): void {
 </script>
 
 <template>
-  <nav class="tab-rail tab-wheel" aria-label="Monitor views" @wheel.prevent="onWheel">
+  <nav class="tab-rail tab-wheel" :aria-label="text('Monitor views')" @wheel.prevent="onWheel">
     <button
       type="button"
       class="wheel-step wheel-prev"
-      aria-label="Previous view"
+      :aria-label="text('Previous view')"
       @click="emit('select', stepTab(ids, active, -1))"
     >
       <svg viewBox="0 0 12 12" aria-hidden="true">
@@ -49,7 +52,7 @@ function onWheel(event: WheelEvent): void {
     <button
       type="button"
       class="wheel-step wheel-next"
-      aria-label="Next view"
+      :aria-label="text('Next view')"
       @click="emit('select', stepTab(ids, active, 1))"
     >
       <svg viewBox="0 0 12 12" aria-hidden="true">
