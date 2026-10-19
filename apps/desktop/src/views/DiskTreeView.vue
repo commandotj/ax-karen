@@ -44,7 +44,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   scan: [path?: string];
   selectVolume: [path: string];
-  requestTreeView: [params: { path: string; selectedPath?: string; root?: string; open?: boolean; metric?: "size" | "files"; depth?: number; width?: number; height?: number }];
+  requestTreeView: [params: { path: string; selectedPath?: string; root?: string; open?: boolean; keepView?: boolean; metric?: "size" | "files"; depth?: number; width?: number; height?: number }];
   toggleMark: [path: string];
   requestReview: [];
   cancelReview: [];
@@ -75,8 +75,8 @@ const powerPresets: { id: PowerPreset; label: string; note: string }[] = [
 ];
 
 const helpRows: [string, string][] = [
-  ["Click / double-click tile", "Select / open directory (click a selected directory opens it)"],
-  ["Right-click tile", "Select and reveal in the file manager"],
+  ["Click / double-click tile", "Select / open directory (double-click)"],
+  ["Right-click tile", "Path actions: mark or unmark, reveal in the file manager"],
   ["Ctrl/Cmd-click, middle-click", "Toggle mark without moving selection"],
   ["Enter", "Open selected or pointed directory"],
   ["Space, X", "Toggle mark"],
@@ -156,12 +156,26 @@ const isHoveredMarked = computed(() => {
   const path = hoveredTile.value?.tile.path;
   return Boolean(path && props.marks.some((mark) => mark.path === path));
 });
-const coveredMarkName = computed(() => {
-  const path = hoveredTile.value?.tile.path;
+function coveredMarkFor(path: string | null | undefined): string {
   if (!path) return "";
   const separator = path.includes("\\") ? "\\" : "/";
   const mark = props.marks.find((item) => path.startsWith(`${item.path}${separator}`));
   return mark?.path.split(separator).at(-1) ?? "";
+}
+const coveredMarkName = computed(() => coveredMarkFor(hoveredTile.value?.tile.path));
+const pathMenu = ref<{ path: string; x: number; y: number } | null>(null);
+const pathMenuEl = ref<HTMLElement | null>(null);
+const pathMenuMarked = computed(() => Boolean(pathMenu.value && props.marks.some((mark) => mark.path === pathMenu.value?.path)));
+const pathMenuCovered = computed(() => coveredMarkFor(pathMenu.value?.path));
+const pathMenuStyle = computed(() => {
+  const menu = pathMenu.value!;
+  const width = 240;
+  const height = 100;
+  const edge = 8;
+  return {
+    left: `${Math.max(edge, Math.min(menu.x, window.innerWidth - width - edge))}px`,
+    top: `${Math.max(edge, Math.min(menu.y, window.innerHeight - height - edge))}px`,
+  };
 });
 const isHoveredCovered = computed(() => coveredMarkName.value.length > 0);
 
@@ -170,12 +184,14 @@ function requestTree(
   selectedPath = path,
   root = props.treeRoot || props.selectedVolume,
   open = true,
+  keepView = false,
 ): void {
   emit("requestTreeView", {
     path,
     selectedPath,
     root,
     open,
+    keepView,
     metric: props.treeMode === "files" ? "files" : "size",
     depth: props.treeDepth,
     width: treemapSize.value.width,
@@ -185,9 +201,9 @@ function requestTree(
 
 function selectTile(tile: TreeTile, event: MouseEvent): void {
   if (!tile.path) return;
-  const selectedBefore = props.selection?.path === tile.path;
-  const open = tile.is_dir && (selectedBefore || event.detail > 1);
-  requestTree(props.treeRoot, tile.path, props.treeRoot, open);
+  // Only the second click of a double-click drills in; a third rapid click would open whatever now sits under the pointer.
+  const open = tile.is_dir && event.detail === 2;
+  requestTree(props.treeRoot, tile.path, props.treeRoot, open, !open);
 }
 
 function setTreeMode(mode: TreeMode): void {
@@ -292,6 +308,7 @@ function treeCoords(event: MouseEvent): { x: number; y: number; px: number; py: 
 }
 
 function wheelTree(event: WheelEvent): void {
+  closePathMenu();
   const point = treeCoords(event);
   if (!point) return;
   const current = zoom.value;
@@ -325,7 +342,7 @@ function stepSibling(step: number): void {
   const list = props.siblings;
   const at = list.findIndex((sibling) => sibling.path === props.selection?.path);
   const next = list[(at + step + list.length) % list.length];
-  if (next) requestTree(props.treeRoot, next.path, props.treeRoot, false);
+  if (next) requestTree(props.treeRoot, next.path, props.treeRoot, false, true);
 }
 
 function handleDiskKeyboard(event: KeyboardEvent): void {
@@ -334,7 +351,7 @@ function handleDiskKeyboard(event: KeyboardEvent): void {
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
   if (target instanceof Element && target.closest("button:not(.tree-tile)")) return;
 
-  if (helpOpen.value) return;
+  if (helpOpen.value || pathMenu.value) return;
   const key = vimArrows[event.key] ?? event.key;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) pointerLast = false;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
@@ -360,7 +377,7 @@ function handleDiskKeyboard(event: KeyboardEvent): void {
       .sort((left, right) => left.score - right.score)[0]?.tile;
     if (next?.path) {
       event.preventDefault();
-      requestTree(props.treeRoot, next.path, props.treeRoot, false);
+      requestTree(props.treeRoot, next.path, props.treeRoot, false, true);
     }
     return;
   }
@@ -452,6 +469,7 @@ function closeVolumeMenu(event: PointerEvent): void {
   if (target instanceof Element && !target.closest(".volume-picker, .volume-options")) {
     volumeMenuOpen.value = false;
   }
+  if (!(target instanceof Element && target.closest(".tree-context-menu"))) closePathMenu();
   if (target instanceof Element && !target.closest(".tree-crumb-wrap")) crumbMenu.value = null;
   if (target instanceof Element && !target.closest(".power-picker")) powerMenuOpen.value = false;
 }
@@ -495,6 +513,12 @@ function onSelectVolume(path: string): void {
 
 function closeVolumeMenuOnEscape(event: KeyboardEvent): void {
   if (event.key !== "Escape") return;
+  if (pathMenu.value) {
+    // handleDiskKeyboard is registered after this listener and would otherwise run its Escape branch (go to parent).
+    event.stopImmediatePropagation();
+    closePathMenu();
+    return;
+  }
   if (props.removalConfirm || props.review) {
     emit("cancelReview");
     return;
@@ -547,6 +571,7 @@ function updateTreePointer(event: PointerEvent): void {
 function clickTreeCanvas(event: MouseEvent): void {
   const canvas = treemapCanvas.value;
   if (!canvas) return;
+  if (event.type === "auxclick" && event.button !== 1) return;
   const point = treeCoords(event);
   const tile = point ? tileAt(props.tiles, point.x, point.y) : undefined;
   if (!tile?.path) return;
@@ -557,12 +582,56 @@ function clickTreeCanvas(event: MouseEvent): void {
   selectTile(tile, event);
 }
 
+function closePathMenu(): void {
+  // The focused menu button is about to leave the DOM; hand focus back so keyboard shortcuts keep working.
+  if (pathMenuEl.value?.contains(document.activeElement)) focusTreemap();
+  pathMenu.value = null;
+}
+
+function runPathMenu(action: "toggleMark" | "revealPath"): void {
+  const path = pathMenu.value!.path;
+  closePathMenu();
+  if (action === "toggleMark") emit("toggleMark", path);
+  else emit("revealPath", path);
+}
+
+function keyPathMenu(event: KeyboardEvent): void {
+  if (event.key === "Tab") {
+    closePathMenu();
+    return;
+  }
+  const keys = ["ArrowDown", "ArrowUp", "Home", "End"];
+  if (!keys.includes(event.key)) return;
+  event.preventDefault();
+  // Reveal is always enabled, so there is at least one focusable item.
+  const buttons = [...pathMenuEl.value!.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
+  const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+  const next = event.key === "Home" ? 0
+    : event.key === "End" ? buttons.length - 1
+    : (at + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length;
+  buttons[next].focus();
+}
+
 function contextTree(event: MouseEvent): void {
-  const point = treeCoords(event);
-  const tile = point ? tileAt(props.tiles, point.x, point.y) : undefined;
+  // This handler is bound to the canvas, so it is mounted.
+  const point = treeCoords(event)!;
+  let tile = tileAt(props.tiles, point.x, point.y);
+  let x = event.clientX;
+  let y = event.clientY;
+  const bounds = treemapCanvas.value!.getBoundingClientRect();
+  if (!tile && event.button !== 2) {
+    // A keyboard-invoked menu carries no pointer position, so anchor it to the selected tile.
+    tile = props.tiles.find((item) => item.path === props.selection?.path);
+    if (tile) {
+      x = bounds.left + ((tile.x + tile.width / 2) * zoom.value.scale + zoom.value.x) * bounds.width / treemapSize.value.width;
+      y = bounds.top + ((tile.y + tile.height / 2) * zoom.value.scale + zoom.value.y) * bounds.height / treemapSize.value.height;
+    }
+  }
   if (!tile?.path) return;
-  requestTree(props.treeRoot, tile.path, props.treeRoot, false);
-  emit("revealPath", tile.path);
+  requestTree(props.treeRoot, tile.path, props.treeRoot, false, true);
+  hoveredTile.value = null;
+  pathMenu.value = { path: tile.path, x, y };
+  void nextTick(() => pathMenuEl.value?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus());
 }
 
 function drawCurrentTreemap(): void {
@@ -618,6 +687,15 @@ watch(
   { deep: true },
 );
 
+watch(() => props.tiles, (tiles) => {
+  // The right-click that opens the menu also requests the tree, so only close once its path is gone.
+  if (pathMenu.value && !tiles.some((tile) => tile.path === pathMenu.value?.path)) closePathMenu();
+});
+
+watch(() => props.reviewScreen || props.removalConfirm, (open) => {
+  if (open) closePathMenu();
+});
+
 watch(() => props.reviewScreen, async (open) => {
   if (open) return;
   await observeTreemap();
@@ -630,6 +708,7 @@ watch(
     const viewDir = crumbs.at(-1)?.path ?? "";
     if (viewDir && viewDir !== lastViewDir) {
       lastViewDir = viewDir;
+      closePathMenu();
       zoom.value = { scale: 1, x: 0, y: 0 };
       if (!replayingHistory) {
         history.value = [...history.value.slice(0, historyIndex.value + 1), { root: props.treeRoot, path: viewDir }];
@@ -643,6 +722,8 @@ watch(
 
 onMounted(async () => {
   window.addEventListener("pointerdown", closeVolumeMenu);
+  window.addEventListener("resize", closePathMenu);
+  window.addEventListener("blur", closePathMenu);
   window.addEventListener("resize", positionVolumeMenu);
   window.addEventListener("resize", syncViewportWidth);
   window.addEventListener("scroll", positionVolumeMenu, true);
@@ -656,6 +737,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   treemapResizeObserver?.disconnect();
   window.removeEventListener("pointerdown", closeVolumeMenu);
+  window.removeEventListener("resize", closePathMenu);
+  window.removeEventListener("blur", closePathMenu);
   window.removeEventListener("resize", positionVolumeMenu);
   window.removeEventListener("scroll", positionVolumeMenu, true);
   window.removeEventListener("keydown", closeVolumeMenuOnEscape);
@@ -752,7 +835,7 @@ onBeforeUnmount(() => {
           class="treemap-canvas"
           tabindex="0"
           role="img"
-          aria-label="Disk usage treemap. Use arrow keys to select a tile, Enter to open, and Space to mark."
+          aria-label="Disk usage treemap. Use arrow keys to select a tile, Enter to open, Space to mark, and the context menu key for path actions."
           @pointermove="updateTreePointer"
           @pointerleave="hoveredTile = null"
           @click="clickTreeCanvas"
@@ -914,7 +997,7 @@ onBeforeUnmount(() => {
         <button class="review-back" @click="helpOpen = false">CLOSE · ESC</button>
       </section>
     </div>
-    <aside v-if="hoveredTile?.tile.path && !reviewScreen" class="tree-tooltip" :style="{ left: `${hoveredTile.x}px`, top: `${hoveredTile.y}px` }" aria-live="polite">
+    <aside v-if="hoveredTile?.tile.path && !reviewScreen && !pathMenu" class="tree-tooltip" :style="{ left: `${hoveredTile.x}px`, top: `${hoveredTile.y}px` }" aria-live="polite">
       <div class="tree-tooltip-title"><i>{{ hoveredTile.tile.is_dir ? "▰" : "▪" }}</i><b>{{ hoveredTile.tile.name }}</b></div>
       <small>{{ hoveredTile.tile.path }}</small>
       <div class="tree-tooltip-reading">
@@ -929,6 +1012,11 @@ onBeforeUnmount(() => {
     </aside>
   </section>
   <Teleport to="body">
+    <div v-if="pathMenu" ref="pathMenuEl" class="tree-context-menu" role="menu" :aria-label="t('space.pathActions')" :style="pathMenuStyle" @contextmenu.prevent @keydown="keyPathMenu">
+      <button v-if="pathMenuCovered" role="menuitem" disabled>{{ t("space.insideMarked", { name: pathMenuCovered }) }}</button>
+      <button v-else role="menuitem" @click="runPathMenu('toggleMark')">{{ pathMenuMarked ? t("space.unmark") : t("space.markForRemoval") }}</button>
+      <button role="menuitem" @click="runPathMenu('revealPath')">{{ isMacOS ? t("space.revealFinder") : t("space.revealFileManager") }}</button>
+    </div>
     <div v-if="volumeMenuOpen" class="volume-options" :class="{ above: volumeMenuAbove }" :style="volumeMenuStyle" role="listbox" aria-label="Select volume">
       <button v-for="volume in volumes" :key="volume.mount_point" role="option" :aria-selected="volume.mount_point === selectedVolume" :class="{ chosen: volume.mount_point === selectedVolume }" @click="onSelectVolume(volume.mount_point)">
         <i class="drive-lamp"></i>

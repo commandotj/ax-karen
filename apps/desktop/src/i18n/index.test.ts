@@ -58,6 +58,10 @@ describe("i18n engine and dictionaries", () => {
       expect(dict.masthead.edition).toBeTruthy();
       expect(dict.network.processLedger).toBeTruthy();
       expect(dict.space.scanRoot).toBeTruthy();
+      for (const key of ["markForRemoval", "unmark", "revealFinder", "revealFileManager", "insideMarked", "pathActions"] as const) {
+        expect(dict.space[key], `${locale.code}.space.${key}`).toBeTruthy();
+      }
+      expect(dict.space.insideMarked).toContain("{name}");
       expect(dict.review.title).toBeTruthy();
       expect(dict.dataTable.noData).toBeTruthy();
     }

@@ -24,6 +24,9 @@ Kernel tuning, process termination, automatic cleanup, privileged collection, re
 
 | RFC | Concern |
 |-----|---------|
+| [0029](0029-larger-default-window.md) | Enlarge the default window size |
+| [0028](0028-titlebar-drag-maximize.md) | Fix custom title bar drag, cursor and double-click maximize |
+| [0027](0027-disktree-click-context-menu.md) | Clarify Disk Tree click and context-menu actions |
 | [0014](0014-replace-xtask-with-mjs.md) | Replace Rust xtask runner with root mjs script |
 | [0013](0013-redesign-icon-logo-designer.md) | Redesign application icon with Logo Designer skill |
 | [0012](0012-top-bar-tray-icon.md) | Add top-bar system tray icon and menu |
