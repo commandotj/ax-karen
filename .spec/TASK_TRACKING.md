@@ -1,5 +1,9 @@
 # Task Tracking
 
+## Active
+
+- [ ] Implement RFC 0026: Publish only installable Karen desktop app artifacts (RFC 0026)
+
 ## Done
 - [x] Implement RFC 0016: Windows desktop support (RFC 0016)
 - [x] Implement RFC 0018: Cover platform-dependent code with integration tests (RFC 0018)
