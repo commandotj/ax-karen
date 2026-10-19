@@ -1,6 +1,6 @@
 # RFC 0032: Check for updates and prompt to install (child of 0031)
 
-**Status:** Approved
+**Status:** Implemented
 
 **Parent:** [0031](0031-in-app-auto-update.md)
 
@@ -40,3 +40,7 @@ Nothing in the app knows about releases. The Tauri updater plugin is not install
 - Locale test: every locale defines the new keys.
 - `pnpm build`, `pnpm lint`, `pnpm test` keep the 100% line coverage gate; `cargo test` and `clippy` pass for `src-tauri`.
 - Manual: an installed older build shows the prompt against a release that carries signed artifacts (needs RFC 0033 and a key).
+
+## Closing note
+
+Closed after PR #21 merged, on automated tests and a local macOS arm64 build and manifest check. Not yet observed on a real release: the Linux AppImage `.sig` name, a signed release run, and an installed older build finding and installing an update. Reopen via a new child RFC if the first release shows a problem.

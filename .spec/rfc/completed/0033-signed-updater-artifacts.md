@@ -1,6 +1,6 @@
 # RFC 0033: Publish signed updater artifacts and latest.json (child of 0031)
 
-**Status:** Approved
+**Status:** Implemented
 
 **Parent:** [0031](0031-in-app-auto-update.md)
 
@@ -38,3 +38,7 @@ The workflow publishes only DMG, deb and AppImage plus checksums. The Tauri upda
 - The workflow parses and the new steps are gated on the release job.
 - Verified locally on macOS arm64: `pnpm tauri --config '{"bundle":{"createUpdaterArtifacts":true}}'` with a signing key produces the DMG, `Karen.app.tar.gz` and `.sig`, and `scripts/updater-manifest.mjs` builds a correct `latest.json` from them. The `TAURI_CONFIG` environment variable is not honoured by tauri-cli 2.12.3, so `--config` is used.
 - A real release run produces `latest.json` and the `.sig` files; that is only observable on a release, and the RFC stays Approved until it has been seen.
+
+## Closing note
+
+Closed after PR #21 merged, on automated tests and a local macOS arm64 build and manifest check. Not yet observed on a real release: the Linux AppImage `.sig` name, a signed release run, and an installed older build finding and installing an update. Reopen via a new child RFC if the first release shows a problem.
