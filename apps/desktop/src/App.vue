@@ -5,6 +5,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { KarenCli, type CliEvent } from "./cli";
 import TabWheel from "./components/TabWheel.vue";
+import UpdatePrompt from "./components/UpdatePrompt.vue";
 import { formatTraySummary, formatTrayTitle, type TabId, type TabItem } from "./components/tabWheel";
 import { formatBytes } from "./format";
 import type { TreeTile } from "./treemap";
@@ -681,5 +682,6 @@ onBeforeUnmount(() => {
       @set-power="setPower"
       @close-window="closeWindow"
     />
+    <UpdatePrompt />
   </main>
 </template>

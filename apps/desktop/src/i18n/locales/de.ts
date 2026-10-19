@@ -119,6 +119,13 @@ export const de: LocaleMessageSchema = {
     directories: "Ordner",
     modified: "Geändert am",
   },
+  update: {
+    available: "Karen {version} ist verfügbar.",
+    install: "Installieren und neu starten",
+    installing: "Wird installiert…",
+    later: "Später",
+    failed: "Update fehlgeschlagen. Versuchen Sie es später erneut.",
+  },
   review: {
     title: "ÜBERPRÜFUNG & BEREINIGUNG",
     subtitle: "Zur dauerhaften Löschung markierte Elemente",

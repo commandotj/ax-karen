@@ -119,6 +119,13 @@ export const fr: LocaleMessageSchema = {
     directories: "Dossiers",
     modified: "Modifié le",
   },
+  update: {
+    available: "Karen {version} est disponible.",
+    install: "Installer et redémarrer",
+    installing: "Installation…",
+    later: "Plus tard",
+    failed: "Échec de la mise à jour. Réessayez plus tard.",
+  },
   review: {
     title: "EXAMEN ET RÉCUPÉRATION",
     subtitle: "Éléments marqués pour suppression définitive",

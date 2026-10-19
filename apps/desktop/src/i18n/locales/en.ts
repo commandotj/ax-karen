@@ -120,6 +120,13 @@ export const en: LocaleMessageSchema = {
     directories: "Directories",
     modified: "Modified",
   },
+  update: {
+    available: "Karen {version} is available.",
+    install: "Install and restart",
+    installing: "Installing…",
+    later: "Later",
+    failed: "Update failed. Try again later.",
+  },
   review: {
     title: "REVIEW & RECLAIM",
     subtitle: "Items marked for permanent removal",

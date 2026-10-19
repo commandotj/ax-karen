@@ -1,5 +1,11 @@
 # Task Tracking
 
+## Active
+
+- [ ] Implement RFC 0031: In-app auto-update (Umbrella) (RFC 0031)
+  - [ ] Implement RFC 0032: Check for updates and prompt to install (child of 0031) (RFC 0032)
+  - [ ] Implement RFC 0033: Publish signed updater artifacts and latest.json (child of 0031) (RFC 0033)
+
 ## Done
 - [x] Implement RFC 0016: Windows desktop support (RFC 0016)
 - [x] Implement RFC 0018: Cover platform-dependent code with integration tests (RFC 0018)

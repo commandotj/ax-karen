@@ -119,6 +119,13 @@ export const ko: LocaleMessageSchema = {
     directories: "디렉터리 수",
     modified: "수정일",
   },
+  update: {
+    available: "Karen {version}을(를) 사용할 수 있습니다.",
+    install: "설치 후 다시 시작",
+    installing: "설치 중…",
+    later: "나중에",
+    failed: "업데이트에 실패했습니다. 나중에 다시 시도하세요.",
+  },
   review: {
     title: "정리 및 공간 확보",
     subtitle: "영구 삭제 대상으로 선택된 항목",

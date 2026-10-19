@@ -181,9 +181,21 @@ jobs:
           echo "APPLE_API_KEY=$APPLE_API_KEY_ID" >> "$GITHUB_ENV"
           echo "APPLE_API_KEY_PATH=$AUTH_KEY_PATH" >> "$GITHUB_ENV"
 
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm tauri
+      - name: Updater signing key preflight
         env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::Missing TAURI_SIGNING_PRIVATE_KEY; the in-app updater needs signed update archives."
+            exit 1
+          fi
+
+      - run: pnpm install --frozen-lockfile
+      # Updater archives are only built for releases, so local and PR builds need no signing key.
+      - run: pnpm tauri --config '{"bundle":{"createUpdaterArtifacts":true}}'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -200,6 +212,12 @@ jobs:
             exit 1
           fi
           cp "$dmg" dist/
+          archive=$(ls target/release/bundle/macos/*.app.tar.gz 2>/dev/null | head -n 1)
+          if [ -z "$archive" ] || [ ! -f "$archive.sig" ]; then
+            echo "::error::Expected signed macOS updater archive (.app.tar.gz and .sig) in target/release/bundle/macos"
+            exit 1
+          fi
+          cp "$archive" "$archive.sig" dist/
           (cd dist && shasum -a 256 * > SHA256SUMS-desktop-macos)
 
       - name: Package Desktop Installers (Linux)
@@ -217,10 +235,14 @@ jobs:
             echo "::error::Expected Linux .AppImage missing in target/release/bundle/appimage"
             missing=1
           fi
+          if [ ! -f "$appimage.sig" ]; then
+            echo "::error::Expected signed Linux updater signature $appimage.sig"
+            missing=1
+          fi
           if [ "$missing" -ne 0 ]; then
             exit 1
           fi
-          cp "$deb" "$appimage" dist/
+          cp "$deb" "$appimage" "$appimage.sig" dist/
           (cd dist && shasum -a 256 * > SHA256SUMS-desktop-linux)
 
       - uses: actions/upload-artifact@v4
@@ -245,6 +267,14 @@ jobs:
           pattern: desktop-*
           merge-multiple: true
           path: dist
+
+      - name: Generate updater manifest (latest.json)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          notes=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body)
+          node scripts/updater-manifest.mjs dist "$TAG" "$GITHUB_REPOSITORY" "$notes"
 
       - name: Generate master SHA256SUMS
         run: |

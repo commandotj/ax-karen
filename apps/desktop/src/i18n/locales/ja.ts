@@ -119,6 +119,13 @@ export const ja: LocaleMessageSchema = {
     directories: "フォルダ数",
     modified: "更新日時",
   },
+  update: {
+    available: "Karen {version} が利用可能です。",
+    install: "インストールして再起動",
+    installing: "インストール中…",
+    later: "後で",
+    failed: "更新に失敗しました。後でもう一度お試しください。",
+  },
   review: {
     title: "整理とディスク解放",
     subtitle: "完全削除としてマークされた項目",

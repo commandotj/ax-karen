@@ -119,6 +119,13 @@ export const es: LocaleMessageSchema = {
     directories: "Carpetas",
     modified: "Modificado",
   },
+  update: {
+    available: "Karen {version} está disponible.",
+    install: "Instalar y reiniciar",
+    installing: "Instalando…",
+    later: "Más tarde",
+    failed: "La actualización falló. Inténtalo más tarde.",
+  },
   review: {
     title: "REVISIÓN Y RECUPERACIÓN",
     subtitle: "Elementos marcados para eliminación permanente",

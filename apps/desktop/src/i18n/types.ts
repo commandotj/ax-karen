@@ -135,6 +135,13 @@ export interface LocaleMessageSchema {
     directories: string;
     modified: string;
   };
+  update: {
+    available: string;
+    install: string;
+    installing: string;
+    later: string;
+    failed: string;
+  };
   review: {
     title: string;
     subtitle: string;
