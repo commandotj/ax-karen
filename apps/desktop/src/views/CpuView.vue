@@ -5,7 +5,7 @@ import { processMetricWidth } from "../format";
 import { useI18n } from "../i18n";
 import type { CpuProcess } from "../types";
 
-const { t } = useI18n();
+const { t, text, decimal } = useI18n();
 
 const props = defineProps<{
   cpu: number | null;
@@ -21,7 +21,7 @@ const columns = computed(() => [t("runtime.processes"), t("network.colPid"), t("
   <section class="view metric-view detail-view">
     <div class="view-heading">
       <h1>{{ t("nav.cpu") }}</h1>
-      <span class="volume-count">SYSTEM {{ cpu ?? "—" }}% · 100% = ONE CORE</span>
+      <span class="volume-count">{{ text("SYSTEM") }} {{ cpu ?? "—" }}% · {{ text("100% = ONE CORE") }}</span>
     </div>
     <DataTable
       :columns="columns"
@@ -30,8 +30,8 @@ const columns = computed(() => [t("runtime.processes"), t("network.colPid"), t("
       :key-prop="(process) => process.pid"
     >
       <template #empty>
-        <p v-if="!cpuProcessesAvailable" class="process-empty">SAMPLING BASELINE — PROCESS LOAD WARMING UP</p>
-        <p v-else class="process-empty">NO PROCESS CPU READINGS AVAILABLE</p>
+        <p v-if="!cpuProcessesAvailable" class="process-empty">{{ text("SAMPLING BASELINE — PROCESS LOAD WARMING UP") }}</p>
+        <p v-else class="process-empty">{{ text("NO PROCESS CPU READINGS AVAILABLE") }}</p>
       </template>
       <template #row="{ item: process, index }">
         <span class="detail-process-identity">
@@ -40,13 +40,13 @@ const columns = computed(() => [t("runtime.processes"), t("network.colPid"), t("
         </span>
         <span class="process-pid">{{ process.pid }}</span>
         <span class="detail-process-reading">
-          <b>{{ process.cpu_percent.toFixed(1) }}%</b>
+          <b>{{ decimal(process.cpu_percent) }}%</b>
           <i :style="{ width: processMetricWidth(process.cpu_percent, largestCpuProcess) }"></i>
         </span>
       </template>
     </DataTable>
     <div class="panel-status">
-      <span class="calibration">✥</span> PROCESS CPU <i>·</i> DESCENDING LOAD <i>·</i> TOP 20 <i>·</i> 3 SECOND SAMPLE
+      <span class="calibration">✥</span> {{ text("PROCESS CPU") }} <i>·</i> {{ text("DESCENDING LOAD") }} <i>·</i> {{ text("TOP 20") }} <i>·</i> {{ text("3 SECOND SAMPLE") }}
     </div>
   </section>
 </template>

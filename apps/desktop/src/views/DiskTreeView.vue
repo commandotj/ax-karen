@@ -5,7 +5,7 @@ import { useI18n } from "../i18n";
 import { categoryColor, drawTreemap, tileAt, type TreeTile } from "../treemap";
 import type { BlockedMark, Crumb, DiskMark, Finding, PowerPreset, RemovalState, Sibling, TreeMode, Volume } from "../types";
 
-const { t } = useI18n();
+const { t, text, number, decimal, date } = useI18n();
 
 const props = defineProps<{
   selectedVolume: string;
@@ -44,7 +44,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   scan: [path?: string];
   selectVolume: [path: string];
-  requestTreeView: [params: { path: string; selectedPath?: string; root?: string; open?: boolean; metric?: "size" | "files"; depth?: number; width?: number; height?: number }];
+  requestTreeView: [params: { path: string; selectedPath?: string; root?: string; open?: boolean; keepView?: boolean; metric?: "size" | "files"; depth?: number; width?: number; height?: number }];
   toggleMark: [path: string];
   requestReview: [];
   cancelReview: [];
@@ -67,16 +67,16 @@ const emit = defineEmits<{
 }>();
 
 const treeModes: readonly TreeMode[] = ["size", "files", "age"] as const;
-const powerPresets: { id: PowerPreset; label: string; note: string }[] = [
-  { id: "miser", label: "Miser", note: "fewest workers, lowest battery use" },
-  { id: "balanced", label: "Balanced", note: "default scan speed" },
-  { id: "aggressive", label: "Aggressive", note: "more workers, faster scan" },
-  { id: "drain", label: "Drain My Battery", note: "every available worker" },
-];
+const powerPresets = computed(() => [
+  { id: "miser" as const, label: text("Miser"), note: text("fewest workers, lowest battery use") },
+  { id: "balanced" as const, label: text("Balanced"), note: text("default scan speed") },
+  { id: "aggressive" as const, label: text("Aggressive"), note: text("more workers, faster scan") },
+  { id: "drain" as const, label: text("Drain My Battery"), note: text("every available worker") },
+]);
 
-const helpRows: [string, string][] = [
-  ["Click / double-click tile", "Select / open directory (click a selected directory opens it)"],
-  ["Right-click tile", "Select and reveal in the file manager"],
+const helpRows = computed<[string, string][]>(() => [
+  ["Click / double-click tile", "Select / open directory (double-click)"],
+  ["Right-click tile", "Path actions: mark or unmark, reveal in the file manager"],
   ["Ctrl/Cmd-click, middle-click", "Toggle mark without moving selection"],
   ["Enter", "Open selected or pointed directory"],
   ["Space, X", "Toggle mark"],
@@ -100,7 +100,7 @@ const helpRows: [string, string][] = [
   ["C", "Review marked paths"],
   ["?", "This help"],
   ["Q", "Quit"],
-];
+].map(([keys, action]) => [text(keys), text(action)]));
 
 const vimArrows: Record<string, string> = { h: "ArrowLeft", j: "ArrowDown", k: "ArrowUp", l: "ArrowRight" };
 
@@ -135,8 +135,8 @@ const visibleCrumbs = computed(() => {
   if (all.length <= 5) return all.map((item) => ({ ...item, gap: false }));
   return [{ ...all[0], gap: false }, { crumb: all[0].crumb, index: -1, gap: true }, ...all.slice(-3).map((item) => ({ ...item, gap: false }))];
 });
-const workerLabel = computed(() => props.workers === null ? "" : ` · ${props.workers} WORKERS`);
-const powerLabel = computed(() => powerPresets.find((preset) => preset.id === props.power)?.label ?? "Balanced");
+const workerLabel = computed(() => props.workers === null ? "" : ` · ${number(props.workers)} ${text("WORKERS")}`);
+const powerLabel = computed(() => powerPresets.value.find((preset) => preset.id === props.power)?.label ?? text("Balanced"));
 const removalFreeDelta = computed(() => props.removal?.freeBefore != null && props.removal.freeAfter != null
   ? props.removal.freeAfter - props.removal.freeBefore
   : null);
@@ -156,12 +156,26 @@ const isHoveredMarked = computed(() => {
   const path = hoveredTile.value?.tile.path;
   return Boolean(path && props.marks.some((mark) => mark.path === path));
 });
-const coveredMarkName = computed(() => {
-  const path = hoveredTile.value?.tile.path;
+function coveredMarkFor(path: string | null | undefined): string {
   if (!path) return "";
   const separator = path.includes("\\") ? "\\" : "/";
   const mark = props.marks.find((item) => path.startsWith(`${item.path}${separator}`));
   return mark?.path.split(separator).at(-1) ?? "";
+}
+const coveredMarkName = computed(() => coveredMarkFor(hoveredTile.value?.tile.path));
+const pathMenu = ref<{ path: string; x: number; y: number } | null>(null);
+const pathMenuEl = ref<HTMLElement | null>(null);
+const pathMenuMarked = computed(() => Boolean(pathMenu.value && props.marks.some((mark) => mark.path === pathMenu.value?.path)));
+const pathMenuCovered = computed(() => coveredMarkFor(pathMenu.value?.path));
+const pathMenuStyle = computed(() => {
+  const menu = pathMenu.value!;
+  const width = 240;
+  const height = 100;
+  const edge = 8;
+  return {
+    left: `${Math.max(edge, Math.min(menu.x, window.innerWidth - width - edge))}px`,
+    top: `${Math.max(edge, Math.min(menu.y, window.innerHeight - height - edge))}px`,
+  };
 });
 const isHoveredCovered = computed(() => coveredMarkName.value.length > 0);
 
@@ -170,12 +184,14 @@ function requestTree(
   selectedPath = path,
   root = props.treeRoot || props.selectedVolume,
   open = true,
+  keepView = false,
 ): void {
   emit("requestTreeView", {
     path,
     selectedPath,
     root,
     open,
+    keepView,
     metric: props.treeMode === "files" ? "files" : "size",
     depth: props.treeDepth,
     width: treemapSize.value.width,
@@ -185,9 +201,9 @@ function requestTree(
 
 function selectTile(tile: TreeTile, event: MouseEvent): void {
   if (!tile.path) return;
-  const selectedBefore = props.selection?.path === tile.path;
-  const open = tile.is_dir && (selectedBefore || event.detail > 1);
-  requestTree(props.treeRoot, tile.path, props.treeRoot, open);
+  // Only the second click of a double-click drills in; a third rapid click would open whatever now sits under the pointer.
+  const open = tile.is_dir && event.detail === 2;
+  requestTree(props.treeRoot, tile.path, props.treeRoot, open, !open);
 }
 
 function setTreeMode(mode: TreeMode): void {
@@ -292,6 +308,7 @@ function treeCoords(event: MouseEvent): { x: number; y: number; px: number; py: 
 }
 
 function wheelTree(event: WheelEvent): void {
+  closePathMenu();
   const point = treeCoords(event);
   if (!point) return;
   const current = zoom.value;
@@ -325,7 +342,7 @@ function stepSibling(step: number): void {
   const list = props.siblings;
   const at = list.findIndex((sibling) => sibling.path === props.selection?.path);
   const next = list[(at + step + list.length) % list.length];
-  if (next) requestTree(props.treeRoot, next.path, props.treeRoot, false);
+  if (next) requestTree(props.treeRoot, next.path, props.treeRoot, false, true);
 }
 
 function handleDiskKeyboard(event: KeyboardEvent): void {
@@ -334,7 +351,7 @@ function handleDiskKeyboard(event: KeyboardEvent): void {
   if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
   if (target instanceof Element && target.closest("button:not(.tree-tile)")) return;
 
-  if (helpOpen.value) return;
+  if (helpOpen.value || pathMenu.value) return;
   const key = vimArrows[event.key] ?? event.key;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) pointerLast = false;
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
@@ -360,7 +377,7 @@ function handleDiskKeyboard(event: KeyboardEvent): void {
       .sort((left, right) => left.score - right.score)[0]?.tile;
     if (next?.path) {
       event.preventDefault();
-      requestTree(props.treeRoot, next.path, props.treeRoot, false);
+      requestTree(props.treeRoot, next.path, props.treeRoot, false, true);
     }
     return;
   }
@@ -452,6 +469,7 @@ function closeVolumeMenu(event: PointerEvent): void {
   if (target instanceof Element && !target.closest(".volume-picker, .volume-options")) {
     volumeMenuOpen.value = false;
   }
+  if (!(target instanceof Element && target.closest(".tree-context-menu"))) closePathMenu();
   if (target instanceof Element && !target.closest(".tree-crumb-wrap")) crumbMenu.value = null;
   if (target instanceof Element && !target.closest(".power-picker")) powerMenuOpen.value = false;
 }
@@ -495,6 +513,12 @@ function onSelectVolume(path: string): void {
 
 function closeVolumeMenuOnEscape(event: KeyboardEvent): void {
   if (event.key !== "Escape") return;
+  if (pathMenu.value) {
+    // handleDiskKeyboard is registered after this listener and would otherwise run its Escape branch (go to parent).
+    event.stopImmediatePropagation();
+    closePathMenu();
+    return;
+  }
   if (props.removalConfirm || props.review) {
     emit("cancelReview");
     return;
@@ -547,6 +571,7 @@ function updateTreePointer(event: PointerEvent): void {
 function clickTreeCanvas(event: MouseEvent): void {
   const canvas = treemapCanvas.value;
   if (!canvas) return;
+  if (event.type === "auxclick" && event.button !== 1) return;
   const point = treeCoords(event);
   const tile = point ? tileAt(props.tiles, point.x, point.y) : undefined;
   if (!tile?.path) return;
@@ -557,12 +582,56 @@ function clickTreeCanvas(event: MouseEvent): void {
   selectTile(tile, event);
 }
 
+function closePathMenu(): void {
+  // The focused menu button is about to leave the DOM; hand focus back so keyboard shortcuts keep working.
+  if (pathMenuEl.value?.contains(document.activeElement)) focusTreemap();
+  pathMenu.value = null;
+}
+
+function runPathMenu(action: "toggleMark" | "revealPath"): void {
+  const path = pathMenu.value!.path;
+  closePathMenu();
+  if (action === "toggleMark") emit("toggleMark", path);
+  else emit("revealPath", path);
+}
+
+function keyPathMenu(event: KeyboardEvent): void {
+  if (event.key === "Tab") {
+    closePathMenu();
+    return;
+  }
+  const keys = ["ArrowDown", "ArrowUp", "Home", "End"];
+  if (!keys.includes(event.key)) return;
+  event.preventDefault();
+  // Reveal is always enabled, so there is at least one focusable item.
+  const buttons = [...pathMenuEl.value!.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
+  const at = buttons.indexOf(document.activeElement as HTMLButtonElement);
+  const next = event.key === "Home" ? 0
+    : event.key === "End" ? buttons.length - 1
+    : (at + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length;
+  buttons[next].focus();
+}
+
 function contextTree(event: MouseEvent): void {
-  const point = treeCoords(event);
-  const tile = point ? tileAt(props.tiles, point.x, point.y) : undefined;
+  // This handler is bound to the canvas, so it is mounted.
+  const point = treeCoords(event)!;
+  let tile = tileAt(props.tiles, point.x, point.y);
+  let x = event.clientX;
+  let y = event.clientY;
+  const bounds = treemapCanvas.value!.getBoundingClientRect();
+  if (!tile && event.button !== 2) {
+    // A keyboard-invoked menu carries no pointer position, so anchor it to the selected tile.
+    tile = props.tiles.find((item) => item.path === props.selection?.path);
+    if (tile) {
+      x = bounds.left + ((tile.x + tile.width / 2) * zoom.value.scale + zoom.value.x) * bounds.width / treemapSize.value.width;
+      y = bounds.top + ((tile.y + tile.height / 2) * zoom.value.scale + zoom.value.y) * bounds.height / treemapSize.value.height;
+    }
+  }
   if (!tile?.path) return;
-  requestTree(props.treeRoot, tile.path, props.treeRoot, false);
-  emit("revealPath", tile.path);
+  requestTree(props.treeRoot, tile.path, props.treeRoot, false, true);
+  hoveredTile.value = null;
+  pathMenu.value = { path: tile.path, x, y };
+  void nextTick(() => pathMenuEl.value?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus());
 }
 
 function drawCurrentTreemap(): void {
@@ -578,6 +647,9 @@ function drawCurrentTreemap(): void {
     height: treemapSize.value.height,
     filter: filterText.value,
     zoom: zoom.value,
+    text,
+    number,
+    decimal,
   });
 }
 
@@ -618,6 +690,15 @@ watch(
   { deep: true },
 );
 
+watch(() => props.tiles, (tiles) => {
+  // The right-click that opens the menu also requests the tree, so only close once its path is gone.
+  if (pathMenu.value && !tiles.some((tile) => tile.path === pathMenu.value?.path)) closePathMenu();
+});
+
+watch(() => props.reviewScreen || props.removalConfirm, (open) => {
+  if (open) closePathMenu();
+});
+
 watch(() => props.reviewScreen, async (open) => {
   if (open) return;
   await observeTreemap();
@@ -630,6 +711,7 @@ watch(
     const viewDir = crumbs.at(-1)?.path ?? "";
     if (viewDir && viewDir !== lastViewDir) {
       lastViewDir = viewDir;
+      closePathMenu();
       zoom.value = { scale: 1, x: 0, y: 0 };
       if (!replayingHistory) {
         history.value = [...history.value.slice(0, historyIndex.value + 1), { root: props.treeRoot, path: viewDir }];
@@ -643,6 +725,8 @@ watch(
 
 onMounted(async () => {
   window.addEventListener("pointerdown", closeVolumeMenu);
+  window.addEventListener("resize", closePathMenu);
+  window.addEventListener("blur", closePathMenu);
   window.addEventListener("resize", positionVolumeMenu);
   window.addEventListener("resize", syncViewportWidth);
   window.addEventListener("scroll", positionVolumeMenu, true);
@@ -656,6 +740,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   treemapResizeObserver?.disconnect();
   window.removeEventListener("pointerdown", closeVolumeMenu);
+  window.removeEventListener("resize", closePathMenu);
+  window.removeEventListener("blur", closePathMenu);
   window.removeEventListener("resize", positionVolumeMenu);
   window.removeEventListener("scroll", positionVolumeMenu, true);
   window.removeEventListener("keydown", closeVolumeMenuOnEscape);
@@ -673,20 +759,20 @@ onBeforeUnmount(() => {
         <div class="tree-location">
           <div class="volume-picker">
             <button ref="volumePickerTrigger" class="volume-picker-trigger" aria-haspopup="listbox" :aria-expanded="volumeMenuOpen" @click="toggleVolumeMenu">
-              <i class="drive-lamp"></i><strong>{{ selectedVolume || "NO VOLUME" }}</strong><small>{{ selected?.device || "LOCAL STORAGE" }}</small><i class="picker-chevron" :class="{ open: volumeMenuOpen }"></i>
+              <i class="drive-lamp"></i><strong>{{ selectedVolume || text("NO VOLUME") }}</strong><small>{{ selected?.device || text("LOCAL STORAGE") }}</small><i class="picker-chevron" :class="{ open: volumeMenuOpen }"></i>
             </button>
           </div>
           <span class="location-lamp"></span>
           <div class="history-buttons">
-            <button aria-label="History back" :title="history[historyIndex - 1]?.path ?? 'Nothing earlier'" :disabled="historyIndex <= 0" @click="goHistory(-1)">‹</button>
-            <button aria-label="History forward" :title="history[historyIndex + 1]?.path ?? 'Nothing later'" :disabled="historyIndex >= history.length - 1" @click="goHistory(1)">›</button>
+            <button :aria-label="text('History back')" :title="history[historyIndex - 1]?.path ?? text('Nothing earlier')" :disabled="historyIndex <= 0" @click="goHistory(-1)">‹</button>
+            <button :aria-label="text('History forward')" :title="history[historyIndex + 1]?.path ?? text('Nothing later')" :disabled="historyIndex >= history.length - 1" @click="goHistory(1)">›</button>
           </div>
           <template v-for="item in visibleCrumbs" :key="item.gap ? 'gap' : item.crumb.path">
             <span v-if="item.gap" class="tree-crumb-gap" aria-hidden="true">…</span>
             <span v-else class="tree-crumb-wrap">
               <button class="tree-crumb" :title="item.crumb.path" @click="requestTree(item.crumb.path, item.crumb.path, treeRoot, true)">{{ item.crumb.label }}</button>
-              <button v-if="(item.crumb.siblings?.length ?? 0) > 1" class="crumb-siblings" :aria-label="`Siblings of ${item.crumb.label}`" :aria-expanded="crumbMenu === item.index" @click.stop="crumbMenu = crumbMenu === item.index ? null : item.index">▾</button>
-              <div v-if="crumbMenu === item.index" class="crumb-menu" role="listbox" :aria-label="`Siblings of ${item.crumb.label}`">
+              <button v-if="(item.crumb.siblings?.length ?? 0) > 1" class="crumb-siblings" :aria-label="text('SIBLINGS')" :aria-expanded="crumbMenu === item.index" @click.stop="crumbMenu = crumbMenu === item.index ? null : item.index">▾</button>
+              <div v-if="crumbMenu === item.index" class="crumb-menu" role="listbox" :aria-label="text('SIBLINGS')">
                 <button v-for="sibling in item.crumb.siblings" :key="sibling.path" role="option" :class="{ chosen: sibling.path === item.crumb.path }" @click="openSibling(sibling)">
                   <i class="crumb-dot" :style="{ background: categoryColor(sibling.category ?? '') }"></i>
                   <span class="crumb-name">{{ sibling.name }}</span>
@@ -699,51 +785,51 @@ onBeforeUnmount(() => {
         </div>
         <div class="tree-actions">
           <div class="power-picker">
-            <button class="power-trigger" aria-haspopup="listbox" :aria-expanded="powerMenuOpen" title="Power Efficiency: scan worker preset" @click="powerMenuOpen = !powerMenuOpen">
-              POWER · {{ powerLabel.toUpperCase() }}{{ workerLabel }}
+            <button class="power-trigger" aria-haspopup="listbox" :aria-expanded="powerMenuOpen" :title="text('Power Efficiency: scan worker preset')" @click="powerMenuOpen = !powerMenuOpen">
+              {{ text("POWER") }} · {{ powerLabel.toUpperCase() }}{{ workerLabel }}
             </button>
-            <div v-if="powerMenuOpen" class="power-menu" role="listbox" aria-label="Power Efficiency">
+            <div v-if="powerMenuOpen" class="power-menu" role="listbox" :aria-label="text('Power Efficiency')">
               <button v-for="preset in powerPresets" :key="preset.id" role="option" :class="{ chosen: power === preset.id }" @click="setPower(preset.id)">
                 <b>{{ preset.label }}</b><small>{{ preset.note }}</small>
               </button>
             </div>
           </div>
-          <span v-if="previewing" class="tree-preview-badge">SCANNING · PREVIOUS MAP RETAINED</span>
+          <span v-if="previewing" class="tree-preview-badge">{{ text("SCANNING · PREVIOUS MAP RETAINED") }}</span>
           <button class="map-button" :disabled="scanning || !selectedVolume" @click="emit('scan', treeRoot || selectedVolume)">
             {{ scanning ? t("space.scanning") : treeRoot ? t("space.rescan") : t("space.scanRoot") }}
           </button>
         </div>
       </div>
       <div class="tree-controls" @click="($event.target as HTMLElement).closest('button, label') && focusTreemap()">
-        <div class="tree-mode" role="group" aria-label="Treemap mode">
-          <button v-for="mode in treeModes" :key="mode" :class="{ active: treeMode === mode }" @click="setTreeMode(mode)">{{ mode.toUpperCase() }}</button>
+        <div class="tree-mode" role="group" :aria-label="text('Treemap mode')">
+          <button v-for="mode in treeModes" :key="mode" :class="{ active: treeMode === mode }" @click="setTreeMode(mode)">{{ text(mode.toUpperCase()) }}</button>
         </div>
         <label class="tree-check">
           <input :checked="includeHidden" type="checkbox" :disabled="scanning" @change="emit('update:includeHidden', ($event.target as HTMLInputElement).checked); rescanWithFilter()">
-          <span>HIDDEN FILES</span>
+          <span>{{ text("HIDDEN FILES") }}</span>
         </label>
         <label class="tree-check">
           <input :checked="apparentSize" type="checkbox" :disabled="scanning" @change="emit('update:apparentSize', ($event.target as HTMLInputElement).checked); rescanWithFilter()">
           <span>{{ t("space.apparent") }}</span>
         </label>
         <label v-show="filterOpen || filterText" class="tree-filter">
-          <span>FILTER</span>
-          <input ref="filterInput" v-model="filterText" type="text" placeholder="name contains…" aria-label="Filter tiles by name" @keydown.enter.prevent="closeFilter(false)" @keydown.esc.stop.prevent="closeFilter(true)">
+          <span>{{ text("FILTER") }}</span>
+          <input ref="filterInput" v-model="filterText" type="text" :placeholder="text('name contains…')" :aria-label="text('Filter tiles by name')" @keydown.enter.prevent="closeFilter(false)" @keydown.esc.stop.prevent="closeFilter(true)">
         </label>
         <div class="depth-control">
           <span>{{ t("space.depthLimit") }} {{ treeDepth }}</span>
-          <button aria-label="Decrease treemap depth" :disabled="treeDepth <= 1" @click="setTreeDepth(-1)">−</button>
-          <button aria-label="Increase treemap depth" :disabled="treeDepth >= 6" @click="setTreeDepth(1)">+</button>
+          <button :aria-label="text('Decrease treemap depth')" :disabled="treeDepth <= 1" @click="setTreeDepth(-1)">−</button>
+          <button :aria-label="text('Increase treemap depth')" :disabled="treeDepth >= 6" @click="setTreeDepth(1)">+</button>
         </div>
       </div>
       <div class="tree-legend" :class="{ 'age-mode': treeMode === 'age' }">
         <span v-if="treeRoot" class="tree-count">
-          {{ previewing ? `SCAN ${scanProgress.files.toLocaleString()} FILES` : formatBytes(bytes) }} <i>·</i> {{ files.toLocaleString() }} files <i>·</i> {{ dirs.toLocaleString() }} dirs
-          <template v-if="unreadable"> <i>·</i> {{ unreadable.toLocaleString() }} unreadable</template>
-          <template v-if="filterText"> <i>·</i> filter “{{ filterText }}”</template>
+          {{ previewing ? `${text("SCAN")} ${number(scanProgress.files)} ${text("FILES")}` : formatBytes(bytes) }} <i>·</i> {{ number(files) }} {{ text("files") }} <i>·</i> {{ number(dirs) }} {{ text("dirs") }}
+          <template v-if="unreadable"> <i>·</i> {{ number(unreadable) }} {{ text("unreadable") }}</template>
+          <template v-if="filterText"> <i>·</i> {{ text("filter") }} “{{ filterText }}”</template>
         </span>
-        <span class="age-legend"><i></i> THIS WEEK <i></i> THIS MONTH <i></i> SIX MONTHS <i></i> THIS YEAR <i></i> OLDER</span>
-        <span><i class="legend-code"></i> CODE</span><span><i class="legend-agent"></i> AGENT SCRATCH</span><span><i class="legend-tool"></i> TOOLCHAINS</span><span><i class="legend-synced"></i> SYNCED</span><span><i class="legend-git"></i> GIT</span><span><i class="legend-media"></i> MEDIA</span><span><i class="legend-documents"></i> DOCUMENTS</span><span><i class="legend-cache"></i> CACHE</span><span><i class="legend-other"></i> OTHER</span>
+        <span class="age-legend"><i></i> {{ text("THIS WEEK") }} <i></i> {{ text("THIS MONTH") }} <i></i> {{ text("SIX MONTHS") }} <i></i> {{ text("THIS YEAR") }} <i></i> {{ text("OLDER") }}</span>
+        <span><i class="legend-code"></i> {{ text("CODE") }}</span><span><i class="legend-agent"></i> {{ text("AGENT SCRATCH") }}</span><span><i class="legend-tool"></i> {{ text("TOOLCHAINS") }}</span><span><i class="legend-synced"></i> {{ text("SYNCED") }}</span><span><i class="legend-git"></i> {{ text("GIT") }}</span><span><i class="legend-media"></i> {{ text("MEDIA") }}</span><span><i class="legend-documents"></i> {{ text("DOCUMENTS") }}</span><span><i class="legend-cache"></i> {{ text("CACHE") }}</span><span><i class="legend-other"></i> {{ text("OTHER") }}</span>
       </div>
       <div class="treemap-frame" :class="{ mapped: tiles.length > 0 }">
         <canvas
@@ -752,7 +838,7 @@ onBeforeUnmount(() => {
           class="treemap-canvas"
           tabindex="0"
           role="img"
-          aria-label="Disk usage treemap. Use arrow keys to select a tile, Enter to open, and Space to mark."
+          :aria-label="text('Disk usage treemap. Use arrow keys to select a tile, Enter to open, Space to mark, and the context menu key for path actions.')"
           @pointermove="updateTreePointer"
           @pointerleave="hoveredTile = null"
           @click="clickTreeCanvas"
@@ -761,130 +847,130 @@ onBeforeUnmount(() => {
           @wheel.prevent="wheelTree"
         ></canvas>
         <div v-if="!tiles.length" class="tree-empty">
-          <span class="empty-state-label">{{ scanning ? "MAPPING STORAGE" : treeRoot ? "NO DIRECTORY ENTRIES" : "VOLUME NOT MAPPED" }}</span>
-          <p>{{ scanning ? `${scanProgress.files.toLocaleString()} files · ${formatBytes(scanProgress.bytes)} inspected${previewing ? " · previous completed map retained" : ""}` : treeRoot ? "Selected volume contains no visible directory entries." : "Choose a volume to map its directory allocation." }}</p>
+          <span class="empty-state-label">{{ scanning ? text("MAPPING STORAGE") : treeRoot ? text("NO DIRECTORY ENTRIES") : text("VOLUME NOT MAPPED") }}</span>
+          <p>{{ scanning ? `${number(scanProgress.files)} ${text("files")} · ${formatBytes(scanProgress.bytes)} ${text("inspected")}${previewing ? ` · ${text("previous completed map retained")}` : ""}` : treeRoot ? text("Selected volume contains no visible directory entries.") : text("Choose a volume to map its directory allocation.") }}</p>
           <div v-if="selected" class="unmapped-volume-stats">
-            <div><span>USED</span><b>{{ volumePercent(selected).toFixed(0) }}%</b></div>
-            <div><span>CAPACITY</span><b>{{ selected.total_bytes == null ? "—" : formatBytes(selected.total_bytes) }}</b></div>
-            <div><span>AVAILABLE</span><b>{{ selected.available_bytes == null ? "—" : formatBytes(selected.available_bytes) }}</b></div>
+            <div><span>{{ text("USED") }}</span><b>{{ number(volumePercent(selected)) }}%</b></div>
+            <div><span>{{ text("CAPACITY") }}</span><b>{{ selected.total_bytes == null ? "—" : formatBytes(selected.total_bytes) }}</b></div>
+            <div><span>{{ text("AVAILABLE") }}</span><b>{{ selected.available_bytes == null ? "—" : formatBytes(selected.available_bytes) }}</b></div>
             <div class="unmapped-meter" :style="meterStyle(volumePercent(selected))"><i></i></div>
           </div>
         </div>
       </div>
       <div class="tree-keybar">
-        <span>ENTER <b>OPEN</b></span><span>U <b>UP</b></span><span>X <b>MARK</b></span><span>T <b>MODE</b></span><span>P <b>PANEL</b></span><span>R <b>RESCAN</b></span>
-        <span class="tree-keybar-status">{{ scanning ? "SCAN IN PROGRESS" : treeRoot ? `${files.toLocaleString()} FILES · ${dirs.toLocaleString()} DIRS` : "AWAITING SCAN" }}</span>
+        <span>ENTER <b>{{ text("OPEN") }}</b></span><span>U <b>{{ text("UP") }}</b></span><span>X <b>{{ text("MARK") }}</b></span><span>T <b>{{ text("MODE") }}</b></span><span>P <b>{{ text("PANEL") }}</b></span><span>R <b>{{ text("RESCAN") }}</b></span>
+        <span class="tree-keybar-status">{{ scanning ? text("SCAN IN PROGRESS") : treeRoot ? `${number(files)} ${text("FILES")} · ${number(dirs)} ${text("DIRS")}` : text("AWAITING SCAN") }}</span>
       </div>
     </div>
     <aside v-if="!reviewScreen && showInspector" class="tree-inspector">
-      <div class="inspector-resize" role="separator" aria-orientation="vertical" aria-label="Resize inspection panel" title="Drag to resize, double-click to reset" @pointerdown.prevent="startInspectorResize" @dblclick="inspectorWidth = 286"></div>
-      <span class="metric-caption">SELECTION</span>
-      <h2>{{ String(selection?.name ?? "No selection") }}</h2>
+      <div class="inspector-resize" role="separator" aria-orientation="vertical" :aria-label="text('Resize inspection panel')" :title="text('Drag to resize, double-click to reset')" @pointerdown.prevent="startInspectorResize" @dblclick="inspectorWidth = 286"></div>
+      <span class="metric-caption">{{ text("SELECTION") }}</span>
+      <h2>{{ String(selection?.name ?? text("No selection")) }}</h2>
       <strong class="inspector-size">{{ typeof selection?.bytes === "number" ? formatBytes(selection.bytes) : formatBytes(bytes) }}</strong>
-      <p>{{ String(selection?.category ?? "Selected volume") }} · {{ files.toLocaleString() }} files · {{ dirs.toLocaleString() }} folders</p>
+      <p>{{ String(selection?.category ?? text("Selected volume")) }} · {{ number(files) }} {{ text("files") }} · {{ number(dirs) }} {{ text("folders") }}</p>
       <dl v-if="selection?.path" class="selection-facts">
-        <div v-if="typeof selection.share === 'number'"><dt>SHARE OF SCAN</dt><dd>{{ (selection.share * 100).toFixed(1) }}%</dd></div>
-        <div v-if="typeof selection.modified === 'number'"><dt>LAST WRITE</dt><dd>{{ new Date(selection.modified * 1000).toLocaleDateString() }}</dd></div>
-        <div v-if="selection.reason"><dt>KIND</dt><dd>{{ String(selection.reason) }}</dd></div>
+        <div v-if="typeof selection.share === 'number'"><dt>{{ text("SHARE OF SCAN") }}</dt><dd>{{ decimal(selection.share * 100) }}%</dd></div>
+        <div v-if="typeof selection.modified === 'number'"><dt>{{ text("LAST WRITE") }}</dt><dd>{{ date(selection.modified * 1000) }}</dd></div>
+        <div v-if="selection.reason"><dt>{{ text("KIND") }}</dt><dd>{{ String(selection.reason) }}</dd></div>
       </dl>
       <div v-if="unreadable > 0 && isMacOS" class="privacy-hint">
-        <span>{{ unreadable.toLocaleString() }} entries could not be read. Full Disk Access lets Karen measure them.</span>
-        <button @click="emit('openFullDiskAccess')">OPEN PRIVACY SETTINGS</button>
+        <span>{{ number(unreadable) }} {{ text("entries could not be read. Full Disk Access lets Karen measure them.") }}</span>
+        <button @click="emit('openFullDiskAccess')">{{ text("OPEN PRIVACY SETTINGS") }}</button>
       </div>
       <div v-if="breadcrumbs.length > 1 && siblings.length" class="sibling-list">
-        <span class="metric-caption">SIBLINGS</span>
+        <span class="metric-caption">{{ text("SIBLINGS") }}</span>
         <button v-for="sibling in siblings.slice(0, 8)" :key="sibling.path" :title="sibling.path" @click="requestTree(treeRoot, sibling.path)">
           <em>{{ sibling.name }}</em><span>{{ formatBytes(sibling.bytes) }}</span>
         </button>
-        <small v-if="siblings.length > 8">+{{ siblings.length - 8 }} more</small>
+        <small v-if="siblings.length > 8">+{{ number(siblings.length - 8) }} {{ text("more") }}</small>
       </div>
       <div class="mark-actions">
         <button :disabled="!selection?.path || selection.path === treeRoot" @click="emit('toggleMark', String(selection?.path))">
-          {{ selection?.marked ? "UNMARK PATH" : "MARK FOR REMOVAL" }}
+          {{ selection?.marked ? text("UNMARK PATH") : text("MARK FOR REMOVAL") }}
         </button>
-        <button :disabled="!marks.length" @click="emit('requestReview')">REVIEW {{ marks.length }} MARKS</button>
+        <button :disabled="!marks.length" @click="emit('requestReview')">{{ t("space.reviewMarks", { count: number(marks.length) }) }}</button>
       </div>
       <div v-if="review" class="review-summary">
-        <span>{{ review.targets }} targets · {{ formatBytes(Number(review.reclaim_bytes ?? 0)) }} reclaimable</span>
-        <small v-for="blocked in blockedMarks" :key="blocked.path">BLOCKED · {{ blocked.path }} · {{ blocked.reason }}</small>
-        <button :disabled="Number(review.targets) === 0" @click="emit('update:removalConfirm', true)">CONTINUE TO REMOVAL</button>
-        <button @click="emit('cancelReview')">CANCEL REVIEW</button>
+        <span>{{ number(Number(review.targets)) }} {{ text("targets") }} · {{ formatBytes(Number(review.reclaim_bytes ?? 0)) }} {{ t("space.reclaimable") }}</span>
+        <small v-for="blocked in blockedMarks" :key="blocked.path">{{ text("BLOCKED") }} · {{ blocked.path }} · {{ blocked.reason }}</small>
+        <button :disabled="Number(review.targets) === 0" @click="emit('update:removalConfirm', true)">{{ text("CONTINUE TO REMOVAL") }}</button>
+        <button @click="emit('cancelReview')">{{ text("CANCEL REVIEW") }}</button>
       </div>
       <p v-if="removalStatus" class="removal-status">{{ removalStatus }}</p>
       <ul class="marked-list">
         <li v-for="mark in marks" :key="mark.path"><span>{{ mark.path }}</span><b>{{ formatBytes(mark.bytes) }}</b></li>
       </ul>
       <div class="worth-a-look">
-        <span class="metric-caption">WORTH A LOOK</span>
+        <span class="metric-caption">{{ text("WORTH A LOOK") }}</span>
         <button v-for="finding in findings" :key="finding.path" @click="requestTree(treeRoot, finding.path, treeRoot, false)">
           <span>{{ finding.path.replace(treeRoot, "") }}</span><b>{{ formatBytes(finding.bytes) }}</b><small>{{ finding.reason }}</small>
         </button>
       </div>
       <div v-if="selected" class="inspector-volume">
-        <div class="disk-meter-heading"><span>DISK · {{ selected.device || selected.mount_point }}</span><b>{{ selected.available_bytes == null ? "—" : formatBytes(selected.available_bytes) }} FREE</b></div>
+        <div class="disk-meter-heading"><span>{{ text("DISK") }} · {{ selected.device || selected.mount_point }}</span><b>{{ selected.available_bytes == null ? "—" : formatBytes(selected.available_bytes) }} {{ text("FREE") }}</b></div>
         <div class="disk-meter" :style="meterStyle(volumePercent(selected))"><i></i></div>
-        <small>{{ formatBytes((selected.total_bytes ?? 0) - (selected.free_bytes ?? 0)) }} USED <span>{{ selected.total_bytes == null ? "—" : formatBytes(selected.total_bytes) }} TOTAL</span></small>
+        <small>{{ formatBytes((selected.total_bytes ?? 0) - (selected.free_bytes ?? 0)) }} {{ text("USED") }} <span>{{ selected.total_bytes == null ? "—" : formatBytes(selected.total_bytes) }} {{ text("TOTAL") }}</span></small>
       </div>
     </aside>
 
     <section v-if="reviewScreen" class="review-workspace">
       <template v-if="removal">
         <header class="review-heading">
-          <span class="metric-caption">SPACE · {{ removal.phase === "running" ? "REMOVAL IN PROGRESS" : "REMOVAL COMPLETE" }}</span>
-          <h1>{{ removal.phase === "running" ? "Removing marked paths" : "Removal finished" }}</h1>
-          <p v-if="removal.phase === 'running'">Core is removing each path after re-checking its guards. Closing the window is safe only after this finishes.</p>
-          <p v-else>{{ removal.removed }} removed · {{ formatBytes(removal.bytes) }} · {{ removal.failed }} failed</p>
+          <span class="metric-caption">{{ t("nav.space") }} · {{ removal.phase === "running" ? text("REMOVAL IN PROGRESS") : text("REMOVAL COMPLETE") }}</span>
+          <h1>{{ removal.phase === "running" ? text("Removing marked paths") : text("Removal finished") }}</h1>
+          <p v-if="removal.phase === 'running'">{{ text("Core is removing each path after re-checking its guards. Closing the window is safe only after this finishes.") }}</p>
+          <p v-else>{{ number(removal.removed) }} {{ text("removed") }} · {{ formatBytes(removal.bytes) }} · {{ number(removal.failed) }} {{ text("failed") }}</p>
         </header>
         <div class="review-instrument">
-          <div><span>{{ removal.phase === "running" ? "COMPLETED" : "REMOVED" }}</span><strong>{{ removal.phase === "running" ? `${removal.completed} / ${removal.total}` : removal.removed }}</strong></div>
-          <div><span>FAILED</span><strong>{{ removal.phase === "running" ? removal.errors.length : removal.failed }}</strong></div>
-          <div><span>FREE SPACE CHANGE</span><strong>{{ removalFreeDelta === null ? "MEASURING" : `${removalFreeDelta >= 0 ? "+" : "−"}${formatBytes(Math.abs(removalFreeDelta))}` }}</strong></div>
+          <div><span>{{ removal.phase === "running" ? text("COMPLETED") : text("REMOVED") }}</span><strong>{{ removal.phase === "running" ? `${number(removal.completed)} / ${number(removal.total)}` : number(removal.removed) }}</strong></div>
+          <div><span>{{ text("FAILED") }}</span><strong>{{ removal.phase === "running" ? number(removal.errors.length) : number(removal.failed) }}</strong></div>
+          <div><span>{{ text("FREE SPACE CHANGE") }}</span><strong>{{ removalFreeDelta === null ? text("MEASURING") : `${removalFreeDelta >= 0 ? "+" : "−"}${formatBytes(Math.abs(removalFreeDelta))}` }}</strong></div>
         </div>
         <div class="review-list">
-          <div class="review-list-heading"><span>PROGRESS</span><span>{{ removal.total ? Math.round(removal.completed / removal.total * 100) : 0 }}%</span></div>
+          <div class="review-list-heading"><span>{{ text("PROGRESS") }}</span><span>{{ removal.total ? Math.round(removal.completed / removal.total * 100) : 0 }}%</span></div>
           <div class="removal-progress" role="progressbar" :aria-valuenow="removal.completed" aria-valuemin="0" :aria-valuemax="removal.total">
             <i :style="{ width: `${removal.total ? removal.completed / removal.total * 100 : 0}%` }"></i>
           </div>
           <div v-for="failure in removal.errors" :key="failure" class="review-blocked"><span>{{ failure }}</span></div>
         </div>
         <div class="review-actions">
-          <button class="review-commit" :disabled="removal.phase === 'running'" @click="emit('finishRemoval')">RETURN TO MAP</button>
+          <button class="review-commit" :disabled="removal.phase === 'running'" @click="emit('finishRemoval')">{{ text("RETURN TO MAP") }}</button>
         </div>
       </template>
       <template v-else>
         <header class="review-heading">
-          <span class="metric-caption">SPACE · DESTRUCTIVE ACTION REVIEW</span>
-          <h1>Review marked paths</h1>
-          <p>Nothing changes until final confirmation. Core will re-check every path and volume boundary.</p>
+          <span class="metric-caption">{{ t("nav.space") }} · {{ text("DESTRUCTIVE ACTION REVIEW") }}</span>
+          <h1>{{ text("Review marked paths") }}</h1>
+          <p>{{ text("Nothing changes until final confirmation. Core will re-check every path and volume boundary.") }}</p>
         </header>
         <div class="review-instrument">
-          <div><span>TARGETS</span><strong>{{ Number(review?.targets ?? 0) }}</strong></div>
-          <div><span>RECLAIM ON THIS VOLUME</span><strong>{{ formatBytes(Number(review?.reclaim_bytes ?? 0)) }}</strong></div>
-          <div><span>OTHER VOLUME BYTES</span><strong>{{ formatBytes(Number(review?.foreign_bytes ?? 0)) }}</strong></div>
+          <div><span>{{ text("TARGETS") }}</span><strong>{{ number(Number(review?.targets ?? 0)) }}</strong></div>
+          <div><span>{{ text("RECLAIM ON THIS VOLUME") }}</span><strong>{{ formatBytes(Number(review?.reclaim_bytes ?? 0)) }}</strong></div>
+          <div><span>{{ text("OTHER VOLUME BYTES") }}</span><strong>{{ formatBytes(Number(review?.foreign_bytes ?? 0)) }}</strong></div>
         </div>
         <div class="review-list">
-          <div class="review-list-heading"><span>PATH / TARGET</span><span>ALLOCATED</span></div>
+          <div class="review-list-heading"><span>{{ text("PATH / TARGET") }}</span><span>{{ t("space.allocated") }}</span></div>
           <div v-for="mark in reviewMarks" :key="mark.path" class="review-path-row">
-            <span><b>{{ mark.path }}</b><small>{{ mark.is_dir ? "DIRECTORY" : "FILE" }}</small></span>
+            <span><b>{{ mark.path }}</b><small>{{ mark.is_dir ? text("DIRECTORY") : text("FILE") }}</small></span>
             <strong>{{ formatBytes(mark.bytes) }}</strong>
-            <button class="row-unmark" :aria-label="`Unmark ${mark.path}`" @click="emit('toggleMark', mark.path); emit('requestReview')">UNMARK</button>
+            <button class="row-unmark" :aria-label="text('Unmark {path}', { path: mark.path })" @click="emit('toggleMark', mark.path); emit('requestReview')">{{ t("space.unmark") }}</button>
           </div>
           <div v-for="blocked in blockedMarks" :key="blocked.path" class="review-blocked"><span>{{ blocked.path }}</span><b>BLOCKED · {{ blocked.reason }}</b></div>
-          <p v-if="!reviewMarks.length" class="process-empty">NO MARKED PATHS TO REVIEW</p>
+          <p v-if="!reviewMarks.length" class="process-empty">{{ text("NO MARKED PATHS TO REVIEW") }}</p>
         </div>
         <div class="review-actions">
           <div class="removal-mode">
-            <span>REMOVAL METHOD</span>
-            <button :class="{ active: removalMode === 'trash' }" @click="emit('update:removalMode', 'trash')">SYSTEM TRASH</button>
-            <button :class="{ active: removalMode === 'permanent' }" @click="emit('update:removalMode', 'permanent')">PERMANENT</button>
+            <span>{{ text("REMOVAL METHOD") }}</span>
+            <button :class="{ active: removalMode === 'trash' }" @click="emit('update:removalMode', 'trash')">{{ text("SYSTEM TRASH") }}</button>
+            <button :class="{ active: removalMode === 'permanent' }" @click="emit('update:removalMode', 'permanent')">{{ text("PERMANENT") }}</button>
           </div>
-          <button class="review-back" @click="emit('cancelReview')">RETURN TO MAP</button>
-          <button class="review-commit" :disabled="Number(review?.targets ?? 0) === 0" @click="emit('update:removalConfirm', true)">CONTINUE TO CONFIRMATION ↗</button>
+          <button class="review-back" @click="emit('cancelReview')">{{ text("RETURN TO MAP") }}</button>
+          <button class="review-commit" :disabled="Number(review?.targets ?? 0) === 0" @click="emit('update:removalConfirm', true)">{{ text("CONTINUE TO CONFIRMATION") }} ↗</button>
         </div>
         <div class="review-exports">
-          <button :disabled="!reviewMarks.length" @click="emit('exportMarks', 'paths', true)">SAVE PATH LIST</button>
-          <button :disabled="!reviewMarks.length" @click="emit('exportMarks', 'prompt', false)">COPY AGENT PROMPT</button>
-          <button :disabled="!reviewMarks.length" @click="emit('clearMarks')">CLEAR MARKS</button>
+          <button :disabled="!reviewMarks.length" @click="emit('exportMarks', 'paths', true)">{{ text("SAVE PATH LIST") }}</button>
+          <button :disabled="!reviewMarks.length" @click="emit('exportMarks', 'prompt', false)">{{ text("COPY AGENT PROMPT") }}</button>
+          <button :disabled="!reviewMarks.length" @click="emit('clearMarks')">{{ text("CLEAR MARKS") }}</button>
           <span v-if="exportStatus" class="export-status">{{ exportStatus }}</span>
         </div>
       </template>
@@ -892,51 +978,56 @@ onBeforeUnmount(() => {
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <div v-if="removalConfirm" class="removal-shade" role="dialog" aria-modal="true" aria-labelledby="removal-title">
       <section class="removal-confirm">
-        <span class="metric-caption">DESTRUCTIVE OPERATION</span>
-        <h2 id="removal-title">Confirm marked paths</h2>
+        <span class="metric-caption">{{ text("DESTRUCTIVE OPERATION") }}</span>
+        <h2 id="removal-title">{{ text("Confirm marked paths") }}</h2>
         <p>{{ review?.targets }} targets · {{ formatBytes(Number(review?.reclaim_bytes ?? 0)) }} expected volume recovery</p>
-        <label><input :checked="removalMode === 'trash'" type="radio" value="trash" @change="emit('update:removalMode', 'trash')"> Move to system Trash</label>
-        <label><input :checked="removalMode === 'permanent'" type="radio" value="permanent" @change="emit('update:removalMode', 'permanent')"> Delete permanently</label>
+        <label><input :checked="removalMode === 'trash'" type="radio" value="trash" @change="emit('update:removalMode', 'trash')"> {{ text("Move to system Trash") }}</label>
+        <label><input :checked="removalMode === 'permanent'" type="radio" value="permanent" @change="emit('update:removalMode', 'permanent')"> {{ text("Delete permanently") }}</label>
         <div class="confirm-actions">
-          <button @click="emit('cancelReview')">CANCEL</button>
-          <button @click="emit('confirmRemoval', removalMode)">CONFIRM {{ removalMode === "trash" ? "TRASH" : "PERMANENT DELETE" }}</button>
+          <button @click="emit('cancelReview')">{{ text("CANCEL") }}</button>
+          <button @click="emit('confirmRemoval', removalMode)">{{ text("CONFIRM") }} {{ removalMode === "trash" ? text("TRASH") : text("PERMANENT DELETE") }}</button>
         </div>
       </section>
     </div>
     <div v-if="helpOpen" class="removal-shade" role="dialog" aria-modal="true" aria-labelledby="help-title" @click.self="helpOpen = false">
       <section class="help-sheet">
-        <header><span class="metric-caption">SPACE · KEYBOARD AND MOUSE</span><h2 id="help-title">Controls</h2></header>
+        <header><span class="metric-caption">{{ t("nav.space") }} · {{ text("KEYBOARD AND MOUSE") }}</span><h2 id="help-title">{{ text("Controls") }}</h2></header>
         <dl>
           <template v-for="[keys, action] in helpRows" :key="keys">
             <dt>{{ keys }}</dt><dd>{{ action }}</dd>
           </template>
         </dl>
-        <button class="review-back" @click="helpOpen = false">CLOSE · ESC</button>
+        <button class="review-back" @click="helpOpen = false">{{ text("CLOSE") }} · ESC</button>
       </section>
     </div>
-    <aside v-if="hoveredTile?.tile.path && !reviewScreen" class="tree-tooltip" :style="{ left: `${hoveredTile.x}px`, top: `${hoveredTile.y}px` }" aria-live="polite">
+    <aside v-if="hoveredTile?.tile.path && !reviewScreen && !pathMenu" class="tree-tooltip" :style="{ left: `${hoveredTile.x}px`, top: `${hoveredTile.y}px` }" aria-live="polite">
       <div class="tree-tooltip-title"><i>{{ hoveredTile.tile.is_dir ? "▰" : "▪" }}</i><b>{{ hoveredTile.tile.name }}</b></div>
       <small>{{ hoveredTile.tile.path }}</small>
       <div class="tree-tooltip-reading">
-        <strong>{{ hoveredTile.tile.bytes === null ? "MERGED ITEMS" : formatBytes(hoveredTile.tile.bytes) }}</strong>
-        <i :style="{ width: `${hoveredShare}%` }"></i><span>{{ hoveredShare.toFixed(1) }}%</span>
+      <strong>{{ hoveredTile.tile.bytes === null ? text("MERGED ITEMS") : formatBytes(hoveredTile.tile.bytes) }}</strong>
+        <i :style="{ width: `${hoveredShare}%` }"></i><span>{{ decimal(hoveredShare) }}%</span>
       </div>
-      <span>{{ hoveredTile.tile.files?.toLocaleString() ?? "—" }} FILES · {{ hoveredTile.tile.dirs?.toLocaleString() ?? "—" }} DIRS · {{ formatBytes(hoveredTile.tile.direct_bytes ?? 0) }} DIRECT</span>
-      <span v-if="hoveredTile.tile.name.startsWith('.')">HIDDEN</span>
-      <span v-if="isHoveredMarked">MARKED FOR REMOVAL</span>
-      <span v-else-if="isHoveredCovered">INSIDE MARKED {{ coveredMarkName }}</span>
-      <span class="tree-tooltip-keys">{{ hoveredTile.tile.is_dir ? "SPACE MARK · ENTER OPEN" : "SPACE MARK" }}</span>
+      <span>{{ hoveredTile.tile.files != null ? number(hoveredTile.tile.files) : "—" }} {{ text("FILES") }} · {{ hoveredTile.tile.dirs != null ? number(hoveredTile.tile.dirs) : "—" }} {{ text("DIRS") }} · {{ formatBytes(hoveredTile.tile.direct_bytes ?? 0) }} {{ text("DIRECT") }}</span>
+      <span v-if="hoveredTile.tile.name.startsWith('.')">{{ text("HIDDEN") }}</span>
+      <span v-if="isHoveredMarked">{{ text("MARKED FOR REMOVAL") }}</span>
+      <span v-else-if="isHoveredCovered">{{ text("INSIDE MARKED {name}", { name: coveredMarkName }) }}</span>
+      <span class="tree-tooltip-keys">{{ hoveredTile.tile.is_dir ? text("SPACE MARK · ENTER OPEN") : text("SPACE MARK") }}</span>
     </aside>
   </section>
   <Teleport to="body">
-    <div v-if="volumeMenuOpen" class="volume-options" :class="{ above: volumeMenuAbove }" :style="volumeMenuStyle" role="listbox" aria-label="Select volume">
+    <div v-if="pathMenu" ref="pathMenuEl" class="tree-context-menu" role="menu" :aria-label="t('space.pathActions')" :style="pathMenuStyle" @contextmenu.prevent @keydown="keyPathMenu">
+      <button v-if="pathMenuCovered" role="menuitem" disabled>{{ t("space.insideMarked", { name: pathMenuCovered }) }}</button>
+      <button v-else role="menuitem" @click="runPathMenu('toggleMark')">{{ pathMenuMarked ? t("space.unmark") : t("space.markForRemoval") }}</button>
+      <button role="menuitem" @click="runPathMenu('revealPath')">{{ isMacOS ? t("space.revealFinder") : t("space.revealFileManager") }}</button>
+    </div>
+    <div v-if="volumeMenuOpen" class="volume-options" :class="{ above: volumeMenuAbove }" :style="volumeMenuStyle" role="listbox" :aria-label="text('Select volume')">
       <button v-for="volume in volumes" :key="volume.mount_point" role="option" :aria-selected="volume.mount_point === selectedVolume" :class="{ chosen: volume.mount_point === selectedVolume }" @click="onSelectVolume(volume.mount_point)">
         <i class="drive-lamp"></i>
-        <span><b>{{ volume.mount_point }}</b><small>{{ volume.device || "LOCAL STORAGE" }}</small></span>
-        <em>{{ volumePercent(volume).toFixed(0) }}% USED</em>
+        <span><b>{{ volume.mount_point }}</b><small>{{ volume.device || text("LOCAL STORAGE") }}</small></span>
+        <em>{{ number(volumePercent(volume)) }}% {{ text("USED") }}</em>
         <i class="option-check">{{ volume.mount_point === selectedVolume ? "✓" : "" }}</i>
       </button>
-      <p v-if="!volumes.length">No mounted volumes</p>
+      <p v-if="!volumes.length">{{ text("No mounted volumes") }}</p>
     </div>
   </Teleport>
 </template>

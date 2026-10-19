@@ -84,63 +84,6 @@ jobs:
               --title "Karen ${TAG#v}" --generate-notes
           fi
 
-  build-cli:
-    name: Build CLI (${{ matrix.name }})
-    needs: prepare
-    if: needs.prepare.outputs.proceed == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { name: Linux x86_64, runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu, os: linux, ext: tar.gz }
-          - { name: Linux aarch64, runner: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu, os: linux, ext: tar.gz }
-          - { name: macOS arm64, runner: macos-15, target: aarch64-apple-darwin, os: macos, ext: tar.gz }
-          - { name: macOS Intel, runner: macos-15, target: x86_64-apple-darwin, os: macos, ext: tar.gz, cross: true }
-          - { name: Windows x86_64, runner: windows-2025, target: x86_64-pc-windows-msvc, os: windows, ext: zip }
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          ref: ${{ needs.prepare.outputs.tag }}
-
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.97"
-          targets: ${{ matrix.target }}
-
-      - name: Build CLI binary
-        run: cargo build --release --bin karen --target ${{ matrix.target }}
-
-      - name: Package CLI (Unix)
-        if: matrix.os != 'windows'
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-          TARGET: ${{ matrix.target }}
-        run: |
-          mkdir -p dist
-          asset="karen-${VERSION}-${TARGET}.tar.gz"
-          tar -C "target/${TARGET}/release" -czf "dist/${asset}" karen
-          (cd dist && shasum -a 256 "${asset}" > "${asset}.sha256")
-
-      - name: Package CLI (Windows)
-        if: matrix.os == 'windows'
-        shell: pwsh
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-          TARGET: ${{ matrix.target }}
-        run: |
-          New-Item -ItemType Directory -Force dist | Out-Null
-          $asset = "karen-$env:VERSION-$env:TARGET.zip"
-          Compress-Archive -Path "target/$env:TARGET/release/karen.exe" -DestinationPath "dist/$asset"
-          $hash = (Get-FileHash "dist/$asset" -Algorithm SHA256).Hash.ToLower()
-          "$hash  $asset" | Out-File -Encoding utf8 "dist/$asset.sha256"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cli-${{ matrix.target }}
-          path: dist/*
-          if-no-files-found: error
-
   build-desktop:
     name: Build Desktop (${{ matrix.name }})
     needs: prepare
@@ -152,7 +95,6 @@ jobs:
         include:
           - { name: macOS arm64, runner: macos-15, target: aarch64-apple-darwin, os: macos }
           - { name: Linux x86_64, runner: ubuntu-24.04, target: x86_64-unknown-linux-gnu, os: linux }
-          - { name: Windows x86_64, runner: windows-2025, target: x86_64-pc-windows-msvc, os: windows }
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
@@ -239,63 +181,69 @@ jobs:
           echo "APPLE_API_KEY=$APPLE_API_KEY_ID" >> "$GITHUB_ENV"
           echo "APPLE_API_KEY_PATH=$AUTH_KEY_PATH" >> "$GITHUB_ENV"
 
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm tauri
+      - name: Updater signing key preflight
         env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::Missing TAURI_SIGNING_PRIVATE_KEY; the in-app updater needs signed update archives."
+            exit 1
+          fi
+
+      - run: pnpm install --frozen-lockfile
+      # Updater archives are only built for releases, so local and PR builds need no signing key.
+      - run: pnpm tauri --config '{"bundle":{"createUpdaterArtifacts":true}}'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
 
-      - name: Package Desktop Bundle (macOS)
+      - name: Package Desktop Installer (macOS)
         if: matrix.os == 'macos'
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-          TARGET: ${{ matrix.target }}
         run: |
           mkdir -p dist
-          bundle="karen-desktop-${VERSION}-${TARGET}.tar.gz"
-          tar -C target/release/bundle -czf "dist/${bundle}" .
-          if [ -d target/release/bundle/dmg ]; then
-            cp target/release/bundle/dmg/*.dmg "dist/" 2>/dev/null || true
+          dmg=$(ls target/release/bundle/dmg/*.dmg 2>/dev/null | head -n 1)
+          if [ -z "$dmg" ]; then
+            echo "::error::Expected macOS DMG missing in target/release/bundle/dmg"
+            exit 1
           fi
+          cp "$dmg" dist/
+          archive=$(ls target/release/bundle/macos/*.app.tar.gz 2>/dev/null | head -n 1)
+          if [ -z "$archive" ] || [ ! -f "$archive.sig" ]; then
+            echo "::error::Expected signed macOS updater archive (.app.tar.gz and .sig) in target/release/bundle/macos"
+            exit 1
+          fi
+          cp "$archive" "$archive.sig" dist/
           (cd dist && shasum -a 256 * > SHA256SUMS-desktop-macos)
 
-      - name: Package Desktop Bundle (Linux)
+      - name: Package Desktop Installers (Linux)
         if: matrix.os == 'linux'
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-          TARGET: ${{ matrix.target }}
         run: |
           mkdir -p dist
-          bundle="karen-desktop-${VERSION}-${TARGET}.tar.gz"
-          tar -C target/release/bundle -czf "dist/${bundle}" .
-          if [ -d target/release/bundle/deb ]; then
-            cp target/release/bundle/deb/*.deb "dist/" 2>/dev/null || true
+          missing=0
+          deb=$(ls target/release/bundle/deb/*.deb 2>/dev/null | head -n 1)
+          appimage=$(ls target/release/bundle/appimage/*.AppImage 2>/dev/null | head -n 1)
+          if [ -z "$deb" ]; then
+            echo "::error::Expected Linux .deb missing in target/release/bundle/deb"
+            missing=1
           fi
-          if [ -d target/release/bundle/appimage ]; then
-            cp target/release/bundle/appimage/*.AppImage "dist/" 2>/dev/null || true
+          if [ -z "$appimage" ]; then
+            echo "::error::Expected Linux .AppImage missing in target/release/bundle/appimage"
+            missing=1
           fi
+          if [ ! -f "$appimage.sig" ]; then
+            echo "::error::Expected signed Linux updater signature $appimage.sig"
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          cp "$deb" "$appimage" "$appimage.sig" dist/
           (cd dist && shasum -a 256 * > SHA256SUMS-desktop-linux)
-
-      - name: Package Desktop Bundle (Windows)
-        if: matrix.os == 'windows'
-        shell: pwsh
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-          TARGET: ${{ matrix.target }}
-        run: |
-          New-Item -ItemType Directory -Force dist | Out-Null
-          $bundle = "karen-desktop-$env:VERSION-$env:TARGET.zip"
-          Compress-Archive -Path target/release/bundle/* -DestinationPath "dist/$bundle"
-          if (Test-Path target/release/bundle/msi) {
-            Copy-Item target/release/bundle/msi/*.msi dist/ -ErrorAction SilentlyContinue
-          }
-          $hashes = Get-ChildItem dist/* | ForEach-Object {
-            "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
-          }
-          [IO.File]::WriteAllLines("dist/SHA256SUMS-desktop-windows", $hashes)
 
       - uses: actions/upload-artifact@v4
         with:
@@ -305,7 +253,7 @@ jobs:
 
   publish:
     name: Consolidate checksums and publish release
-    needs: [prepare, build-cli, build-desktop]
+    needs: [prepare, build-desktop]
     if: needs.prepare.outputs.proceed == 'true'
     runs-on: ubuntu-24.04
     environment: release
@@ -316,15 +264,17 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: cli-*
-          merge-multiple: true
-          path: dist
-
-      - uses: actions/download-artifact@v4
-        with:
           pattern: desktop-*
           merge-multiple: true
           path: dist
+
+      - name: Generate updater manifest (latest.json)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          notes=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body)
+          node scripts/updater-manifest.mjs dist "$TAG" "$GITHUB_REPOSITORY" "$notes"
 
       - name: Generate master SHA256SUMS
         run: |
@@ -344,6 +294,30 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.prepare.outputs.tag }}
         run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+
+  # skip-github-release stops Release Please from retagging its own PR, and it refuses to open
+  # the next version PR while a merged one is still "pending". Manual dispatches rebuild old tags
+  # and must not tag a newer version PR that is still waiting for promotion.
+  tag-release-pr:
+    name: Mark merged release PR as tagged
+    needs: [prepare, publish]
+    if: needs.prepare.outputs.proceed == 'true' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Flip autorelease label
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          gh label create "autorelease: tagged" --repo "$GITHUB_REPOSITORY" \
+            --color EDEDED --description "Release PR whose release has been published" 2>/dev/null || true
+          gh pr list --repo "$GITHUB_REPOSITORY" --base develop --state merged \
+            --label "autorelease: pending" --json number --jq '.[].number' |
+          while read -r number; do
+            gh pr edit "$number" --repo "$GITHUB_REPOSITORY" \
+              --remove-label "autorelease: pending" --add-label "autorelease: tagged"
+            echo "Marked #$number as tagged." >> "$GITHUB_STEP_SUMMARY"
+          done
 
   homebrew-tap-pr:
     name: Package manager pull request (luban-homebrew)
@@ -379,25 +353,17 @@ jobs:
           branch="bump-karen-${TAG}"
           git checkout -b "$branch"
 
-          # Update formula / cask if present
-          if [ -f Formula/karen.rb ]; then
-            asset_url="https://github.com/commandotj/ax-karen/releases/download/${TAG}/karen-${VERSION}-aarch64-apple-darwin.tar.gz"
-            sha=$(curl -sL "${asset_url}" | sha256sum | awk '{print $1}')
-            sed -i "s|url \".*\"|url \"${asset_url}\"|" Formula/karen.rb
-            sed -i "s|sha256 \".*\"|sha256 \"${sha}\"|" Formula/karen.rb
-            git add Formula/karen.rb
-          fi
-
           if [ -f Casks/karen.rb ]; then
-            dmg_url="https://github.com/commandotj/ax-karen/releases/download/${TAG}/karen-desktop-${VERSION}-aarch64-apple-darwin.tar.gz"
+            dmg_url="https://github.com/commandotj/ax-karen/releases/download/${TAG}/Karen_${VERSION}_aarch64.dmg"
             sha=$(curl -sL "${dmg_url}" | sha256sum | awk '{print $1}')
+            sed -i "s|url \".*\"|url \"${dmg_url}\"|" Casks/karen.rb
             sed -i "s|version \".*\"|version \"${VERSION}\"|" Casks/karen.rb
             sed -i "s|sha256 \".*\"|sha256 \"${sha}\"|" Casks/karen.rb
             git add Casks/karen.rb
           fi
 
           if git diff --staged --quiet; then
-            echo "No formula/cask changes staged; tap is already up to date or formulas not yet registered."
+            echo "No cask changes staged; tap is already up to date or cask not yet registered."
           else
             git commit -m "chore(karen): bump to ${TAG}"
             git push origin "$branch"

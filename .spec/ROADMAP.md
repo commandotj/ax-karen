@@ -27,3 +27,11 @@
 | 0023 | [Publishify CI/CD Pipeline and Distribution Setup](rfc/completed/0023-publishify-cicd-pipeline-setup.md) | Implemented |
 | 0024 | [Cask-only Homebrew distribution](rfc/pending/0024-cask-only-homebrew-distribution.md) | Pending |
 | 0025 | [Drop Windows release targets](rfc/pending/0025-drop-windows-release-targets.md) | Pending |
+| 0026 | [Publish only installable Karen desktop app artifacts](rfc/completed/0026-desktop-only-release-assets.md) | Implemented |
+| 0027 | [Clarify Disk Tree click and context-menu actions (child of 0001)](rfc/completed/0027-disktree-click-context-menu.md) | Implemented |
+| 0028 | [Fix custom title bar drag, cursor and double-click maximize (child of 0001)](rfc/completed/0028-titlebar-drag-maximize.md) | Implemented |
+| 0029 | [Open the window at three quarters of the screen (child of 0001)](rfc/completed/0029-larger-default-window.md) | Implemented |
+| 0030 | [Mark the merged release PR as tagged after publishing (child of 0001)](rfc/completed/0030-tag-release-pr-after-publish.md) | Implemented |
+| 0031 | [In-app auto-update (Umbrella)](rfc/completed/0031-in-app-auto-update.md) | Implemented |
+| 0032 | [Check for updates and prompt to install (child of 0031)](rfc/completed/0032-updater-check-and-prompt.md) | Implemented |
+| 0033 | [Publish signed updater artifacts and latest.json (child of 0031)](rfc/completed/0033-signed-updater-artifacts.md) | Implemented |

@@ -8,6 +8,7 @@ const host = vi.hoisted(() => ({
   tauri: true,
   startError: undefined as Error | undefined,
   failCommand: "",
+  update: null as { version: string; downloadAndInstall: () => Promise<void> } | null,
   windowCalls: [] as string[],
   trayStatus: [] as string[],
   emitTray: (_tab: string) => {},
@@ -35,6 +36,8 @@ vi.mock("@tauri-apps/api/window", () => ({
     close: async () => { host.windowCalls.push("close"); },
   }),
 }));
+vi.mock("@tauri-apps/plugin-updater", () => ({ check: async () => host.update }));
+vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: async () => undefined }));
 vi.mock("./cli", () => ({
   KarenCli: class {
     constructor(onEvent: (event: CliEvent) => void) {
@@ -101,6 +104,7 @@ describe("Karen desktop interface", () => {
     host.startError = undefined;
     host.failCommand = "";
     host.windowCalls.length = 0;
+    host.update = null;
     HTMLCanvasElement.prototype.getContext = (() => null) as unknown as HTMLCanvasElement["getContext"];
     HTMLCanvasElement.prototype.getBoundingClientRect = () => ({ left: 0, top: 0, right: 1200, bottom: 680, width: 1200, height: 680, x: 0, y: 0, toJSON() {} });
     globalThis.ResizeObserver = class {
@@ -304,6 +308,15 @@ describe("Karen desktop interface", () => {
       expect(wrapper.text()).toContain("Open Karen.app to connect the CLI");
     });
 
+    it("offers an available update from the app shell", async () => {
+      expect(wrapper.find(".update-prompt").exists()).toBe(false);
+      wrapper.unmount();
+      host.update = { version: "9.9.9", downloadAndInstall: async () => undefined };
+      wrapper = mount((await import("./App.vue")).default, { attachTo: document.body });
+      await flushPromises();
+      expect(wrapper.find(".update-prompt").text()).toContain("9.9.9");
+    });
+
     it("shows a fault when the CLI sidecar cannot start", async () => {
       wrapper.unmount();
       host.startError = new Error("sidecar missing");
@@ -323,6 +336,22 @@ describe("Karen desktop interface", () => {
       await wrapper.find("[aria-label='Close window']").trigger("click");
       await wrapper.find(".masthead").trigger("mousedown");
       expect(host.windowCalls).toEqual(["minimize", "maximize", "close", "drag"]);
+    });
+
+    it("drags from any non-interactive part of the title bar and maximizes on double press", async () => {
+      await wrapper.find(".brand-name").trigger("mousedown");
+      await wrapper.find(".telemetry-state").trigger("mousedown");
+      expect(host.windowCalls).toEqual(["drag", "drag"]);
+      host.windowCalls.length = 0;
+      wrapper.find(".brand-name").element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, detail: 2 }));
+      await flushPromises();
+      expect(host.windowCalls).toEqual(["maximize"]);
+    });
+
+    it("ignores title bar presses on controls and non-primary buttons", async () => {
+      await wrapper.find(".lang-picker select").trigger("mousedown");
+      await wrapper.find(".masthead").trigger("mousedown", { button: 2 });
+      expect(host.windowCalls).toEqual([]);
     });
 
     it("renders CPU and memory readings, charts and load conditions on Runtime", async () => {
@@ -868,7 +897,7 @@ describe("Karen desktop interface", () => {
   });
 
   describe("treemap pointer", () => {
-    it("selects on click, opens a selected or double-clicked directory, and ignores misses", async () => {
+    it("selects on click, opens only a double-clicked directory, and ignores misses", async () => {
       await openSpace(gridView("b"));
       await onCanvas("click", { clientX: 100, clientY: 100, detail: 1 });
       expect(lastRequest("tree_view")).toMatchObject({ path: "/Users/a", open: false });
@@ -877,19 +906,19 @@ describe("Karen desktop interface", () => {
       emit(gridView("a"));
       await flushPromises();
       await onCanvas("click", { clientX: 100, clientY: 100, detail: 1 });
-      expect(lastRequest("tree_view")).toMatchObject({ path: "/Users/a", open: true });
+      expect(lastRequest("tree_view")).toMatchObject({ path: "/Users/a", open: false });
       await onCanvas("click", { clientX: 700, clientY: 100, detail: 2 });
       expect(lastRequest("tree_view")).toMatchObject({ path: "/Users/b", open: false });
       sent.length = 0;
       await onCanvas("click", { clientX: 1300, clientY: 100 });
-      await onCanvas("contextmenu", { clientX: 1300, clientY: 100 });
+      await onCanvas("contextmenu", { clientX: 1300, clientY: 100, button: 2 });
       emit(treeView({ tiles: [{ ...tile, path: null }] }));
       await flushPromises();
       await onCanvas("click", { clientX: 10, clientY: 10 });
       expect(sent).toEqual([]);
     });
 
-    it("marks with Ctrl/Cmd-click and middle-click and reveals on right-click", async () => {
+    it("marks with Ctrl/Cmd-click and middle-click, and ignores right-click auxclick", async () => {
       await openSpace(gridView());
       await onCanvas("click", { clientX: 700, clientY: 100, ctrlKey: true });
       expect(lastRequest("toggle_mark")).toMatchObject({ path: "/Users/b" });
@@ -897,9 +926,293 @@ describe("Karen desktop interface", () => {
       expect(lastRequest("toggle_mark")).toMatchObject({ path: "/Users/c" });
       await onCanvas("auxclick", { clientX: 700, clientY: 400, button: 1 });
       expect(lastRequest("toggle_mark")).toMatchObject({ path: "/Users/d" });
-      await onCanvas("contextmenu", { clientX: 700, clientY: 400 });
-      expect(lastRequest("tree_view")).toMatchObject({ path: "/Users/d", open: false });
-      expect(lastRequest("reveal")).toMatchObject({ path: "/Users/d" });
+      sent.length = 0;
+      await onCanvas("auxclick", { clientX: 700, clientY: 400, button: 2 });
+      expect(sent).toEqual([]);
+    });
+
+    it("keeps the current view when a click only selects", async () => {
+      const deeper = [{ path: "/Users/a", label: "a" }];
+      await openSpace(gridView());
+      const crumbLabels = () => wrapper.findAll(".tree-crumb").map((item) => item.text());
+      const before = crumbLabels();
+      await onCanvas("click", { clientX: 100, clientY: 100, detail: 1 });
+      const select = lastRequest("tree_view")!;
+      // The CLI answers a select-only request with the clicked node's parent as the view.
+      emit({ ...gridView("a", { breadcrumbs: [...crumbs, ...deeper], tiles: [tile] }), id: select.id });
+      await flushPromises();
+      expect(crumbLabels()).toEqual(before);
+      expect(wrapper.find("canvas.treemap-canvas").isVisible()).toBe(true);
+      await onCanvas("click", { clientX: 100, clientY: 100, detail: 2 });
+      emit({ ...gridView("a", { breadcrumbs: [...crumbs, ...deeper] }), id: lastRequest("tree_view")!.id });
+      await flushPromises();
+      expect(crumbLabels()).toEqual([...before, "a"]);
+    });
+
+    it("does not open a third rapid click and never opens a file on double-click", async () => {
+      await openSpace(gridView());
+      sent.length = 0;
+      await onCanvas("click", { clientX: 100, clientY: 100, detail: 3 });
+      expect(lastRequest("tree_view")).toMatchObject({ path: "/Users/a", open: false });
+      await onCanvas("click", { clientX: 700, clientY: 100, detail: 2 });
+      expect(lastRequest("tree_view")).toMatchObject({ path: "/Users/b", open: false });
+    });
+
+    describe("context menu", () => {
+      const menu = (): HTMLElement | null => document.body.querySelector<HTMLElement>(".tree-context-menu");
+      const items = (): HTMLElement[] => [...document.body.querySelectorAll<HTMLElement>(".tree-context-menu [role=menuitem]")];
+      const item = (label: string): HTMLElement => items().find((node) => node.textContent?.trim() === label)!;
+      const openMenu = async (x = 700, y = 400): Promise<void> => {
+        await openSpace(gridView());
+        sent.length = 0;
+        await onCanvas("contextmenu", { clientX: x, clientY: y });
+      };
+
+      it("selects the tile and shows actions without marking or revealing", async () => {
+        await openMenu();
+        expect(lastRequest("tree_view")).toMatchObject({ path: "/Users/d", open: false });
+        expect(menu()?.getAttribute("role")).toBe("menu");
+        expect(items().map((node) => node.textContent?.trim())).toEqual(["Mark for removal", "Reveal in Finder"]);
+        expect(sent.filter((request) => request.command !== "tree_view")).toEqual([]);
+      });
+
+      it("marks and reveals the absolute path, then closes", async () => {
+        await openMenu();
+        item("Mark for removal").click();
+        await flushPromises();
+        expect(lastRequest("toggle_mark")).toMatchObject({ path: "/Users/d" });
+        expect(menu()).toBeNull();
+        await onCanvas("contextmenu", { clientX: 700, clientY: 400 });
+        item("Reveal in Finder").click();
+        await flushPromises();
+        expect(lastRequest("reveal")).toMatchObject({ path: "/Users/d" });
+        expect(menu()).toBeNull();
+      });
+
+      it("offers Unmark for a marked path and a disabled notice inside a marked ancestor", async () => {
+        const mark = (path: string) => ({ path, bytes: GB, is_dir: true, hidden: false });
+        await openSpace(gridView("a", { marks: [mark("/Users/d")] }));
+        await onCanvas("contextmenu", { clientX: 700, clientY: 400 });
+        expect(items().map((node) => node.textContent?.trim())).toEqual(["Unmark", "Reveal in Finder"]);
+        await onCanvas("click", { clientX: 10, clientY: 10 });
+        emit(gridView("a", { marks: [mark("/Users")] }));
+        await flushPromises();
+        await onCanvas("contextmenu", { clientX: 700, clientY: 400 });
+        const covered = item("Inside marked Users");
+        expect(covered.hasAttribute("disabled")).toBe(true);
+        sent.length = 0;
+        covered.click();
+        await flushPromises();
+        expect(sent).toEqual([]);
+      });
+
+      it("survives the tree_view response it triggers and closes when its path disappears", async () => {
+        await openMenu();
+        emit(gridView("d"));
+        await flushPromises();
+        expect(menu()).not.toBeNull();
+        emit(treeView());
+        await flushPromises();
+        expect(menu()).toBeNull();
+      });
+
+      it("closes on Escape without leaving the directory, and on an outside press", async () => {
+        await openMenu();
+        sent.length = 0;
+        await press("Escape");
+        expect(menu()).toBeNull();
+        expect(sent).toEqual([]);
+        await onCanvas("contextmenu", { clientX: 700, clientY: 400 });
+        document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+        await flushPromises();
+        expect(menu()).toBeNull();
+        await onCanvas("contextmenu", { clientX: 700, clientY: 400 });
+        menu()!.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+        await flushPromises();
+        expect(menu()).not.toBeNull();
+      });
+
+      it("closes when the review screen opens", async () => {
+        await openSpace(gridView("a", { marks: [{ path: "/Users/d", bytes: GB, is_dir: true, hidden: false }] }));
+        await onCanvas("contextmenu", { clientX: 700, clientY: 400 });
+        expect(menu()).not.toBeNull();
+        await (await button(wrapper, "REVIEW 1 MARKS")).trigger("click");
+        emit({ event: "review", root: "/", marks: [{ path: "/Users/d", bytes: GB, is_dir: true, hidden: false }], targets: 1, reclaim_bytes: GB, foreign_bytes: 0, blocked: [] });
+        await flushPromises();
+        expect(menu()).toBeNull();
+      });
+
+      it("moves focus with arrows, Home and End, and closes on Tab", async () => {
+        await openMenu();
+        const key = async (name: string): Promise<void> => {
+          menu()!.dispatchEvent(new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true }));
+          await flushPromises();
+        };
+        const focused = (): string | undefined => document.activeElement?.textContent?.trim();
+        expect(focused()).toBe("Mark for removal");
+        await key("ArrowDown");
+        expect(focused()).toBe("Reveal in Finder");
+        await key("ArrowDown");
+        expect(focused()).toBe("Mark for removal");
+        await key("ArrowUp");
+        expect(focused()).toBe("Reveal in Finder");
+        await key("Home");
+        expect(focused()).toBe("Mark for removal");
+        await key("End");
+        expect(focused()).toBe("Reveal in Finder");
+        await key("x");
+        expect(menu()).not.toBeNull();
+        await key("Tab");
+        expect(menu()).toBeNull();
+      });
+
+      it("keeps the view for the right-click reply and still applies its selection and marks", async () => {
+        await openMenu();
+        const request = lastRequest("tree_view")!;
+        const mark = { path: "/Users/d", bytes: GB, is_dir: true, hidden: false };
+        emit({
+          ...gridView("a", {
+            breadcrumbs: [...crumbs, { path: "/Users/a", label: "a" }],
+            tiles: grid,
+            selection: { name: "picked", path: "/Users/d", category: "Other", bytes: GB, is_dir: true, marked: true },
+            marks: [mark],
+          }),
+          id: request.id,
+        });
+        await flushPromises();
+        expect(wrapper.findAll(".tree-crumb").map((item) => item.text())).toEqual(["/", "Users"]);
+        expect(wrapper.find(".tree-inspector").text()).toContain("picked");
+        expect(items().map((node) => node.textContent?.trim())).toEqual(["Unmark", "Reveal in Finder"]);
+      });
+
+      it("applies a select-only id once: an error, a rescan or a repeat no longer hides the view", async () => {
+        await openSpace(gridView());
+        const deeper = [...crumbs, { path: "/Users/a", label: "a" }];
+        await onCanvas("click", { clientX: 100, clientY: 100, detail: 1 });
+        const failed = lastRequest("tree_view")!.id;
+        emit({ event: "error", id: failed, code: "tree_path_not_found" } as CliEvent);
+        emit({ ...gridView("a", { breadcrumbs: deeper }), id: failed });
+        await flushPromises();
+        expect(wrapper.findAll(".tree-crumb").map((item) => item.text())).toEqual(["/", "Users", "a"]);
+
+        emit(gridView());
+        await flushPromises();
+        await onCanvas("click", { clientX: 100, clientY: 100, detail: 1 });
+        const stale = lastRequest("tree_view")!.id;
+        await press("r");
+        emit({ ...gridView("a", { breadcrumbs: deeper }), id: stale });
+        await flushPromises();
+        expect(wrapper.findAll(".tree-crumb").map((item) => item.text())).toEqual(["/", "Users", "a"]);
+      });
+
+      it("keeps the view for keyboard selection", async () => {
+        const sibling = (name: string) => ({ name, path: `/Users/${name}`, bytes: GB, is_dir: true });
+        await openSpace(gridView("a", { siblings: [sibling("a"), sibling("b")] }));
+        await press("ArrowRight");
+        const arrow = lastRequest("tree_view")!;
+        emit({ ...gridView("b", { breadcrumbs: [...crumbs, { path: "/Users/b", label: "b" }] }), id: arrow.id });
+        await press("Tab");
+        const tab = lastRequest("tree_view")!;
+        emit({ ...gridView("c", { breadcrumbs: [...crumbs, { path: "/Users/c", label: "c" }] }), id: tab.id });
+        await flushPromises();
+        expect(wrapper.findAll(".tree-crumb").map((item) => item.text())).toEqual(["/", "Users"]);
+      });
+
+      it("closes on wheel, resize, blur and when the view directory changes", async () => {
+        await openMenu();
+        await wheel({ clientX: 300, clientY: 170, deltaY: -100 });
+        expect(menu()).toBeNull();
+        for (const name of ["resize", "blur"]) {
+          await onCanvas("contextmenu", { clientX: 700, clientY: 400 });
+          expect(menu()).not.toBeNull();
+          window.dispatchEvent(new Event(name));
+          await flushPromises();
+          expect(menu()).toBeNull();
+        }
+        await onCanvas("contextmenu", { clientX: 700, clientY: 400 });
+        emit(gridView("a", { breadcrumbs: [...crumbs, { path: "/Users/a", label: "a" }] }));
+        await flushPromises();
+        expect(menu()).toBeNull();
+      });
+
+      it("removes its window listeners on unmount", async () => {
+        await openSpace();
+        const remove = vi.spyOn(window, "removeEventListener");
+        wrapper.unmount();
+        expect(remove.mock.calls.map(([name]) => name)).toEqual(expect.arrayContaining(["resize", "blur"]));
+        remove.mockRestore();
+        wrapper = mount((await import("./App.vue")).default, { attachTo: document.body });
+      });
+
+      it("ignores tile shortcuts while open and returns focus to the canvas when closed from outside", async () => {
+        await openMenu();
+        expect(document.activeElement?.textContent?.trim()).toBe("Mark for removal");
+        sent.length = 0;
+        for (const key of ["Enter", " ", "x", "ArrowRight"]) await press(key);
+        expect(sent).toEqual([]);
+        document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+        await flushPromises();
+        expect(document.activeElement).toBe(canvas());
+      });
+
+      it("follows mark changes while open", async () => {
+        const mark = (path: string) => ({ path, bytes: GB, is_dir: true, hidden: false });
+        await openMenu();
+        const labels = () => items().map((node) => node.textContent?.trim());
+        emit(gridView("a", { marks: [mark("/Users/d")] }));
+        await flushPromises();
+        expect(labels()).toEqual(["Unmark", "Reveal in Finder"]);
+        emit(gridView("a", { marks: [] }));
+        await flushPromises();
+        expect(labels()).toEqual(["Mark for removal", "Reveal in Finder"]);
+        emit(gridView("a", { marks: [mark("/Users")] }));
+        await flushPromises();
+        expect(labels()).toEqual(["Inside marked Users", "Reveal in Finder"]);
+      });
+
+      it("hides the hover tooltip while open and clamps the position inside the window", async () => {
+        await openSpace(gridView());
+        await onCanvas("pointermove", { clientX: 1100, clientY: 670 });
+        expect(wrapper.find(".tree-tooltip").exists()).toBe(true);
+        await onCanvas("contextmenu", { clientX: 1100, clientY: 670 });
+        expect(wrapper.find(".tree-tooltip").exists()).toBe(false);
+        expect(menu()!.style.left).toBe(`${window.innerWidth - 240 - 8}px`);
+        expect(menu()!.style.top).toBe(`${window.innerHeight - 100 - 8}px`);
+        await onCanvas("contextmenu", { clientX: 5, clientY: 5 });
+        expect(menu()!.style.left).toBe("8px");
+        expect(menu()!.style.top).toBe("8px");
+      });
+
+      it("anchors a keyboard-invoked menu at the selected tile and does nothing without one", async () => {
+        await openSpace(gridView("a"));
+        await onCanvas("contextmenu", { clientX: 1300, clientY: 100, button: 0 });
+        expect(menu()!.style.left).toBe("300px");
+        expect(menu()!.style.top).toBe("170px");
+        await press("Escape");
+        emit(gridView("missing"));
+        await flushPromises();
+        await onCanvas("contextmenu", { clientX: 1300, clientY: 100, button: 0 });
+        expect(menu()).toBeNull();
+      });
+
+      it("names the file manager instead of Finder off macOS", async () => {
+        const agent = navigator.userAgent;
+        Object.defineProperty(navigator, "userAgent", { value: "Mozilla/5.0 (X11; Linux x86_64)", configurable: true });
+        vi.resetModules();
+        wrapper.unmount();
+        wrapper = mount((await import("./App.vue")).default, { attachTo: document.body });
+        await flushPromises();
+        await openMenu();
+        expect(items().map((node) => node.textContent?.trim())).toEqual(["Mark for removal", "Reveal in file manager"]);
+        Object.defineProperty(navigator, "userAgent", { value: agent, configurable: true });
+      });
+
+      it("falls back to the selected tile for a keyboard-invoked context menu", async () => {
+        await openSpace(gridView("a"));
+        await onCanvas("contextmenu", { clientX: 1300, clientY: 100, button: 0 });
+        expect(menu()).not.toBeNull();
+        expect(lastRequest("tree_view")).toMatchObject({ path: "/Users/a" });
+      });
     });
 
     it("shows a tooltip that flips near window edges and describes the tile", async () => {

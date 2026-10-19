@@ -1,6 +1,7 @@
 import type { LocaleMessageSchema } from "../types";
 
 export const en: LocaleMessageSchema = {
+  interfaceText: {},
   nav: {
     runtime: "Runtime",
     cpu: "CPU",
@@ -98,9 +99,15 @@ export const en: LocaleMessageSchema = {
     apparent: "APPARENT SIZE",
     depthLimit: "DEPTH",
     rescan: "RESCAN",
+    markForRemoval: "Mark for removal",
+    unmark: "Unmark",
+    revealFinder: "Reveal in Finder",
+    revealFileManager: "Reveal in file manager",
+    insideMarked: "Inside marked {name}",
+    pathActions: "Path actions",
     markedItems: "Marked Items",
     reclaimable: "Reclaimable",
-    reviewMarks: "Review Marks",
+    reviewMarks: "REVIEW {count} MARKS",
     scanning: "MAPPING…",
     emptyScan: "Select a directory or volume to scan",
     crumbsRoot: "Root",
@@ -112,6 +119,13 @@ export const en: LocaleMessageSchema = {
     files: "Files",
     directories: "Directories",
     modified: "Modified",
+  },
+  update: {
+    available: "Karen {version} is available.",
+    install: "Install and restart",
+    installing: "Installing…",
+    later: "Later",
+    failed: "Update failed. Try again later.",
   },
   review: {
     title: "REVIEW & RECLAIM",

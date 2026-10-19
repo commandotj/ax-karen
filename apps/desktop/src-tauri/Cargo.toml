@@ -1,6 +1,6 @@
 [package]
 name = "karen-desktop"
-version = "0.12.0"
+version = "0.13.0"
 description = "Karen desktop shell"
 authors = ["Karen contributors"]
 edition = "2021"
@@ -14,4 +14,8 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-shell = "2"
 tauri-plugin-single-instance = "2"
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
+# Needed by the generate_context! expansion once tauri.conf.json has a plugins section.
+serde_json = "1"
 

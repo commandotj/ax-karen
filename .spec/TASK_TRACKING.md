@@ -20,12 +20,22 @@
   - [x] Implement RFC 0013: Redesign application icon with Logo Designer skill (child of 0001) (RFC 0013)
   - [x] Implement RFC 0014: Replace Rust xtask runner with root mjs script (child of 0001) (RFC 0014)
   - [x] Implement RFC 0015: Linux and Windows desktop support (child of 0001 (child of 0001) (RFC 0015)
+  - [x] Implement RFC 0027: Clarify Disk Tree click and context-menu actions (child of 0001) (RFC 0027)
+  - [x] Implement RFC 0028: Fix custom title bar drag, cursor and double-click maximize (child of 0001) (RFC 0028)
+  - [x] Implement RFC 0029: Enlarge the default window size (child of 0001) (RFC 0029)
+  - [x] Implement RFC 0030: Mark the merged release PR as tagged after publishing (child of 0001) (RFC 0030)
 - [x] Implement RFC 0020: Network process attribution and connection topology (RFC 0020)
 - [x] Implement RFC 0021: Single-instance desktop application guard (RFC 0021)
 - [x] Implement RFC 0022: Desktop application multi-language internationalization (RFC 0022)
 - [x] Implement RFC 0023: Publishify CI/CD Pipeline and Distribution Setup (RFC 0023)
 - [x] Implement RFC 0024: Cask-only Homebrew distribution (RFC 0024)
 - [x] Implement RFC 0025: Drop Windows release targets (RFC 0025)
+- [x] Implement RFC 0026: Publish only installable Karen desktop app artifacts (RFC 0026)
+- [x] Implement RFC 0031: In-app auto-update (Umbrella) (RFC 0031)
+  - [x] Implement RFC 0032: Check for updates and prompt to install (child of 0031) (RFC 0032)
+  - [x] Implement RFC 0033: Publish signed updater artifacts and latest.json (child of 0031) (RFC 0033)
+
+
 
 
 

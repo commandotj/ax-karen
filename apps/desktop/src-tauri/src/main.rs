@@ -1,11 +1,21 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
-use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::tray::{
+    MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent,
+};
 use tauri::{Emitter, Manager};
 
 struct TrayState {
     status_item: MenuItem<tauri::Wry>,
+    toggle_item: MenuItem<tauri::Wry>,
+    runtime_item: MenuItem<tauri::Wry>,
+    cpu_item: MenuItem<tauri::Wry>,
+    memory_item: MenuItem<tauri::Wry>,
+    battery_item: MenuItem<tauri::Wry>,
+    network_item: MenuItem<tauri::Wry>,
+    space_item: MenuItem<tauri::Wry>,
+    quit_item: MenuItem<tauri::Wry>,
 }
 
 #[tauri::command]
@@ -14,6 +24,14 @@ fn update_tray_status(
     state: tauri::State<'_, TrayState>,
     title: Option<String>,
     summary: String,
+    toggle_window: Option<String>,
+    runtime_label: Option<String>,
+    cpu_label: Option<String>,
+    memory_label: Option<String>,
+    battery_label: Option<String>,
+    network_label: Option<String>,
+    space_label: Option<String>,
+    quit_label: Option<String>,
 ) {
     let label = if summary.trim().is_empty() {
         "Karen — System Monitor".to_owned()
@@ -21,6 +39,30 @@ fn update_tray_status(
         summary
     };
     let _ = state.status_item.set_text(&label);
+    if let Some(label) = toggle_window {
+        let _ = state.toggle_item.set_text(&label);
+    }
+    if let Some(label) = runtime_label {
+        let _ = state.runtime_item.set_text(&label);
+    }
+    if let Some(label) = cpu_label {
+        let _ = state.cpu_item.set_text(&label);
+    }
+    if let Some(label) = memory_label {
+        let _ = state.memory_item.set_text(&label);
+    }
+    if let Some(label) = battery_label {
+        let _ = state.battery_item.set_text(&label);
+    }
+    if let Some(label) = network_label {
+        let _ = state.network_item.set_text(&label);
+    }
+    if let Some(label) = space_label {
+        let _ = state.space_item.set_text(&label);
+    }
+    if let Some(label) = quit_label {
+        let _ = state.quit_item.set_text(&label);
+    }
     if let Some(tray) = app.tray_by_id("karen-tray") {
         let _ = tray.set_tooltip(Some(&label));
         if let Some(ref t) = title {
@@ -66,15 +108,36 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         None::<&str>,
     )?;
     let sep2 = PredefinedMenuItem::separator(app)?;
-    let tab_runtime =
-        MenuItem::with_id(app, "tab-runtime", "Open Runtime", true, None::<&str>)?;
-    let tab_cpu = MenuItem::with_id(app, "tab-cpu", "Open CPU", true, None::<&str>)?;
-    let tab_memory =
-        MenuItem::with_id(app, "tab-memory", "Open Memory", true, None::<&str>)?;
-    let tab_battery =
-        MenuItem::with_id(app, "tab-battery", "Open Battery", true, None::<&str>)?;
-    let tab_network =
-        MenuItem::with_id(app, "tab-network", "Open Network", true, None::<&str>)?;
+    let tab_runtime = MenuItem::with_id(
+        app,
+        "tab-runtime",
+        "Open Runtime",
+        true,
+        None::<&str>,
+    )?;
+    let tab_cpu =
+        MenuItem::with_id(app, "tab-cpu", "Open CPU", true, None::<&str>)?;
+    let tab_memory = MenuItem::with_id(
+        app,
+        "tab-memory",
+        "Open Memory",
+        true,
+        None::<&str>,
+    )?;
+    let tab_battery = MenuItem::with_id(
+        app,
+        "tab-battery",
+        "Open Battery",
+        true,
+        None::<&str>,
+    )?;
+    let tab_network = MenuItem::with_id(
+        app,
+        "tab-network",
+        "Open Network",
+        true,
+        None::<&str>,
+    )?;
     let tab_space =
         MenuItem::with_id(app, "tab-space", "Open Space", true, None::<&str>)?;
     let sep3 = PredefinedMenuItem::separator(app)?;
@@ -99,11 +162,23 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
         ],
     )?;
 
-    app.manage(TrayState { status_item });
+    app.manage(TrayState {
+        status_item,
+        toggle_item,
+        runtime_item: tab_runtime,
+        cpu_item: tab_cpu,
+        memory_item: tab_memory,
+        battery_item: tab_battery,
+        network_item: tab_network,
+        space_item: tab_space,
+        quit_item,
+    });
 
-    let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray-icon.png"))
-        .ok()
-        .or_else(|| app.default_window_icon().cloned());
+    let icon = tauri::image::Image::from_bytes(include_bytes!(
+        "../icons/tray-icon.png"
+    ))
+    .ok()
+    .or_else(|| app.default_window_icon().cloned());
 
     let mut builder = TrayIconBuilder::with_id("karen-tray")
         .menu(&menu)
@@ -157,17 +232,96 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
+/// Matches `minWidth` and `minHeight` in tauri.conf.json; a smaller monitor wins.
+const MIN_WINDOW: (f64, f64) = (760.0, 600.0);
+
+fn three_quarters(width: f64, height: f64) -> (f64, f64) {
+    (
+        (width * 0.75).max(MIN_WINDOW.0).min(width),
+        (height * 0.75).max(MIN_WINDOW.1).min(height),
+    )
+}
+
+/// Top-left corner that centers `size` on a monitor, horizontally and
+/// vertically. Computed here because `Window::center` can run before a resize
+/// has taken effect and then centers the old size.
+fn centered(
+    origin: (f64, f64),
+    monitor: (f64, f64),
+    size: (f64, f64),
+) -> (f64, f64) {
+    (
+        origin.0 + (monitor.0 - size.0) / 2.0,
+        origin.1 + (monitor.1 - size.1) / 2.0,
+    )
+}
+
+/// Sizes the window from the monitor it opens on; the configured size stays
+/// when the monitor cannot be read.
+fn fit_main_window(app: &tauri::App) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    let Ok(Some(monitor)) = window.current_monitor() else {
+        return;
+    };
+    let scale = monitor.scale_factor();
+    let screen = monitor.size().to_logical::<f64>(scale);
+    let origin = monitor.position().to_logical::<f64>(scale);
+    let size = three_quarters(screen.width, screen.height);
+    let (x, y) =
+        centered((origin.x, origin.y), (screen.width, screen.height), size);
+    let _ = window.set_size(tauri::LogicalSize::new(size.0, size.1));
+    let _ = window.set_position(tauri::LogicalPosition::new(x, y));
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             show_and_focus_main(app);
         }))
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             setup_tray(app)?;
+            fit_main_window(app);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![update_tray_status])
         .run(tauri::generate_context!())
         .expect("failed to run Karen desktop");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{centered, three_quarters};
+
+    #[test]
+    fn window_is_three_quarters_of_the_monitor() {
+        assert_eq!(three_quarters(1920.0, 1080.0), (1440.0, 810.0));
+        assert_eq!(three_quarters(2560.0, 1440.0), (1920.0, 1080.0));
+    }
+
+    #[test]
+    fn window_never_drops_below_the_configured_minimum() {
+        assert_eq!(three_quarters(800.0, 600.0), (760.0, 600.0));
+    }
+
+    #[test]
+    fn window_is_centered_on_its_monitor() {
+        assert_eq!(
+            centered((0.0, 0.0), (1920.0, 1080.0), (1440.0, 810.0)),
+            (240.0, 135.0)
+        );
+        assert_eq!(
+            centered((1920.0, -200.0), (2560.0, 1440.0), (1920.0, 1080.0)),
+            (2240.0, -20.0)
+        );
+    }
+
+    #[test]
+    fn window_never_exceeds_the_monitor() {
+        assert_eq!(three_quarters(700.0, 500.0), (700.0, 500.0));
+    }
 }

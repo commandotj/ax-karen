@@ -33,6 +33,9 @@ type DrawOptions = {
   height: number;
   filter?: string;
   zoom?: { scale: number; x: number; y: number };
+  text?: (source: string) => string;
+  number?: (value: number) => string;
+  decimal?: (value: number, fractionDigits?: number) => string;
 };
 
 const colors: Record<string, string> = {
@@ -168,7 +171,7 @@ function paintLabels(
     .slice(0, 150);
   for (const tile of sorted) {
     const light = isLight(tileBase(tile, options, isMarked(tile, options.marks)));
-    paintLabel(context, tile, options.mode, light);
+    paintLabel(context, tile, options.mode, light, options);
   }
 }
 
@@ -177,6 +180,7 @@ function paintLabel(
   tile: TreeTile,
   mode: "size" | "files" | "age",
   lightFill: boolean,
+  options: DrawOptions,
 ): void {
   const region = tile.header ?? tile;
   const nameSize = 12;
@@ -185,16 +189,19 @@ function paintLabel(
 
   const pad = nameSize * 0.42;
   const inset = nameSize * 0.25;
+  const otherItemCount = tile.name.match(/^Other items \((\d+)\)$/)?.[1];
+  const text = options.text ?? ((source: string) => source);
+  const number = options.number ?? ((value: number) => new Intl.NumberFormat("en").format(value));
   const name = tile.path === null
-    ? tile.name.replace(/^Other items \((\d+)\)$/, "+$1 more")
+    ? otherItemCount ? `+${number(Number(otherItemCount))} ${text("more")}` : tile.name
     : tile.name;
   const value = tile.path === null
     ? ""
     : tile.bytes === null
-      ? "MERGED ITEMS"
+      ? text("MERGED ITEMS")
       : mode === "files"
-        ? `${(tile.files ?? 0).toLocaleString()} files`
-        : formatBytes(tile.bytes);
+        ? `${number(tile.files ?? 0)} ${text("files")}`
+        : formatBytes(tile.bytes, options.decimal);
   context.save();
   context.beginPath();
   context.rect(region.x, region.y, region.width, region.height);
@@ -257,11 +264,11 @@ function mix(first: string, second: string, amount: number): string {
   return `#${left.map((value, index) => Math.round(value + (right[index] - value) * amount).toString(16).padStart(2, "0")).join("")}`;
 }
 
-function formatBytes(value: number): string {
+function formatBytes(value: number, decimal?: (value: number, fractionDigits?: number) => string): string {
   if (value < 1024) return `${value} B`;
   const units = ["KB", "MB", "GB", "TB", "PB"];
   let amount = value;
   let index = -1;
   do { amount /= 1024; index += 1; } while (amount >= 1024 && index < units.length - 1);
-  return `${amount.toFixed(1)} ${units[index]}`;
+  return `${decimal ? decimal(amount) : amount.toFixed(1)} ${units[index]}`;
 }

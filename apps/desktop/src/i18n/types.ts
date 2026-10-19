@@ -16,6 +16,7 @@ export interface LocaleOption {
 }
 
 export interface LocaleMessageSchema {
+  interfaceText: Record<string, string>;
   nav: {
     runtime: string;
     cpu: string;
@@ -113,6 +114,12 @@ export interface LocaleMessageSchema {
     apparent: string;
     depthLimit: string;
     rescan: string;
+    markForRemoval: string;
+    unmark: string;
+    revealFinder: string;
+    revealFileManager: string;
+    insideMarked: string;
+    pathActions: string;
     markedItems: string;
     reclaimable: string;
     reviewMarks: string;
@@ -127,6 +134,13 @@ export interface LocaleMessageSchema {
     files: string;
     directories: string;
     modified: string;
+  };
+  update: {
+    available: string;
+    install: string;
+    installing: string;
+    later: string;
+    failed: string;
   };
   review: {
     title: string;
