@@ -24,6 +24,7 @@ Kernel tuning, process termination, automatic cleanup, privileged collection, re
 
 | RFC | Concern |
 |-----|---------|
+| [0030](0030-tag-release-pr-after-publish.md) | Mark the merged release PR as tagged after publishing |
 | [0029](0029-larger-default-window.md) | Enlarge the default window size |
 | [0028](0028-titlebar-drag-maximize.md) | Fix custom title bar drag, cursor and double-click maximize |
 | [0027](0027-disktree-click-context-menu.md) | Clarify Disk Tree click and context-menu actions |

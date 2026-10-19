@@ -265,6 +265,30 @@ jobs:
           TAG: ${{ needs.prepare.outputs.tag }}
         run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
 
+  # skip-github-release stops Release Please from retagging its own PR, and it refuses to open
+  # the next version PR while a merged one is still "pending". Manual dispatches rebuild old tags
+  # and must not tag a newer version PR that is still waiting for promotion.
+  tag-release-pr:
+    name: Mark merged release PR as tagged
+    needs: [prepare, publish]
+    if: needs.prepare.outputs.proceed == 'true' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Flip autorelease label
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          gh label create "autorelease: tagged" --repo "$GITHUB_REPOSITORY" \
+            --color EDEDED --description "Release PR whose release has been published" 2>/dev/null || true
+          gh pr list --repo "$GITHUB_REPOSITORY" --base develop --state merged \
+            --label "autorelease: pending" --json number --jq '.[].number' |
+          while read -r number; do
+            gh pr edit "$number" --repo "$GITHUB_REPOSITORY" \
+              --remove-label "autorelease: pending" --add-label "autorelease: tagged"
+            echo "Marked #$number as tagged." >> "$GITHUB_STEP_SUMMARY"
+          done
+
   homebrew-tap-pr:
     name: Package manager pull request (luban-homebrew)
     needs: [prepare, publish]

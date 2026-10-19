@@ -31,3 +31,4 @@
 | 0027 | [Clarify Disk Tree click and context-menu actions (child of 0001)](rfc/completed/0027-disktree-click-context-menu.md) | Implemented |
 | 0028 | [Fix custom title bar drag, cursor and double-click maximize (child of 0001)](rfc/completed/0028-titlebar-drag-maximize.md) | Implemented |
 | 0029 | [Open the window at three quarters of the screen (child of 0001)](rfc/completed/0029-larger-default-window.md) | Implemented |
+| 0030 | [Mark the merged release PR as tagged after publishing (child of 0001)](rfc/completed/0030-tag-release-pr-after-publish.md) | Implemented |
