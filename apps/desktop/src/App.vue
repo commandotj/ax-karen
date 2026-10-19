@@ -179,14 +179,17 @@ function receive(event: CliEvent): void {
     void scan(path);
   }
   if (event.event === "tree_view") {
+    const keepView = keepViewIds.delete(String(event.id));
     treeRoot.value = String(event.root ?? treeRoot.value);
-    files.value = Number(event.files ?? 0);
-    dirs.value = Number(event.dirs ?? 0);
-    bytes.value = Number(event.bytes ?? 0);
-    tiles.value = Array.isArray(event.tiles) ? event.tiles as TreeTile[] : [];
-    breadcrumbs.value = Array.isArray(event.breadcrumbs) ? event.breadcrumbs as Crumb[] : [];
-    siblings.value = Array.isArray(event.siblings) ? event.siblings as Sibling[] : [];
-    findings.value = Array.isArray(event.worth_a_look) ? event.worth_a_look as Finding[] : [];
+    if (!keepView) {
+      files.value = Number(event.files ?? 0);
+      dirs.value = Number(event.dirs ?? 0);
+      bytes.value = Number(event.bytes ?? 0);
+      tiles.value = Array.isArray(event.tiles) ? event.tiles as TreeTile[] : [];
+      breadcrumbs.value = Array.isArray(event.breadcrumbs) ? event.breadcrumbs as Crumb[] : [];
+      siblings.value = Array.isArray(event.siblings) ? event.siblings as Sibling[] : [];
+      findings.value = Array.isArray(event.worth_a_look) ? event.worth_a_look as Finding[] : [];
+    }
     marks.value = Array.isArray(event.marks) ? event.marks as DiskMark[] : marks.value;
     selection.value = typeof event.selection === "object" && event.selection !== null ? event.selection as Record<string, unknown> : null;
     if (typeof event.unreadable === "number") unreadable.value = event.unreadable;
@@ -239,6 +242,7 @@ function receive(event: CliEvent): void {
     refresh();
   }
   if (event.event === "error") {
+    keepViewIds.delete(String(event.id));
     if (event.id !== activeScanId) {
       if (activeScanId) return;
       status.value = "Monitor fault";
@@ -289,6 +293,7 @@ function refresh(): void {
 async function scan(path = selectedVolume.value): Promise<void> {
   if (activeScanId || !path) return;
   error.value = "";
+  keepViewIds.clear();
   scanProgress.value = { files: 0, dirs: 0, bytes: 0 };
   const id = crypto.randomUUID();
   activeScanId = id;
@@ -339,11 +344,16 @@ function openDiskTree(): void {
   }
 }
 
+// Ids of select-only requests. The CLI answers them with the clicked node's parent as the view,
+// which would read as drilling in, so only the selection of those replies is applied.
+const keepViewIds = new Set<string>();
+
 function requestTreeView(params: {
   path: string;
   selectedPath?: string;
   root?: string;
   open?: boolean;
+  keepView?: boolean;
   metric?: "size" | "files";
   depth?: number;
   width?: number;
@@ -352,8 +362,10 @@ function requestTreeView(params: {
   const root = params.root || treeRoot.value || selectedVolume.value;
   const path = params.path;
   const selectedPath = params.selectedPath ?? path;
+  const id = crypto.randomUUID();
+  if (params.keepView) keepViewIds.add(id);
   void cli?.send({
-    id: crypto.randomUUID(),
+    id,
     command: "tree_view",
     root,
     path: selectedPath,
@@ -436,8 +448,12 @@ function handleGlobalKeys(event: KeyboardEvent): void {
   else if (command && event.key === "0") { event.preventDefault(); setUiZoom(1); }
 }
 
-function startDragging(): void {
-  void getCurrentWindow().startDragging();
+// Maximize on the second press: a native drag begun by the first press can swallow `dblclick` on macOS.
+function pressTitleBar(event: MouseEvent): void {
+  if (event.button !== 0) return;
+  if (event.target instanceof Element && event.target.closest("button, select, label")) return;
+  if (event.detail === 2) toggleMaximizeWindow();
+  else if (event.detail < 3) void getCurrentWindow().startDragging();
 }
 
 function minimizeWindow(): void {
@@ -511,8 +527,8 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="instrument" :class="{ macos: isMacOS }">
-    <header class="masthead" @mousedown.self="startDragging">
-      <div class="brand-lockup" @mousedown.self="startDragging">
+    <header class="masthead" @mousedown="pressTitleBar">
+      <div class="brand-lockup">
         <svg class="brand-seal" viewBox="0 0 512 512" aria-hidden="true">
           <rect x="0" y="0" width="512" height="512" rx="112" fill="#181510"/>
           <rect x="48" y="68" width="416" height="376" rx="60" fill="#C9A24D"/>
@@ -532,7 +548,7 @@ onBeforeUnmount(() => {
         <span class="brand-name">KAREN</span>
         <span class="brand-edition">{{ t("masthead.edition") }} · SYSTEM MONITOR</span>
       </div>
-      <div class="masthead-right" @mousedown.self="startDragging">
+      <div class="masthead-right">
         <label class="lang-picker">
           <select :value="locale" aria-label="Select language" @change="onLocaleChange">
             <option v-for="item in supportedLocales" :key="item.code" :value="item.code">

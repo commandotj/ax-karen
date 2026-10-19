@@ -113,6 +113,12 @@ export interface LocaleMessageSchema {
     apparent: string;
     depthLimit: string;
     rescan: string;
+    markForRemoval: string;
+    unmark: string;
+    revealFinder: string;
+    revealFileManager: string;
+    insideMarked: string;
+    pathActions: string;
     markedItems: string;
     reclaimable: string;
     reviewMarks: string;
