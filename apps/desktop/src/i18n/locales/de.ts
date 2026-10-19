@@ -106,7 +106,7 @@ export const de: LocaleMessageSchema = {
     pathActions: "Pfadaktionen",
     markedItems: "Markierte Elemente",
     reclaimable: "Freigebbar",
-    reviewMarks: "Überprüfen",
+    reviewMarks: "{count} Markierungen prüfen",
     scanning: "Verzeichnisbaum wird gescannt...",
     emptyScan: "Wählen Sie ein Verzeichnis oder Laufwerk",
     crumbsRoot: "Wurzel",

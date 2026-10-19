@@ -106,7 +106,7 @@ export const ko: LocaleMessageSchema = {
     pathActions: "경로 작업",
     markedItems: "선택 항목",
     reclaimable: "확보 가능 공간",
-    reviewMarks: "정리 검토",
+    reviewMarks: "{count}개 표시 검토",
     scanning: "디렉터리 트리 스캔 중...",
     emptyScan: "분석할 디렉터리나 볼륨을 선택하세요",
     crumbsRoot: "루트",

@@ -106,7 +106,7 @@ export const ru: LocaleMessageSchema = {
     pathActions: "Действия с путём",
     markedItems: "Выбранные элементы",
     reclaimable: "Освобождаемое место",
-    reviewMarks: "Перейти к очистке",
+    reviewMarks: "Проверить отметки: {count}",
     scanning: "Сканирование дерева папок...",
     emptyScan: "Выберите папку или том для анализа",
     crumbsRoot: "Корень",

@@ -106,7 +106,7 @@ export const fr: LocaleMessageSchema = {
     pathActions: "Actions sur le chemin",
     markedItems: "Éléments marqués",
     reclaimable: "Récupérable",
-    reviewMarks: "Examiner",
+    reviewMarks: "Examiner {count} éléments marqués",
     scanning: "Analyse de l'arborescence...",
     emptyScan: "Sélectionnez un répertoire ou un volume",
     crumbsRoot: "Racine",

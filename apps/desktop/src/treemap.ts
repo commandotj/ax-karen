@@ -191,7 +191,7 @@ function paintLabel(
   const inset = nameSize * 0.25;
   const otherItemCount = tile.name.match(/^Other items \((\d+)\)$/)?.[1];
   const text = options.text ?? ((source: string) => source);
-  const number = options.number ?? String;
+  const number = options.number ?? ((value: number) => new Intl.NumberFormat("en").format(value));
   const name = tile.path === null
     ? otherItemCount ? `+${number(Number(otherItemCount))} ${text("more")}` : tile.name
     : tile.name;

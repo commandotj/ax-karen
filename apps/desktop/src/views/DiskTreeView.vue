@@ -886,9 +886,9 @@ onBeforeUnmount(() => {
       </div>
       <div class="mark-actions">
         <button :disabled="!selection?.path || selection.path === treeRoot" @click="emit('toggleMark', String(selection?.path))">
-          {{ selection?.marked ? text("UNMARK PATH") : t("space.markForRemoval") }}
+          {{ selection?.marked ? text("UNMARK PATH") : text("MARK FOR REMOVAL") }}
         </button>
-        <button :disabled="!marks.length" @click="emit('requestReview')">{{ t("space.reviewMarks") }} {{ number(marks.length) }} {{ text("MARKS") }}</button>
+        <button :disabled="!marks.length" @click="emit('requestReview')">{{ t("space.reviewMarks", { count: number(marks.length) }) }}</button>
       </div>
       <div v-if="review" class="review-summary">
         <span>{{ number(Number(review.targets)) }} {{ text("targets") }} · {{ formatBytes(Number(review.reclaim_bytes ?? 0)) }} {{ t("space.reclaimable") }}</span>
@@ -953,7 +953,7 @@ onBeforeUnmount(() => {
           <div v-for="mark in reviewMarks" :key="mark.path" class="review-path-row">
             <span><b>{{ mark.path }}</b><small>{{ mark.is_dir ? text("DIRECTORY") : text("FILE") }}</small></span>
             <strong>{{ formatBytes(mark.bytes) }}</strong>
-            <button class="row-unmark" :aria-label="text('UNMARK PATH')" @click="emit('toggleMark', mark.path); emit('requestReview')">{{ t("space.unmark") }}</button>
+            <button class="row-unmark" :aria-label="text('Unmark {path}', { path: mark.path })" @click="emit('toggleMark', mark.path); emit('requestReview')">{{ t("space.unmark") }}</button>
           </div>
           <div v-for="blocked in blockedMarks" :key="blocked.path" class="review-blocked"><span>{{ blocked.path }}</span><b>BLOCKED · {{ blocked.reason }}</b></div>
           <p v-if="!reviewMarks.length" class="process-empty">{{ text("NO MARKED PATHS TO REVIEW") }}</p>

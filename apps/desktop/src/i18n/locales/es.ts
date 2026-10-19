@@ -106,7 +106,7 @@ export const es: LocaleMessageSchema = {
     pathActions: "Acciones de ruta",
     markedItems: "Elementos marcados",
     reclaimable: "Recuperable",
-    reviewMarks: "Revisar",
+    reviewMarks: "Revisar {count} marcas",
     scanning: "Escaneando árbol de directorios...",
     emptyScan: "Seleccione un directorio o volumen",
     crumbsRoot: "Raíz",
