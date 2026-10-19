@@ -119,6 +119,13 @@ export const ru: LocaleMessageSchema = {
     directories: "Папки",
     modified: "Изменено",
   },
+  update: {
+    available: "Доступна Karen {version}.",
+    install: "Установить и перезапустить",
+    installing: "Установка…",
+    later: "Позже",
+    failed: "Не удалось обновить. Повторите попытку позже.",
+  },
   review: {
     title: "ОЧИСТКА И ОСВОБОЖДЕНИЕ ДИСКА",
     subtitle: "Элементы, помеченные на безвозвратное удаление",

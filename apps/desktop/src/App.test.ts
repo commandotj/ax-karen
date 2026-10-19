@@ -8,6 +8,7 @@ const host = vi.hoisted(() => ({
   tauri: true,
   startError: undefined as Error | undefined,
   failCommand: "",
+  update: null as { version: string; downloadAndInstall: () => Promise<void> } | null,
   windowCalls: [] as string[],
   trayStatus: [] as string[],
   emitTray: (_tab: string) => {},
@@ -35,6 +36,8 @@ vi.mock("@tauri-apps/api/window", () => ({
     close: async () => { host.windowCalls.push("close"); },
   }),
 }));
+vi.mock("@tauri-apps/plugin-updater", () => ({ check: async () => host.update }));
+vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: async () => undefined }));
 vi.mock("./cli", () => ({
   KarenCli: class {
     constructor(onEvent: (event: CliEvent) => void) {
@@ -101,6 +104,7 @@ describe("Karen desktop interface", () => {
     host.startError = undefined;
     host.failCommand = "";
     host.windowCalls.length = 0;
+    host.update = null;
     HTMLCanvasElement.prototype.getContext = (() => null) as unknown as HTMLCanvasElement["getContext"];
     HTMLCanvasElement.prototype.getBoundingClientRect = () => ({ left: 0, top: 0, right: 1200, bottom: 680, width: 1200, height: 680, x: 0, y: 0, toJSON() {} });
     globalThis.ResizeObserver = class {
@@ -302,6 +306,15 @@ describe("Karen desktop interface", () => {
       wrapper = mount((await import("./App.vue")).default, { attachTo: document.body });
       await flushPromises();
       expect(wrapper.text()).toContain("Open Karen.app to connect the CLI");
+    });
+
+    it("offers an available update from the app shell", async () => {
+      expect(wrapper.find(".update-prompt").exists()).toBe(false);
+      wrapper.unmount();
+      host.update = { version: "9.9.9", downloadAndInstall: async () => undefined };
+      wrapper = mount((await import("./App.vue")).default, { attachTo: document.body });
+      await flushPromises();
+      expect(wrapper.find(".update-prompt").text()).toContain("9.9.9");
     });
 
     it("shows a fault when the CLI sidecar cannot start", async () => {

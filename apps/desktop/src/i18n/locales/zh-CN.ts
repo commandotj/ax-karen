@@ -119,6 +119,13 @@ export const zhCN: LocaleMessageSchema = {
     directories: "目录数",
     modified: "修改时间",
   },
+  update: {
+    available: "Karen {version} 可用。",
+    install: "安装并重启",
+    installing: "正在安装…",
+    later: "稍后",
+    failed: "更新失败，请稍后重试。",
+  },
   review: {
     title: "清理审查与空间回收",
     subtitle: "已标记永久删除的项目清单",

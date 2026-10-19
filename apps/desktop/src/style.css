@@ -1167,3 +1167,9 @@ body {
   }
 }
 
+.update-prompt { position: fixed; right: 27px; bottom: 20px; z-index: 40; display: grid; gap: 8px; max-width: 320px; padding: 12px 14px; border: 1px solid #a38549; background: #14181a; box-shadow: 0 6px 24px #000a; color: var(--ivory); font: 12px/1.4 'Spline Sans Mono', monospace; }
+.update-error { color: var(--red); }
+.update-actions { display: flex; gap: 8px; }
+.update-actions button { padding: 6px 10px; border: 1px solid #7b5f2b; background: #17130b; color: #e4d7ba; font: 11px 'Spline Sans Mono', monospace; letter-spacing: .08em; cursor: pointer; }
+.update-actions button:hover:not(:disabled) { border-color: #e2c382; background: #624a22; }
+.update-actions button:disabled { opacity: .6; cursor: default; }

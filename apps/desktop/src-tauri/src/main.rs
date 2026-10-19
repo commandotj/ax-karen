@@ -209,6 +209,8 @@ fn main() {
             show_and_focus_main(app);
         }))
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             setup_tray(app)?;
             fit_main_window(app);

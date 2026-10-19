@@ -119,6 +119,13 @@ export const zhTW: LocaleMessageSchema = {
     directories: "目錄數",
     modified: "修改時間",
   },
+  update: {
+    available: "Karen {version} 可用。",
+    install: "安裝並重新啟動",
+    installing: "正在安裝…",
+    later: "稍後",
+    failed: "更新失敗，請稍後再試。",
+  },
   review: {
     title: "清理審查與空間回收",
     subtitle: "已標記永久刪除的項目清單",
