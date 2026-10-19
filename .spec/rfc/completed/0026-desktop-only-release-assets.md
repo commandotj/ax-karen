@@ -1,6 +1,6 @@
 # RFC 0026: Publish only installable Karen desktop app artifacts
 
-**Status:** Draft
+**Status:** Implemented
 
 ## Summary
 

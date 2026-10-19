@@ -27,4 +27,4 @@
 | 0023 | [Publishify CI/CD Pipeline and Distribution Setup](rfc/completed/0023-publishify-cicd-pipeline-setup.md) | Implemented |
 | 0024 | [Cask-only Homebrew distribution](rfc/pending/0024-cask-only-homebrew-distribution.md) | Pending |
 | 0025 | [Drop Windows release targets](rfc/pending/0025-drop-windows-release-targets.md) | Pending |
-| 0026 | [Publish only installable Karen desktop app artifacts](rfc/0026-desktop-only-release-assets.md) | Draft |
+| 0026 | [Publish only installable Karen desktop app artifacts](rfc/completed/0026-desktop-only-release-assets.md) | Implemented |
