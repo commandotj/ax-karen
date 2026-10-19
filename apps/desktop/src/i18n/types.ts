@@ -16,6 +16,7 @@ export interface LocaleOption {
 }
 
 export interface LocaleMessageSchema {
+  interfaceText: Record<string, string>;
   nav: {
     runtime: string;
     cpu: string;

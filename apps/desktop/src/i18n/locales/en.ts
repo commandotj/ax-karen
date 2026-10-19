@@ -1,6 +1,7 @@
 import type { LocaleMessageSchema } from "../types";
 
 export const en: LocaleMessageSchema = {
+  interfaceText: {},
   nav: {
     runtime: "Runtime",
     cpu: "CPU",

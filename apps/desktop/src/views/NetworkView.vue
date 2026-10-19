@@ -5,7 +5,7 @@ import { chartPath, formatBytes, formatRate } from "../format";
 import { useI18n } from "../i18n";
 import type { NetworkConnection, NetworkInfo, NetworkProcess } from "../types";
 
-const { t } = useI18n();
+const { t, text } = useI18n();
 
 const props = defineProps<{
   network: NetworkInfo;
@@ -38,29 +38,19 @@ const connections = computed<NetworkConnection[]>(
   () => props.network.connections ?? [],
 );
 
-const interfaceColumns = [
-  "RANK / INTERFACE",
-  "RX RATE",
-  "TX RATE",
-  "TOTAL RX / TX",
-  "PACKETS / ERR",
-] as const;
+const interfaceColumns = computed(() => [
+  text("RANK / INTERFACE"), text("RX RATE"), text("TX RATE"),
+  text("TOTAL RX / TX"), text("PACKETS / ERR"),
+]);
 
-const processColumns = [
-  "RANK / PROCESS",
-  "PID",
-  "SOCKETS",
-  "REMOTE HOSTS",
-  "PROTOCOLS",
-] as const;
+const processColumns = computed(() => [
+  text("RANK / PROCESS"), "PID", text("SOCKETS"), text("REMOTE HOSTS"), text("PROTOCOLS"),
+]);
 
-const connectionColumns = [
-  "SERVICE / PROTO",
-  "PROCESS / PID",
-  "LOCAL ENDPOINT",
-  "REMOTE ENDPOINT",
-  "STATE / NET",
-] as const;
+const connectionColumns = computed(() => [
+  text("SERVICE / PROTO"), text("PROCESS / PID"), text("LOCAL ENDPOINT"),
+  text("REMOTE ENDPOINT"), text("STATE / NET"),
+]);
 
 const lanConnections = computed(() =>
   connections.value.filter((c) => c.is_lan),
@@ -124,21 +114,21 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
       <div class="metric-main">
         <span class="metric-caption">{{ t("runtime.netThroughput") }}</span>
         <strong class="metric-value memory-value">{{ formatRate(network.rx_bytes_per_sec) }}</strong>
-        <div class="metric-state"><span>TRANSMIT RATE (TX)</span><b>{{ formatRate(network.tx_bytes_per_sec) }}</b></div>
+        <div class="metric-state"><span>{{ text("TRANSMIT RATE (TX)") }}</span><b>{{ formatRate(network.tx_bytes_per_sec) }}</b></div>
         <div class="metric-state"><span>{{ t("network.totalRx") }}</span><b>{{ formatBytes(network.total_rx_bytes) }}</b></div>
         <div class="metric-state"><span>{{ t("network.totalTx") }}</span><b>{{ formatBytes(network.total_tx_bytes) }}</b></div>
       </div>
       <div class="chart-console">
         <div class="chart-heading">
-          <span>DUAL-CHANNEL RX / TX TRACE</span><span>PEAK SCALE {{ formatRate(networkPeakRate) }}</span>
+          <span>{{ text("DUAL-CHANNEL RX / TX TRACE") }}</span><span>{{ text("PEAK SCALE") }} {{ formatRate(networkPeakRate) }}</span>
         </div>
-        <svg class="history-chart" viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" aria-label="Recent network receive and transmit history">
+        <svg class="history-chart" viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" :aria-label="text('Recent network receive and transmit history')">
           <path class="chart-grid" d="M0 1H1000 M0 50H1000 M0 99H1000"/>
           <path v-if="networkRxSamples.length > 1" class="chart-area memory-area" :d="`${chartPath(networkRxSamples, networkPeakRate)} L1000,100 L0,100 Z`"/>
           <path class="chart-line memory-line" :d="chartPath(networkRxSamples, networkPeakRate)"/>
           <path class="chart-line cpu-line" :d="chartPath(networkTxSamples, networkPeakRate)"/>
         </svg>
-        <div class="chart-axis"><span>−4.5 MIN</span><span>−2 MIN</span><span>NOW</span></div>
+        <div class="chart-axis"><span>{{ text("−4.5 MIN") }}</span><span>{{ text("−2 MIN") }}</span><span>{{ text("NOW") }}</span></div>
       </div>
     </div>
 
@@ -183,9 +173,9 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
         heading-class="network-process-heading"
         row-class="network-process-row"
         :empty="!processes.length"
-        empty-message="NO ACTIVE NETWORK PROCESSES DETECTED"
-        section-title="PROCESS NETWORK LEDGER"
-        section-subtitle="UNPRIVILEGED SOCKET ATTRIBUTION · TOP 20"
+        :empty-message="text('NO ACTIVE NETWORK PROCESSES DETECTED')"
+        :section-title="text('PROCESS NETWORK LEDGER')"
+        :section-subtitle="text('UNPRIVILEGED SOCKET ATTRIBUTION · TOP 20')"
         :key-prop="(proc) => proc.pid"
       >
         <template #row="{ item: proc, index }">
@@ -194,9 +184,9 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
             <b :title="proc.name">{{ proc.name }}</b>
           </span>
           <span class="process-pid">{{ proc.pid }}</span>
-          <span class="process-pid">{{ proc.connection_count }} sockets</span>
+          <span class="process-pid">{{ proc.connection_count }} {{ text("sockets") }}</span>
           <span class="process-pid" :title="proc.remote_hosts.join(', ')">
-            {{ proc.remote_hosts.length ? `${proc.remote_hosts.length} remotes` : "local only" }}
+            {{ proc.remote_hosts.length ? `${proc.remote_hosts.length} ${text("remotes")}` : text("local only") }}
           </span>
           <span class="process-pid">
             <span v-for="proto in proc.protocols" :key="proto" class="proto-badge">{{ proto }}</span>
@@ -212,9 +202,9 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
         heading-class="network-connection-heading"
         row-class="network-connection-row"
         :empty="!connections.length"
-        empty-message="NO ACTIVE CONNECTIONS"
-        section-title="ACTIVE SOCKET CONNECTIONS"
-        section-subtitle="BOUNDED ENDPOINT ROSTER · TOP 50"
+        :empty-message="text('NO ACTIVE CONNECTIONS')"
+        :section-title="text('ACTIVE SOCKET CONNECTIONS')"
+        :section-subtitle="text('BOUNDED ENDPOINT ROSTER · TOP 50')"
         :key-prop="(conn, i) => `${conn.local_port}-${conn.remote_port ?? 0}-${i}`"
       >
         <template #row="{ item: conn }">
@@ -223,7 +213,7 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
               {{ conn.service_label || conn.protocol }}
             </span>
           </span>
-          <span class="process-pid" :title="conn.process_name || 'untracked'">
+          <span class="process-pid" :title="conn.process_name || text('untracked')">
             {{ conn.process_name || (conn.pid != null ? `pid-${conn.pid}` : 'system') }}
           </span>
           <span class="process-pid">{{ conn.local_addr }}:{{ conn.local_port }}</span>
@@ -231,7 +221,7 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
             {{ conn.remote_addr ? `${conn.remote_addr}:${conn.remote_port}` : '—' }}
           </span>
           <span class="process-pid">
-            <span class="state-badge">{{ conn.state }}</span>
+            <span class="state-badge">{{ text(conn.state) }}</span>
             <span class="net-scope-badge" :class="conn.is_lan ? 'scope-lan' : 'scope-wan'">
               {{ conn.is_lan ? 'LAN' : 'WAN' }}
             </span>
@@ -248,9 +238,9 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
         heading-class="network-table-heading"
         row-class="network-interface-row"
         :empty="!network.interfaces.length"
-        empty-message="NO NETWORK INTERFACES DETECTED"
-        section-title="PHYSICAL & VIRTUAL INTERFACES"
-        section-subtitle="SORTED BY LIVE THROUGHPUT · TOP 20"
+        :empty-message="text('NO NETWORK INTERFACES DETECTED')"
+        :section-title="text('PHYSICAL & VIRTUAL INTERFACES')"
+        :section-subtitle="text('SORTED BY LIVE THROUGHPUT · TOP 20')"
         :key-prop="(iface) => iface.name"
       >
         <template #row="{ item: iface, index }">
@@ -261,18 +251,18 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
           <span class="process-pid">{{ formatRate(iface.rx_bytes_per_sec) }}</span>
           <span class="process-pid">{{ formatRate(iface.tx_bytes_per_sec) }}</span>
           <span class="process-pid">{{ formatBytes(iface.total_rx_bytes) }} / {{ formatBytes(iface.total_tx_bytes) }}</span>
-          <span class="process-pid">{{ iface.packets_rx + iface.packets_tx }} pkts · {{ iface.errors_rx + iface.errors_tx }} err</span>
+          <span class="process-pid">{{ iface.packets_rx + iface.packets_tx }} {{ text("pkts") }} · {{ iface.errors_rx + iface.errors_tx }} {{ text("err") }}</span>
         </template>
       </DataTable>
     </div>
 
     <div v-else class="astrolabe-console">
       <div class="astrolabe-header">
-        <span>STEAMPUNK CONNECTION ASTROLABE</span>
-        <span>CELESTIAL SOCKET TOPOLOGY</span>
+        <span>{{ text("STEAMPUNK CONNECTION ASTROLABE") }}</span>
+        <span>{{ text("CELESTIAL SOCKET TOPOLOGY") }}</span>
       </div>
       <div class="astrolabe-viewport">
-        <svg class="astrolabe-svg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Connection Astrolabe">
+        <svg class="astrolabe-svg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="text('Connection Astrolabe')">
           <defs>
             <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stop-color="#ffe8a3"/>
@@ -306,8 +296,8 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
           <text :x="ASTROLABE_CX - 190" :y="ASTROLABE_CY + 4" class="astrolabe-cardinal">W · 270°</text>
 
           <!-- Ring Labels -->
-          <text :x="ASTROLABE_CX" :y="ASTROLABE_CY - ASTROLABE_R_LAN - 6" class="astrolabe-ring-label">LAN PERIMETER ({{ lanConnections.length }})</text>
-          <text :x="ASTROLABE_CX" :y="ASTROLABE_CY - ASTROLABE_R_WAN - 6" class="astrolabe-ring-label">WAN CELESTIAL ORBIT ({{ wanConnections.length }})</text>
+          <text :x="ASTROLABE_CX" :y="ASTROLABE_CY - ASTROLABE_R_LAN - 6" class="astrolabe-ring-label">{{ text("LAN PERIMETER") }} ({{ lanConnections.length }})</text>
+          <text :x="ASTROLABE_CX" :y="ASTROLABE_CY - ASTROLABE_R_WAN - 6" class="astrolabe-ring-label">{{ text("WAN CELESTIAL ORBIT") }} ({{ wanConnections.length }})</text>
 
           <!-- Vectors from Center to Nodes -->
           <line
@@ -344,24 +334,24 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
           <!-- Center Compass Gear Hub -->
           <circle :cx="ASTROLABE_CX" :cy="ASTROLABE_CY" r="14" fill="url(#hubGrad)" stroke="#5b4420" stroke-width="1.5"/>
           <circle :cx="ASTROLABE_CX" :cy="ASTROLABE_CY" r="5" fill="#1b140b" stroke="#e5c271" stroke-width="1"/>
-          <text :x="ASTROLABE_CX" :y="ASTROLABE_CY + 26" class="astrolabe-hub-label">LOCAL HOST</text>
+          <text :x="ASTROLABE_CX" :y="ASTROLABE_CY + 26" class="astrolabe-hub-label">{{ text("LOCAL HOST") }}</text>
         </svg>
       </div>
       <div class="astrolabe-metrics">
         <div class="astrolabe-metric-card">
-          <span>ACTIVE SOCKETS</span>
+          <span>{{ t("network.activeSockets") }}</span>
           <b>{{ connections.length }}</b>
         </div>
         <div class="astrolabe-metric-card">
-          <span>LAN NEIGHBORS</span>
+          <span>{{ text("LAN NEIGHBORS") }}</span>
           <b>{{ lanConnections.length }}</b>
         </div>
         <div class="astrolabe-metric-card">
-          <span>WAN DESTINATIONS</span>
+          <span>{{ text("WAN DESTINATIONS") }}</span>
           <b>{{ wanConnections.length }}</b>
         </div>
         <div class="astrolabe-metric-card">
-          <span>ESTABLISHED</span>
+          <span>{{ text("ESTABLISHED") }}</span>
           <b>{{ establishedCount }}</b>
         </div>
       </div>
@@ -369,11 +359,11 @@ const astrolabeNodes = computed<AstrolabeNode[]>(() => {
 
     <div class="panel-status">
       <span class="calibration">✥</span>
-      NETWORK TELEMETRY <i>·</i>
-      {{ processes.length }} PROCESSES <i>·</i>
-      {{ connections.length }} CONNECTIONS <i>·</i>
-      {{ network.interfaces.length }} INTERFACES <i>·</i>
-      3 SECOND SAMPLE
+      {{ text("NETWORK TELEMETRY") }} <i>·</i>
+      {{ processes.length }} {{ text("PROCESSES") }} <i>·</i>
+      {{ connections.length }} {{ text("CONNECTIONS") }} <i>·</i>
+      {{ network.interfaces.length }} {{ text("INTERFACES") }} <i>·</i>
+      {{ text("3 SECOND SAMPLE") }}
     </div>
   </section>
 </template>

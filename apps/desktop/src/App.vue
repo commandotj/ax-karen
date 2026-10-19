@@ -30,7 +30,7 @@ import NetworkView from "./views/NetworkView.vue";
 import RuntimeView from "./views/RuntimeView.vue";
 import { useI18n, type SupportedLocale } from "./i18n";
 
-const { t, locale, supportedLocales, setLocale } = useI18n();
+const { t, text, locale, supportedLocales, setLocale } = useI18n();
 
 const status = ref("Starting monitor");
 const isMacOS = navigator.userAgent.includes("Macintosh");
@@ -91,6 +91,23 @@ const usedMemoryPercent = computed(() => memoryTotal.value
   ? Math.min(100, ((memoryUsed.value ?? 0) / memoryTotal.value) * 100)
   : 0);
 
+function syncTrayStatus(): void {
+  if (!isTauri()) return;
+  const tabLabel = (tabId: string) => t(`nav.${tabId}`);
+  void invoke("update_tray_status", {
+    title: formatTrayTitle(cpu.value, usedMemoryPercent.value),
+    summary: formatTraySummary(cpu.value, usedMemoryPercent.value, battery.value.present, battery.value.percent),
+    toggleWindow: text("Show / Hide Karen"),
+    runtimeLabel: tabLabel("runtime"),
+    cpuLabel: tabLabel("cpu"),
+    memoryLabel: tabLabel("memory"),
+    batteryLabel: tabLabel("battery"),
+    networkLabel: tabLabel("network"),
+    spaceLabel: tabLabel("space"),
+    quitLabel: text("Quit Karen"),
+  });
+}
+
 function receive(event: CliEvent): void {
   if (event.event === "ready") {
     status.value = "Live telemetry";
@@ -122,10 +139,7 @@ function receive(event: CliEvent): void {
       if (typeof network.value.rx_bytes_per_sec === "number") pushSample(networkRxSamples.value, network.value.rx_bytes_per_sec);
       if (typeof network.value.tx_bytes_per_sec === "number") pushSample(networkTxSamples.value, network.value.tx_bytes_per_sec);
     }
-    void invoke("update_tray_status", {
-      title: formatTrayTitle(cpu.value, usedMemoryPercent.value),
-      summary: formatTraySummary(cpu.value, usedMemoryPercent.value, battery.value.present, battery.value.percent),
-    });
+    syncTrayStatus();
   }
   if (event.event === "volumes" && Array.isArray(event.volumes)) {
     volumes.value = event.volumes as Volume[];
@@ -195,9 +209,9 @@ function receive(event: CliEvent): void {
     if (typeof event.unreadable === "number") unreadable.value = event.unreadable;
   }
   if (event.event === "marks_export") {
-    const text = String(event.text ?? "");
-    void navigator.clipboard?.writeText(text).catch(() => undefined);
-    exportStatus.value = event.saved_path ? `SAVED ${String(event.saved_path)}` : `COPIED ${event.format === "prompt" ? "AGENT PROMPT" : "PATH LIST"}`;
+    const exportText = String(event.text ?? "");
+    void navigator.clipboard?.writeText(exportText).catch(() => undefined);
+    exportStatus.value = event.saved_path ? `${text("SAVED")} ${String(event.saved_path)}` : `${text("COPIED")} ${text(event.format === "prompt" ? "AGENT PROMPT" : "PATH LIST")}`;
   }
   if (event.event === "directory_chosen" && typeof event.path === "string") void scan(event.path);
   if (event.event === "reveal_done") status.value = "Live telemetry";
@@ -213,7 +227,7 @@ function receive(event: CliEvent): void {
     reviewScreen.value = true;
   }
   if (event.event === "removal_started") {
-    removalStatus.value = "REMOVAL IN PROGRESS";
+    removalStatus.value = text("REMOVAL IN PROGRESS");
     const selectedVol = volumes.value.find((v) => v.mount_point === selectedVolume.value);
     removal.value = {
       phase: "running", total: Number(review.value?.targets ?? 0), completed: 0, removed: 0, bytes: 0, failed: 0,
@@ -227,12 +241,12 @@ function receive(event: CliEvent): void {
   if (event.event === "removal_item" && removal.value) {
     removal.value.completed += 1;
     if (event.ok === false) {
-      removalStatus.value = `FAILED: ${String(event.error ?? "removal error")}`;
+      removalStatus.value = `${text("FAILED")}: ${String(event.error ?? "removal error")}`;
       removal.value.errors.push(`${String(event.path)} · ${String(event.error ?? "removal error")}`);
     }
   }
   if (event.event === "removal_complete") {
-    removalStatus.value = `REMOVED ${String(event.removed)} · ${formatBytes(Number(event.bytes ?? 0))} · ${String(event.failed)} FAILED`;
+    removalStatus.value = `${text("REMOVED")} ${String(event.removed)} · ${formatBytes(Number(event.bytes ?? 0))} · ${String(event.failed)} ${text("FAILED")}`;
     if (removal.value) {
       Object.assign(removal.value, { phase: "done", removed: Number(event.removed ?? 0), bytes: Number(event.bytes ?? 0), failed: Number(event.failed ?? 0) });
     }
@@ -471,15 +485,16 @@ function closeWindow(): void {
 function onLocaleChange(event: Event): void {
   const target = event.target as HTMLSelectElement;
   setLocale(target.value as SupportedLocale);
+  syncTrayStatus();
 }
 
 const tabItems = computed<TabItem[]>(() => [
-  { id: "runtime", index: "01", label: t("nav.runtime"), badge: cpu.value === null ? "WAIT" : "LIVE" },
-  { id: "cpu", index: "02", label: t("nav.cpu"), badge: cpuProcessesAvailable.value ? "LIVE" : "WAIT" },
-  { id: "memory", index: "03", label: t("nav.memory"), badge: memoryTotal.value === null ? "WAIT" : "LIVE" },
-  { id: "battery", index: "04", label: t("nav.battery"), badge: battery.value.present ? `${battery.value.percent ?? "—"}%` : "AC" },
-  { id: "network", index: "05", label: t("nav.network"), badge: network.value.rx_bytes_per_sec == null ? "WAIT" : "LIVE" },
-  { id: "disk", index: "06", label: t("nav.space"), badge: scanning.value ? "MAP" : treeRoot.value ? "READY" : "OPEN" },
+  { id: "runtime", index: "01", label: t("nav.runtime"), badge: cpu.value === null ? text("WAIT") : text("LIVE") },
+  { id: "cpu", index: "02", label: t("nav.cpu"), badge: cpuProcessesAvailable.value ? text("LIVE") : text("WAIT") },
+  { id: "memory", index: "03", label: t("nav.memory"), badge: memoryTotal.value === null ? text("WAIT") : text("LIVE") },
+  { id: "battery", index: "04", label: t("nav.battery"), badge: battery.value.present ? `${battery.value.percent ?? "—"}%` : text("AC") },
+  { id: "network", index: "05", label: t("nav.network"), badge: network.value.rx_bytes_per_sec == null ? text("WAIT") : text("LIVE") },
+  { id: "disk", index: "06", label: t("nav.space"), badge: scanning.value ? text("MAP") : treeRoot.value ? text("READY") : text("OPEN") },
 ]);
 
 function selectTab(target: TabId): void {
@@ -505,6 +520,7 @@ onMounted(async () => {
     status.value = "Open Karen.app to connect the CLI";
     return;
   }
+  syncTrayStatus();
   unlistenTray = await listen<string>("tray-navigate", ({ payload }) => selectTrayTab(payload));
   cli = new KarenCli(receive);
   try {
@@ -545,24 +561,24 @@ onBeforeUnmount(() => {
           <circle cx="256" cy="368" r="22" fill="#181510"/>
           <circle cx="256" cy="368" r="10" fill="#F0E4C6"/>
         </svg>
-        <span class="brand-name">KAREN</span>
-        <span class="brand-edition">{{ t("masthead.edition") }} · SYSTEM MONITOR</span>
+        <span class="brand-name">KAREN<span v-if="locale === 'zh-CN'"> · 凯衡</span><span v-else-if="locale === 'zh-TW'"> · 凱衡</span></span>
+        <span class="brand-edition">{{ t("masthead.edition") }} · {{ text("SYSTEM MONITOR") }}</span>
       </div>
       <div class="masthead-right">
         <label class="lang-picker">
-          <select :value="locale" aria-label="Select language" @change="onLocaleChange">
+          <select :value="locale" :aria-label="text('Select language')" @change="onLocaleChange">
             <option v-for="item in supportedLocales" :key="item.code" :value="item.code">
               {{ item.nativeName }}
             </option>
           </select>
         </label>
         <div class="telemetry-state" :class="{ fault: status.includes('fault') || status.includes('unavailable') }">
-          <span class="state-lamp"></span><span>{{ status }}</span><span class="state-divider">/</span><span>LOCAL</span>
+          <span class="state-lamp"></span><span>{{ text(status) }}</span><span class="state-divider">/</span><span>{{ text("LOCAL") }}</span>
         </div>
-        <div class="window-controls" aria-label="Window controls">
-          <button aria-label="Minimize window" title="Minimize" @mousedown.stop @click.stop="minimizeWindow"><i class="minimize-glyph"></i></button>
-          <button aria-label="Toggle window size" title="Toggle size" @mousedown.stop @click.stop="toggleMaximizeWindow"><i class="maximize-glyph"></i></button>
-          <button class="close-control" aria-label="Close window" title="Close" @mousedown.stop @click.stop="closeWindow"><i class="close-glyph"></i></button>
+        <div class="window-controls" :aria-label="text('Window controls')">
+          <button :aria-label="text('Minimize window')" :title="text('Minimize')" @mousedown.stop @click.stop="minimizeWindow"><i class="minimize-glyph"></i></button>
+          <button :aria-label="text('Toggle window size')" :title="text('Toggle size')" @mousedown.stop @click.stop="toggleMaximizeWindow"><i class="maximize-glyph"></i></button>
+          <button class="close-control" :aria-label="text('Close window')" :title="text('Close')" @mousedown.stop @click.stop="closeWindow"><i class="close-glyph"></i></button>
         </div>
       </div>
     </header>
