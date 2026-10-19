@@ -37,6 +37,7 @@ jobs:
 
       - name: Report version pull request
         env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           PRS_CREATED: ${{ steps.release.outputs.prs_created }}
           RELEASE_PRS: ${{ steps.release.outputs.prs }}
         run: |
@@ -51,5 +52,19 @@ jobs:
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Release Please completed without opening or updating a version pull request."
+            # skip-github-release keeps the merged version PR "pending" until main publishes the tag,
+            # so Release Please aborts here by design. Tell that wait apart from a real no-op.
+            merged_pending=$(gh pr list --repo "$GITHUB_REPOSITORY" --base develop --state merged \
+              --label "autorelease: pending" --json number --jq 'length')
+            if [ "$merged_pending" -gt 0 ]; then
+              promotion=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main \
+                --head "$GITHUB_REPOSITORY_OWNER:develop" --state open --json url --jq '.[0].url // empty')
+              if [ -n "$promotion" ]; then
+                echo "No version PR: waiting for production tag after promotion ($promotion). No tag or release exists yet." | tee -a "$GITHUB_STEP_SUMMARY"
+              else
+                echo "::warning::Merged version PR is still autorelease: pending and no promotion PR is open. Check the Promote workflow."
+              fi
+            else
+              echo "Release Please completed without opening or updating a version pull request."
+            fi
           fi
