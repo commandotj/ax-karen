@@ -47,6 +47,7 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--gold); out
 .brand-seal { width: 26px; height: 26px; flex: 0 0 auto; display: block; border-radius: 6px; box-shadow: 0 1px 4px #00000080, inset 0 0 0 1px #c9a24d40; }
 .brand-name { color: #f0e3c7; font: 600 14px 'Barlow Condensed', sans-serif; letter-spacing: .22em; }
 .brand-edition { margin-left: 5px; padding-left: 13px; border-left: 1px solid #57482d; color: var(--muted); font: 12px 'Spline Sans Mono', monospace; letter-spacing: .14em; }
+.brand-version { margin-left: 8px; color: var(--muted); font: 11px 'Spline Sans Mono', monospace; letter-spacing: .08em; }
 .masthead-right { height: 100%; display: flex; align-items: center; gap: 22px; }
 .lang-picker { display: flex; align-items: center; gap: 6px; color: var(--muted); font: 11px 'Spline Sans Mono', monospace; letter-spacing: .08em; }
 .lang-picker select { background: radial-gradient(circle at 36% 28%, #2d2618, #16130b 72%); border: 1px solid #755f36; border-radius: 4px; color: var(--gold); padding: 2px 6px; font-size: 11px; font-family: inherit; cursor: pointer; outline: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), inset 0 0 4px rgba(201, 162, 77, 0.15); transition: border-color 0.15s ease; }

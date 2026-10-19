@@ -125,6 +125,10 @@ export const fr: LocaleMessageSchema = {
     installing: "Installation…",
     later: "Plus tard",
     failed: "Échec de la mise à jour. Réessayez plus tard.",
+    checkMenu: "Rechercher des mises à jour…",
+    upToDate: "Karen {version} est à jour.",
+    checkFailed: "Impossible de rechercher des mises à jour.",
+    dismiss: "OK",
   },
   review: {
     title: "EXAMEN ET RÉCUPÉRATION",

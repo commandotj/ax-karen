@@ -141,6 +141,10 @@ export interface LocaleMessageSchema {
     installing: string;
     later: string;
     failed: string;
+    checkMenu: string;
+    upToDate: string;
+    checkFailed: string;
+    dismiss: string;
   };
   review: {
     title: string;

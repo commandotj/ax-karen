@@ -63,10 +63,11 @@ describe("i18n engine and dictionaries", () => {
       }
       expect(dict.space.insideMarked).toContain("{name}");
       expect(dict.review.title).toBeTruthy();
-      for (const key of ["available", "install", "installing", "later", "failed"] as const) {
+      for (const key of ["available", "install", "installing", "later", "failed", "checkMenu", "upToDate", "checkFailed", "dismiss"] as const) {
         expect(dict.update[key], `${locale.code}.update.${key}`).toBeTruthy();
       }
       expect(dict.update.available).toContain("{version}");
+      expect(dict.update.upToDate).toContain("{version}");
       expect(dict.dataTable.noData).toBeTruthy();
     }
   });
