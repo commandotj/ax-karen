@@ -157,6 +157,52 @@ fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
+/// Matches `minWidth` and `minHeight` in tauri.conf.json; a smaller monitor wins.
+const MIN_WINDOW: (f64, f64) = (760.0, 600.0);
+
+fn three_quarters(width: f64, height: f64) -> (f64, f64) {
+    (
+        (width * 0.75).max(MIN_WINDOW.0).min(width),
+        (height * 0.75).max(MIN_WINDOW.1).min(height),
+    )
+}
+
+/// Top-left corner that centers `size` on a monitor, horizontally and
+/// vertically. Computed here because `Window::center` can run before a resize
+/// has taken effect and then centers the old size.
+fn centered(
+    origin: (f64, f64),
+    monitor: (f64, f64),
+    size: (f64, f64),
+) -> (f64, f64) {
+    (
+        origin.0 + (monitor.0 - size.0) / 2.0,
+        origin.1 + (monitor.1 - size.1) / 2.0,
+    )
+}
+
+/// Sizes the window from the monitor it opens on; the configured size stays
+/// when the monitor cannot be read.
+fn fit_main_window(app: &tauri::App) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    let Ok(Some(monitor)) = window.current_monitor() else {
+        return;
+    };
+    let scale = monitor.scale_factor();
+    let screen = monitor.size().to_logical::<f64>(scale);
+    let origin = monitor.position().to_logical::<f64>(scale);
+    let size = three_quarters(screen.width, screen.height);
+    let (x, y) = centered(
+        (origin.x, origin.y),
+        (screen.width, screen.height),
+        size,
+    );
+    let _ = window.set_size(tauri::LogicalSize::new(size.0, size.1));
+    let _ = window.set_position(tauri::LogicalPosition::new(x, y));
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -165,9 +211,43 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             setup_tray(app)?;
+            fit_main_window(app);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![update_tray_status])
         .run(tauri::generate_context!())
         .expect("failed to run Karen desktop");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{centered, three_quarters};
+
+    #[test]
+    fn window_is_three_quarters_of_the_monitor() {
+        assert_eq!(three_quarters(1920.0, 1080.0), (1440.0, 810.0));
+        assert_eq!(three_quarters(2560.0, 1440.0), (1920.0, 1080.0));
+    }
+
+    #[test]
+    fn window_never_drops_below_the_configured_minimum() {
+        assert_eq!(three_quarters(800.0, 600.0), (760.0, 600.0));
+    }
+
+    #[test]
+    fn window_is_centered_on_its_monitor() {
+        assert_eq!(
+            centered((0.0, 0.0), (1920.0, 1080.0), (1440.0, 810.0)),
+            (240.0, 135.0)
+        );
+        assert_eq!(
+            centered((1920.0, -200.0), (2560.0, 1440.0), (1920.0, 1080.0)),
+            (2240.0, -20.0)
+        );
+    }
+
+    #[test]
+    fn window_never_exceeds_the_monitor() {
+        assert_eq!(three_quarters(700.0, 500.0), (700.0, 500.0));
+    }
 }
