@@ -1,6 +1,6 @@
 # RFC 0031: In-app auto-update (Umbrella)
 
-**Status:** Approved
+**Status:** Implemented
 
 **Type:** Umbrella
 
