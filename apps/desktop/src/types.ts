@@ -111,6 +111,10 @@ export type BlockedMark = {
 
 export type PowerPreset = "miser" | "balanced" | "aggressive" | "drain";
 
+export type RemovalFailureCode = "safety_guard" | "permission_denied" | "not_found" | "other";
+
+export type RemovalIssue = { path: string; code: RemovalFailureCode };
+
 export type RemovalState = {
   phase: "running" | "done";
   total: number;
@@ -118,7 +122,7 @@ export type RemovalState = {
   removed: number;
   bytes: number;
   failed: number;
-  errors: string[];
+  errors: RemovalIssue[];
   freeBefore: number | null;
   freeAfter: number | null;
 };

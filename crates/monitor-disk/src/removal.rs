@@ -978,6 +978,54 @@ fn trash_dir_from(
     Some(data.join("Trash"))
 }
 
+/// Stable error category sent with a failed removal item.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RemovalFailureCode {
+    SafetyGuard,
+    PermissionDenied,
+    NotFound,
+    Other,
+}
+
+impl RemovalFailureCode {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::SafetyGuard => "safety_guard",
+            Self::PermissionDenied => "permission_denied",
+            Self::NotFound => "not_found",
+            Self::Other => "other",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RemovalFailure {
+    /// Category for machine-readable recovery guidance.
+    pub code: RemovalFailureCode,
+    /// Original diagnostic retained for CLI compatibility and support.
+    pub detail: String,
+}
+
+impl RemovalFailure {
+    const fn from_io(kind: io::ErrorKind, detail: String) -> Self {
+        let code = match kind {
+            io::ErrorKind::PermissionDenied => {
+                RemovalFailureCode::PermissionDenied
+            }
+            io::ErrorKind::NotFound => RemovalFailureCode::NotFound,
+            _ => RemovalFailureCode::Other,
+        };
+        Self { code, detail }
+    }
+
+    fn safety_guard(detail: impl Into<String>) -> Self {
+        Self {
+            code: RemovalFailureCode::SafetyGuard,
+            detail: detail.into(),
+        }
+    }
+}
+
 /// What a running removal reports.
 #[derive(Clone, Debug)]
 pub enum RemovalEvent {
@@ -987,7 +1035,7 @@ pub enum RemovalEvent {
     Item {
         path: PathBuf,
         bytes: u64,
-        outcome: Result<(), String>,
+        outcome: Result<(), RemovalFailure>,
     },
     Done {
         removed: u64,
@@ -1036,8 +1084,9 @@ pub fn spawn(plan: Plan, mode: RemovalMode) -> RemovalHandle {
         let _ = sender.send(RemovalEvent::Item {
             path: PathBuf::new(),
             bytes: 0,
-            outcome: Err(format!(
-                "could not start the removal worker: {error}"
+            outcome: Err(RemovalFailure::from_io(
+                error.kind(),
+                format!("could not start the removal worker: {error}"),
             )),
         });
     }
@@ -1097,14 +1146,17 @@ fn run(
                 )
             });
         let outcome = if let Some(reason) = reason {
-            Err(io::Error::other(reason))
+            Err(RemovalFailure::safety_guard(reason))
         } else {
-            match mode {
+            let result = match mode {
                 RemovalMode::Permanent => {
                     remove_permanently(&target.path, &plan.root)
                 }
                 RemovalMode::Trash => move_to_trash(&target.path, backend),
-            }
+            };
+            result.map_err(|error| {
+                RemovalFailure::from_io(error.kind(), error.to_string())
+            })
         };
         if outcome.is_ok() {
             removed += 1;
@@ -1115,7 +1167,7 @@ fn run(
         let _ = sender.send(RemovalEvent::Item {
             path: target.path.clone(),
             bytes: target.bytes,
-            outcome: outcome.map_err(|error| error.to_string()),
+            outcome,
         });
     }
 
@@ -1600,6 +1652,35 @@ fn deletion_date() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn removal_failures_have_stable_categories() {
+        assert_eq!(
+            RemovalFailure::from_io(
+                io::ErrorKind::PermissionDenied,
+                String::new()
+            )
+            .code,
+            RemovalFailureCode::PermissionDenied
+        );
+        assert_eq!(
+            RemovalFailure::from_io(io::ErrorKind::NotFound, String::new())
+                .code,
+            RemovalFailureCode::NotFound
+        );
+        assert_eq!(
+            RemovalFailure::from_io(
+                io::ErrorKind::Other,
+                "arbitrary failure".into()
+            )
+            .code,
+            RemovalFailureCode::Other
+        );
+        assert_eq!(
+            RemovalFailure::safety_guard("blocked").code,
+            RemovalFailureCode::SafetyGuard
+        );
+    }
     use tempfile::TempDir;
 
     fn target(path: &Path, bytes: u64) -> Target {
@@ -2247,7 +2328,8 @@ mod tests {
             thread::sleep(std::time::Duration::from_millis(1));
         }
         let error = outcome.expect("an item").expect_err("refused");
-        assert!(error.contains("through a link"), "{error}");
+        assert_eq!(error.code, RemovalFailureCode::SafetyGuard);
+        assert!(error.detail.contains("through a link"), "{error:?}");
         assert!(keep.path().join("x/precious.bin").exists());
     }
 
@@ -2884,7 +2966,8 @@ mod tests {
         let events =
             run_here(&plan, RemovalMode::Permanent, TrashBackend::MacOs, false);
         let item = format!("{:?}", events[1]);
-        assert!(item.contains("outcome: Err(\"part of the system"), "{item}");
+        assert!(item.contains("code: SafetyGuard"), "{item}");
+        assert!(item.contains("part of the system"), "{item}");
     }
 
     #[cfg(unix)]

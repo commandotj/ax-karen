@@ -48,3 +48,4 @@
 
 
 
+- [x] Implement RFC 0036: Fix marked directory removal (RFC 0036)

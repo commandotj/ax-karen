@@ -160,6 +160,10 @@ export const ko: LocaleMessageSchema = {
     close: "닫기: Esc",
   },
   interfaceText: {
+    'Removal blocked by a safety rule. Review the marked path and volume boundary.': '안전 규칙으로 삭제가 차단되었습니다. 표시한 경로와 볼륨 경계를 확인하세요.',
+    'Access denied. Check item permissions, then retry.': '접근이 거부되었습니다. 항목 권한을 확인한 뒤 다시 시도하세요.',
+    'Item no longer exists. Rescan to refresh marked paths.': '항목이 더 이상 없습니다. 다시 스캔해 표시된 경로를 새로 고치세요.',
+    'Could not remove this item. Check that it is available, then retry.': '항목을 삭제할 수 없습니다. 항목을 사용할 수 있는지 확인한 뒤 다시 시도하세요.',
     "Starting monitor": "모니터 시작 중",
     "Live telemetry": "실시간 시스템 정보",
     "Mapping disk": "디스크 매핑 중",
