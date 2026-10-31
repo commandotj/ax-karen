@@ -160,6 +160,10 @@ export const ru: LocaleMessageSchema = {
     close: "Закрыть: Esc",
   },
   interfaceText: {
+    'Removal blocked by a safety rule. Review the marked path and volume boundary.': 'Удаление заблокировано правилом безопасности. Проверьте отмеченный путь и границы тома.',
+    'Access denied. Check item permissions, then retry.': 'Доступ запрещён. Проверьте разрешения для элемента и повторите попытку.',
+    'Item no longer exists. Rescan to refresh marked paths.': 'Элемент больше не существует. Повторите сканирование, чтобы обновить отмеченные пути.',
+    'Could not remove this item. Check that it is available, then retry.': 'Не удалось удалить элемент. Проверьте его доступность и повторите попытку.',
     "Starting monitor": "Запуск системного монитора",
     "Live telemetry": "Телеметрия в реальном времени",
     "Mapping disk": "Сканирование диска",

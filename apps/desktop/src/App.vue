@@ -247,8 +247,11 @@ function receive(event: CliEvent): void {
   if (event.event === "removal_item" && removal.value) {
     removal.value.completed += 1;
     if (event.ok === false) {
-      removalStatus.value = `${text("FAILED")}: ${String(event.error ?? "removal error")}`;
-      removal.value.errors.push(`${String(event.path)} · ${String(event.error ?? "removal error")}`);
+      const code = ["safety_guard", "permission_denied", "not_found"].includes(String(event.error_code))
+        ? String(event.error_code) as RemovalState["errors"][number]["code"]
+        : "other";
+      removalStatus.value = `${text("FAILED")}: ${text(removalFailureMessage(code))}`;
+      removal.value.errors.push({ path: String(event.path ?? ""), code });
     }
   }
   if (event.event === "removal_complete") {
@@ -427,6 +430,15 @@ function revealPath(path: string | null): void {
 
 function chooseDirectory(): void {
   void cli?.send({ id: crypto.randomUUID(), command: "choose_directory" });
+}
+
+function removalFailureMessage(code: RemovalState["errors"][number]["code"]): string {
+  switch (code) {
+    case "safety_guard": return "Removal blocked by a safety rule. Review the marked path and volume boundary.";
+    case "permission_denied": return "Access denied. Check item permissions, then retry.";
+    case "not_found": return "Item no longer exists. Rescan to refresh marked paths.";
+    default: return "Could not remove this item. Check that it is available, then retry.";
+  }
 }
 
 function openFullDiskAccess(): void {

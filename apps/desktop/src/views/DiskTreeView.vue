@@ -67,6 +67,14 @@ const emit = defineEmits<{
 }>();
 
 const treeModes: readonly TreeMode[] = ["size", "files", "age"] as const;
+function removalFailureText(code: RemovalState["errors"][number]["code"]): string {
+  switch (code) {
+    case "safety_guard": return text("Removal blocked by a safety rule. Review the marked path and volume boundary.");
+    case "permission_denied": return text("Access denied. Check item permissions, then retry.");
+    case "not_found": return text("Item no longer exists. Rescan to refresh marked paths.");
+    default: return text("Could not remove this item. Check that it is available, then retry.");
+  }
+}
 const powerPresets = computed(() => [
   { id: "miser" as const, label: text("Miser"), note: text("fewest workers, lowest battery use") },
   { id: "balanced" as const, label: text("Balanced"), note: text("default scan speed") },
@@ -931,7 +939,10 @@ onBeforeUnmount(() => {
           <div class="removal-progress" role="progressbar" :aria-valuenow="removal.completed" aria-valuemin="0" :aria-valuemax="removal.total">
             <i :style="{ width: `${removal.total ? removal.completed / removal.total * 100 : 0}%` }"></i>
           </div>
-          <div v-for="failure in removal.errors" :key="failure" class="review-blocked"><span>{{ failure }}</span></div>
+          <div v-for="failure in removal.errors" :key="failure.path" class="review-blocked">
+            <strong>{{ failure.path }}</strong>
+            <span>{{ removalFailureText(failure.code) }}</span>
+          </div>
         </div>
         <div class="review-actions">
           <button class="review-commit" :disabled="removal.phase === 'running'" @click="emit('finishRemoval')">{{ text("RETURN TO MAP") }}</button>

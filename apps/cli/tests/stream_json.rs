@@ -1004,11 +1004,95 @@ fn permanent_removal_inside_a_tempdir_streams_progress_items_and_completion() {
     assert_eq!(item["path"], doomed_string);
     assert_eq!(item["ok"], true);
     assert!(item["error"].is_null());
+    assert!(item["error_code"].is_null());
     let complete = session.until("removal_complete");
     assert_eq!(complete["removed"], 1);
     assert_eq!(complete["failed"], 0);
     assert!(!doomed.exists());
     assert!(keep.exists());
+    session.finish();
+}
+
+#[test]
+fn removal_item_keeps_diagnostic_and_adds_stable_not_found_code() {
+    let root = tempfile::tempdir().expect("create tree root");
+    let doomed = root.path().join("doomed");
+    fs::create_dir(&doomed).expect("create doomed dir");
+    let root_string = root.path().to_string_lossy().into_owned();
+    let doomed_string = doomed.to_string_lossy().into_owned();
+    let mut session = Session::start();
+    session.scan(&root_string);
+    session.reply(serde_json::json!({
+        "id":"mark","command":"toggle_mark","root":root_string,"path":doomed_string
+    }));
+    assert_eq!(
+        session.reply(serde_json::json!({
+            "id":"review","command":"review","root":root_string
+        }))["targets"],
+        1
+    );
+    fs::remove_dir(&doomed)
+        .expect("remove target after review to reproduce race");
+    session.reply(serde_json::json!({
+        "id":"go","command":"confirm_remove","mode":"permanent"
+    }));
+    session.until("removal_progress");
+    let item = session.until("removal_item");
+    assert_eq!(item["ok"], false);
+    assert_eq!(item["error_code"], "not_found");
+    assert!(
+        item["error"]
+            .as_str()
+            .is_some_and(|detail| !detail.is_empty())
+    );
+    assert_eq!(session.until("removal_complete")["failed"], 1);
+    session.finish();
+}
+
+#[cfg(unix)]
+#[test]
+fn permission_denied_removal_reports_code_and_keeps_mark_for_retry() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tempfile::tempdir().expect("create tree root");
+    let doomed = root.path().join("doomed");
+    fs::create_dir(&doomed).expect("create doomed dir");
+    fs::write(doomed.join("child"), b"keep").expect("create child");
+    let root_string = root.path().to_string_lossy().into_owned();
+    let doomed_string = doomed.to_string_lossy().into_owned();
+    let mut session = Session::start();
+    session.scan(&root_string);
+    session.reply(serde_json::json!({
+        "id":"mark","command":"toggle_mark","root":root_string,"path":doomed_string
+    }));
+    assert_eq!(
+        session.reply(serde_json::json!({
+            "id":"review","command":"review","root":root_string
+        }))["targets"],
+        1
+    );
+    fs::set_permissions(&doomed, fs::Permissions::from_mode(0o000))
+        .expect("deny directory access");
+    session.reply(serde_json::json!({
+        "id":"go","command":"confirm_remove","mode":"permanent"
+    }));
+    session.until("removal_progress");
+    let item = session.until("removal_item");
+    assert_eq!(item["ok"], false);
+    assert_eq!(item["error_code"], "permission_denied");
+    assert!(
+        item["error"]
+            .as_str()
+            .is_some_and(|detail| !detail.is_empty())
+    );
+    assert_eq!(session.until("removal_complete")["failed"], 1);
+    fs::set_permissions(&doomed, fs::Permissions::from_mode(0o700))
+        .expect("restore directory access");
+    assert!(doomed.join("child").exists());
+    let marks = session.reply(serde_json::json!({
+        "id":"marks","command":"export_marks","root":root_string,"format":"paths","save":false
+    }));
+    assert_eq!(marks["text"], format!("{doomed_string}\n"));
     session.finish();
 }
 

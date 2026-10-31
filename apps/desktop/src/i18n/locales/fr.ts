@@ -160,6 +160,10 @@ export const fr: LocaleMessageSchema = {
     close: "Fermer : Échap",
   },
   interfaceText: {
+    'Removal blocked by a safety rule. Review the marked path and volume boundary.': 'Suppression bloquée par une règle de sécurité. Vérifiez le chemin marqué et la limite du volume.',
+    'Access denied. Check item permissions, then retry.': 'Accès refusé. Vérifiez les autorisations de l’élément, puis réessayez.',
+    'Item no longer exists. Rescan to refresh marked paths.': 'L’élément n’existe plus. Relancez l’analyse pour actualiser les chemins marqués.',
+    'Could not remove this item. Check that it is available, then retry.': 'Impossible de supprimer cet élément. Vérifiez qu’il est disponible, puis réessayez.',
     "Starting monitor": "Démarrage du moniteur",
     "Live telemetry": "Télémétrie en direct",
     "Mapping disk": "Cartographie du disque",
