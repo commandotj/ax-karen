@@ -1,5 +1,9 @@
 # Task Tracking
 
+## Active
+
+- [ ] Implement RFC 0037: Use feature branches into main with manual release bumps (RFC 0037)
+
 ## Done
 - [x] Implement RFC 0016: Windows desktop support (RFC 0016)
 - [x] Implement RFC 0018: Cover platform-dependent code with integration tests (RFC 0018)
