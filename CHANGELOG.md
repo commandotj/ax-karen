@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.16.0](https://github.com/commandotj/ax-karen/compare/v0.15.0...v0.16.0) (2026-11-08)
+
+### Features
+
+* **release:** use mainline feature branches targeting main and manual version bumps (RFC 0037)
+* **ci:** transition to feature-branch-to-main and manual release flow
+
+### Bug Fixes
+
+* **disk:** make removal failures actionable and report reasons (RFC 0036)
+
 ## [0.15.0](https://github.com/commandotj/ax-karen/compare/v0.14.0...v0.15.0) (2026-11-08)
 
 
