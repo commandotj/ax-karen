@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 permissions:
   contents: read
@@ -16,62 +16,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  promotion-guard:
-    name: Promotion source guard (main)
-    if: github.base_ref == 'main'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Verify PR source branch and repository
-        env:
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          BASE_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "Checking promotion pull request..."
-          echo "  Base repository: $BASE_REPO"
-          echo "  Head repository: $HEAD_REPO"
-          echo "  Head ref:        $HEAD_REF"
-
-          if [ "$HEAD_REPO" != "$BASE_REPO" ]; then
-            echo "Error: Direct PRs into main from forks are not allowed. PR must originate from internal repository '$BASE_REPO'." >&2
-            exit 1
-          fi
-
-          if [ "$HEAD_REF" != "develop" ]; then
-            echo "Error: Only 'develop' branch may be promoted into 'main'. Received source ref: '$HEAD_REF'." >&2
-            exit 1
-          fi
-
-          pending_release_pr=$(gh pr list \
-            --repo "$GITHUB_REPOSITORY" \
-            --base develop \
-            --state open \
-            --label "autorelease: pending" \
-            --json number \
-            --jq '.[0].number // empty')
-          if [ -n "$pending_release_pr" ]; then
-            echo "Error: Release PR #$pending_release_pr must merge before develop can be promoted." >&2
-            exit 1
-          fi
-
-          echo "Promotion source guard passed: PR targets main from internal develop branch."
-
-      - uses: pnpm/action-setup@v5
-        with:
-          version: 10.11.0
-          run_install: false
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          package-manager-cache: false
-
-      - name: Validate synchronized versioning
-        run: node scripts/check-versions.mjs
-
   check:
     name: Build and test (${{ matrix.name }})
     strategy:
