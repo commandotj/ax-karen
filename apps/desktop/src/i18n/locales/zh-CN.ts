@@ -171,6 +171,10 @@ export const zhCN: LocaleMessageSchema = {
     close: "关闭弹窗: Esc",
   },
   interfaceText: {
+    'Removal blocked by a safety rule. Review the marked path and volume boundary.': '删除操作被安全规则拦截。请检查标记路径和卷边界。',
+    'Access denied. Check item permissions, then retry.': '访问被拒绝。请检查项目权限后重试。',
+    'Item no longer exists. Rescan to refresh marked paths.': '项目已不存在。请重新扫描以刷新标记路径。',
+    'Could not remove this item. Check that it is available, then retry.': '无法删除此项目。请确认项目可用后重试。',
     "SYSTEM MONITOR": "系统监控",
     "Select language": "选择语言",
     "LOCAL": "本机",

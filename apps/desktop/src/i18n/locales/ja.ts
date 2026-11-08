@@ -171,6 +171,10 @@ export const ja: LocaleMessageSchema = {
     close: "閉じる: Esc",
   },
   interfaceText: {
+    'Removal blocked by a safety rule. Review the marked path and volume boundary.': '安全ルールにより削除がブロックされました。マークしたパスとボリューム境界を確認してください。',
+    'Access denied. Check item permissions, then retry.': 'アクセスが拒否されました。項目の権限を確認して再試行してください。',
+    'Item no longer exists. Rescan to refresh marked paths.': '項目はすでに存在しません。再スキャンしてマーク済みパスを更新してください。',
+    'Could not remove this item. Check that it is available, then retry.': '項目を削除できませんでした。項目が利用可能か確認して再試行してください。',
     "SYSTEM MONITOR": "システムモニター",
     "Select language": "言語を選択",
     "LOCAL": "ローカル",

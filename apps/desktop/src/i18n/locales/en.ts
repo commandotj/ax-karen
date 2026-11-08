@@ -1,7 +1,12 @@
 import type { LocaleMessageSchema } from "../types";
 
 export const en: LocaleMessageSchema = {
-  interfaceText: {},
+  interfaceText: {
+    'Removal blocked by a safety rule. Review the marked path and volume boundary.': 'Removal blocked by a safety rule. Review the marked path and volume boundary.',
+    'Access denied. Check item permissions, then retry.': 'Access denied. Check item permissions, then retry.',
+    'Item no longer exists. Rescan to refresh marked paths.': 'Item no longer exists. Rescan to refresh marked paths.',
+    'Could not remove this item. Check that it is available, then retry.': 'Could not remove this item. Check that it is available, then retry.',
+  },
   nav: {
     runtime: "Runtime",
     cpu: "CPU",

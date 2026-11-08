@@ -171,6 +171,10 @@ export const es: LocaleMessageSchema = {
     close: "Cerrar: Esc",
   },
   interfaceText: {
+    'Removal blocked by a safety rule. Review the marked path and volume boundary.': 'La eliminación está bloqueada por una regla de seguridad. Revisa la ruta marcada y el límite del volumen.',
+    'Access denied. Check item permissions, then retry.': 'Acceso denegado. Comprueba los permisos del elemento y vuelve a intentarlo.',
+    'Item no longer exists. Rescan to refresh marked paths.': 'El elemento ya no existe. Vuelve a escanear para actualizar las rutas marcadas.',
+    'Could not remove this item. Check that it is available, then retry.': 'No se pudo eliminar este elemento. Comprueba que esté disponible y vuelve a intentarlo.',
     "Starting monitor": "Iniciando monitor",
     "Live telemetry": "Telemetría en directo",
     "Mapping disk": "Asignando disco",

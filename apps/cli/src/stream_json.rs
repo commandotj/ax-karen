@@ -542,7 +542,15 @@ fn report_removal(
                 bytes,
                 outcome,
             } => {
-                json!({"version":1,"event":"removal_item","path":path,"bytes":bytes,"ok":outcome.is_ok(),"error":outcome.err()})
+                let (ok, error, error_code) = match outcome {
+                    Ok(()) => (true, None, None),
+                    Err(failure) => (
+                        false,
+                        Some(failure.detail),
+                        Some(failure.code.as_str()),
+                    ),
+                };
+                json!({"version":1,"event":"removal_item","path":path,"bytes":bytes,"ok":ok,"error":error,"error_code":error_code})
             }
             RemovalEvent::Done {
                 removed,

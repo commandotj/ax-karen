@@ -171,6 +171,10 @@ export const zhTW: LocaleMessageSchema = {
     close: "關閉視窗: Esc",
   },
   interfaceText: {
+    'Removal blocked by a safety rule. Review the marked path and volume boundary.': '刪除操作遭安全規則阻擋。請檢查標記路徑與磁碟區邊界。',
+    'Access denied. Check item permissions, then retry.': '存取遭拒。請檢查項目權限後重試。',
+    'Item no longer exists. Rescan to refresh marked paths.': '項目已不存在。請重新掃描以更新標記路徑。',
+    'Could not remove this item. Check that it is available, then retry.': '無法刪除此項目。請確認項目可用後重試。',
     "SYSTEM MONITOR": "系統監控",
     "Select language": "選擇語言",
     "LOCAL": "本機",

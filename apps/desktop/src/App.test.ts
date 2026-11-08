@@ -228,7 +228,8 @@ describe("Karen desktop interface", () => {
     emit({ event: "removal_item", path: "/Users/a", ok: false, error: "busy" });
     await flushPromises();
     expect(wrapper.text()).toContain("Removing marked paths");
-    expect(wrapper.text()).toContain("/Users/a · busy");
+    expect(wrapper.text()).toContain("/Users/a");
+    expect(wrapper.text()).toContain("Could not remove this item. Check that it is available, then retry.");
 
     emit({ event: "removal_complete", removed: 1, bytes: GB, failed: 1 });
     await flushPromises();
@@ -1537,11 +1538,13 @@ describe("Karen desktop interface", () => {
       emit({ event: "removal_started", mode: "permanent" });
       emit({ event: "removal_progress" });
       emit({ event: "removal_item", path: "/Users/big.bin", ok: true });
-      emit({ event: "removal_item", path: "/Users/dir", ok: false });
+      emit({ event: "removal_item", path: "/Users/dir", ok: false, error_code: "permission_denied", error: "Permission denied (os error 13)" });
       await flushPromises();
       expect(wrapper.text()).toContain("2 / 2");
       expect(wrapper.text()).toContain("100%");
-      expect(wrapper.text()).toContain("/Users/dir · removal error");
+      expect(wrapper.text()).toContain("/Users/dir");
+      expect(wrapper.text()).toContain("Access denied. Check item permissions, then retry.");
+      expect(wrapper.text()).not.toContain("Permission denied (os error 13)");
       expect(wrapper.find(".review-commit").attributes("disabled")).toBeDefined();
       expect(wrapper.text()).toContain("MEASURING");
 
