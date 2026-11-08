@@ -62,9 +62,9 @@ signed builds, publication, manual rebuild dispatch, and Homebrew update.
 The main GitHub ruleset must stop requiring `Promotion source guard (main)`
 while continuing to require pull requests and the existing build/test checks.
 Retire the `develop` protection ruleset and remote branch only after checking
-that all intended `develop`-only commits have landed or have another explicit
-destination. The current local `develop` has unpushed commits; this RFC must
-not discard them.
+that all commits unique to either branch have landed or have another explicit
+destination. `main` and `develop` currently have divergent commits; this RFC
+must not discard or silently merge them.
 
 ### Manual version bump
 
@@ -126,5 +126,5 @@ created and document exact checks.
 - Main's active ruleset keeps PR and build/test requirements and no longer
   requires the promotion-source check.
 - The Karen `develop` branch and its protection rule are retired only after
-  every intended unpublished commit has an explicit disposition.
+  every commit unique to either branch has an explicit disposition.
 - `systembugtj/luban-homebrew` update behavior remains unchanged.
