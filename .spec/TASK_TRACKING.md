@@ -1,5 +1,9 @@
 # Task Tracking
 
+## Active
+
+- [ ] Implement RFC 0036: Fix marked directory removal (RFC 0036)
+
 ## Done
 - [x] Implement RFC 0016: Windows desktop support (RFC 0016)
 - [x] Implement RFC 0018: Cover platform-dependent code with integration tests (RFC 0018)
@@ -24,7 +28,7 @@
   - [x] Implement RFC 0028: Fix custom title bar drag, cursor and double-click maximize (child of 0001) (RFC 0028)
   - [x] Implement RFC 0029: Enlarge the default window size (child of 0001) (RFC 0029)
   - [x] Implement RFC 0030: Mark the merged release PR as tagged after publishing (child of 0001) (RFC 0030)
-  - [ ] Implement RFC 0034: Add a Check for Updates menu item (child of 0001) (RFC 0034)
+  - [x] Implement RFC 0034: Add a Check for Updates menu item (child of 0001) (RFC 0034)
 - [x] Implement RFC 0020: Network process attribution and connection topology (RFC 0020)
 - [x] Implement RFC 0021: Single-instance desktop application guard (RFC 0021)
 - [x] Implement RFC 0022: Desktop application multi-language internationalization (RFC 0022)
@@ -35,6 +39,8 @@
 - [x] Implement RFC 0031: In-app auto-update (Umbrella) (RFC 0031)
   - [x] Implement RFC 0032: Check for updates and prompt to install (child of 0031) (RFC 0032)
   - [x] Implement RFC 0033: Publish signed updater artifacts and latest.json (child of 0031) (RFC 0033)
+- [x] Implement RFC 0035: Improve auto-update diagnostics and recovery (RFC 0035)
+
 
 
 
