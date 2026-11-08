@@ -139,6 +139,17 @@ export interface LocaleMessageSchema {
     available: string;
     install: string;
     installing: string;
+    checking: string;
+    downloading: string;
+    progress: string;
+    installingPhase: string;
+    restarting: string;
+    restartRequired: string;
+    downloadFailed: string;
+    installFailed: string;
+    retryCheck: string;
+    retryInstall: string;
+    restartNow: string;
     later: string;
     failed: string;
     checkMenu: string;
