@@ -303,6 +303,19 @@ fn main() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
+            let log_path = app.path().home_dir()?.join(".karen").join("logs");
+            app.handle().plugin(
+                tauri_plugin_log::Builder::new()
+                    .clear_targets()
+                    .level(tauri_plugin_log::log::LevelFilter::Info)
+                    .target(tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::Folder {
+                            path: log_path,
+                            file_name: Some("karen".to_owned()),
+                        },
+                    ))
+                    .build(),
+            )?;
             setup_tray(app)?;
             fit_main_window(app);
             Ok(())
