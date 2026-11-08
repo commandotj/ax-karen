@@ -1,6 +1,6 @@
 # RFC 0037: Use feature branches into main with manual release bumps
 
-**Status:** Draft
+**Status:** Approved
 
 ## Summary
 
