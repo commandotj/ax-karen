@@ -47,6 +47,12 @@ Resolve script path from the installed skill, then validate RFCs and run `sync-c
 status or archive changes. Approved RFCs gate implementation; do not hand-edit
 `.spec/ROADMAP.md` or `.spec/TASK_TRACKING.md`.
 
+### RFC worktree and commit rules
+
+- Handle one RFC per work item and commit. Do not mix RFCs in one commit; do not mark an RFC Implemented or archive it until its required commit exists.
+- Start each RFC from a clean worktree. If the worktree is dirty, finish or isolate existing changes before starting another RFC.
+- Before starting an RFC, fetch `origin` and fast-forward local `develop` to the latest `origin/develop`. Create the RFC worktree from that up-to-date base; never start from stale `develop`.
+
 ## Invariants
 
 1. **Disk sizes use allocated bytes** (`st_blocks * 512`) unless apparent size
