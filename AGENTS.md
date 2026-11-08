@@ -47,11 +47,13 @@ Resolve script path from the installed skill, then validate RFCs and run `sync-c
 status or archive changes. Approved RFCs gate implementation; do not hand-edit
 `.spec/ROADMAP.md` or `.spec/TASK_TRACKING.md`.
 
-### RFC worktree and commit rules
+### RFC branch and commit rules
 
-- Handle one RFC per work item and commit. Do not mix RFCs in one commit; do not mark an RFC Implemented or archive it until its required commit exists.
-- Start each RFC from a clean worktree. If the worktree is dirty, finish or isolate existing changes before starting another RFC.
-- Before starting an RFC, fetch `origin` and fast-forward local `develop` to the latest `origin/develop`. Create the RFC worktree from that up-to-date base; never start from stale `develop`.
+- Handle one RFC per work item and commit. Do not mix RFCs in one commit; do not mark an RFC Implemented or archive it until its required commit exists and is pushed.
+- Start each RFC on a clean worktree. If the worktree is dirty, finish or isolate existing changes before starting another RFC.
+- Before starting feature or RFC work, fetch `origin` and base its short-lived branch on the latest `origin/main`. Open the pull request against `main`; do not use `develop` as an integration branch.
+- Keep normal feature PRs version-neutral. For a release, create a separate short-lived branch from latest `origin/main`, manually update the shared version in root `package.json`, `apps/desktop/package.json`, workspace `Cargo.toml`, `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/src-tauri/tauri.conf.json`, and local workspace entries in `Cargo.lock`, then open a version-bump PR to `main`.
+- The version-bump PR must pass `pnpm check:versions`. Merging it triggers the existing `main` release workflow to create the matching tag and publish artifacts.
 
 ## Invariants
 

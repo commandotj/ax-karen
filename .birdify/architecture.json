@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "mapId": "karen-desktop",
-  "revision": 4,
+  "revision": 5,
   "project": {
     "id": "karen",
     "name": "Karen",
@@ -322,17 +322,41 @@
       "role": "backend",
       "name": "Build and Release Pipeline",
       "kind": "local",
-      "responsibility": "GitHub Actions validates release tags, builds CLI and desktop bundles, signs and notarizes macOS output, publishes checksums, and opens a PR updating the Luban Homebrew cask.",
+      "responsibility": "GitHub Actions validates pull requests to main and manually bumped release versions, builds CLI and desktop bundles, signs and notarizes macOS output, publishes checksums, and opens a PR updating the Luban Homebrew cask.",
       "ownership": [
         {
           "kind": "file",
+          "path": "AGENTS.md"
+        },
+        {
+          "kind": "file",
+          "path": ".github/workflows/ci.yml"
+        },
+        {
+          "kind": "file",
           "path": ".github/workflows/release.yml"
+        },
+        {
+          "kind": "file",
+          "path": "scripts/check-versions.mjs"
         }
       ],
       "evidence": [
         {
+          "path": "AGENTS.md",
+          "note": "Repository instructions define main-based feature branches and the manual version-bump pull request."
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "note": "Pull requests to main run version consistency, build, test, lint, and coverage checks."
+        },
+        {
           "path": ".github/workflows/release.yml",
           "note": "Release jobs prepare, build desktop artifacts, publish assets and checksums, then submit the tap update PR."
+        },
+        {
+          "path": "scripts/check-versions.mjs",
+          "note": "The release workflow uses this script to verify synchronized manifests, Cargo lock entries, and release tags."
         }
       ],
       "status": "supported",
