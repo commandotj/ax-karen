@@ -2,7 +2,6 @@
 
 ## Active
 
-- [ ] Implement RFC 0037: Use feature branches into main with manual release bumps (RFC 0037)
 - [ ] Implement RFC 0036: Fix marked directory removal (RFC 0036)
 
 ## Done
@@ -41,6 +40,8 @@
   - [x] Implement RFC 0032: Check for updates and prompt to install (child of 0031) (RFC 0032)
   - [x] Implement RFC 0033: Publish signed updater artifacts and latest.json (child of 0031) (RFC 0033)
 - [x] Implement RFC 0035: Improve auto-update diagnostics and recovery (RFC 0035)
+- [x] Implement RFC 0037: Use feature branches into main with manual release bumps (RFC 0037)
+
 
 
 

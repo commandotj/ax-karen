@@ -39,4 +39,4 @@
 | 0034 | [Add a Check for Updates menu item (child of 0001)](rfc/completed/0034-check-for-updates-menu.md) | Implemented |
 | 0035 | [Improve auto-update diagnostics and recovery](rfc/completed/0035-updater-diagnostics-and-recovery.md) | Implemented |
 | 0036 | [Fix marked directory removal](rfc/0036-marked-directory-removal.md) | Draft |
-| 0037 | [Use feature branches into main with manual release bumps](rfc/0037-feature-branch-main-manual-version.md) | Approved |
+| 0037 | [Use feature branches into main with manual release bumps](rfc/completed/0037-feature-branch-main-manual-version.md) | Implemented |
